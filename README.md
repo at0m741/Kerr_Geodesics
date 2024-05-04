@@ -1,5 +1,7 @@
 # Simulation de géodésiques dans l'espace-temps de Kerr 
 
+![singularity](https://github.com/at0m741/Kerr_Geodesics/assets/20189027/77c3b1ed-d70e-4319-81d4-32004044a585)
+
 Ce projet contient un code C permettant de simuler les trajectoires de géodésiques dans l'espace-temps de Kerr, qui décrivent respectivement un trou noir en rotation.
 
 ## Fonctionnement et théorie
