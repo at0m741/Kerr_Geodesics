@@ -16,6 +16,8 @@ Assurez vous de disposer de GCC-1X ou MPICC (si vous souhaitez des calculs plus 
 make
 ```
 
+Pour visualizer vous aurez besoins du logiciel Paraview
+
 # Geodesic Simulation in Kerr Spacetime
 This project contains a C code to simulate geodesic trajectories in Kerr spacetime, which describe a rotating black hole.
 
@@ -29,6 +31,7 @@ make
 ```
 For more details on the operation and underlying theory, please see my paper. [papier](Simulation_de_trajectoires_de_geodesiques.pdf).
 Please note that the document is written in French, but a translation may be available later on.
+Paraview is needed to plot the results
 
 
 # TODO
