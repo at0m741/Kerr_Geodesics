@@ -10,9 +10,9 @@ Pour plus d'informations sur la théorie et les résultats de ce projet, veuille
 
 Assurez vous de disposer de GCC-1X ou MPICC (si vous souhaitez des calculs plus precis et plus laborieux) 
 
-``bash
+```bash
 make
-``
+```
 
 # Geodesic Simulation in Kerr Spacetime
 This project contains a C code to simulate geodesic trajectories in Kerr spacetime, which describe a rotating black hole.
