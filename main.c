@@ -3,27 +3,16 @@
 extern long double (*geodesic_points)[4];
 extern int num_points;
 
-static inline double sqrt_asm(double n)
-{
-    double result;
-    asm("fldl %1;"
-        "fsqrt;"
-        "fstpl %0;"
-        : "=m" (result)
-        : "m" (n));
-    return result;
-}
 
-
-int main()
+int main(int argc, char **argv)
 {
 	ldouble_a32 Rs = 2 * G * M / powf(c, 2);
 
 	
-    long double x[4] = {Rs * 4, M_PI / 2, M_PI * 2, Rs}; // Position initiale (r, θ, φ, t)
-    long double v[4] = {100.0, 1.01, 1.0, 1.0};        // Vitesse initiale (dr/dλ, dθ/dλ, dφ/dλ, dt/dλ)
-	// long double x[4] = {Rs * 4, M_PI / 2, 0.0, 0.0}; // Position initiale (t, r, θ, φ)
-	// long double v[4] = {1.0, 0.0, 0.0, 0.1};          // Vitesse initiale (dt/dλ, dr/dλ, dθ/dλ, dφ/dλ)
+    // long double x[4] = {Rs * 4, M_PI / 2, M_PI * 2, Rs}; // Position initiale (r, θ, φ, t)
+    // long double v[4] = {100.0, 1.01, 1.0, 1.0};        // Vitesse initiale (dr/dλ, dθ/dλ, dφ/dλ, dt/dλ)
+	long double x[4] = {Rs * 4, M_PI / 2, 0.0, 0.0}; // Position initiale (t, r, θ, φ)
+	long double v[4] = {1.0, 0.0, 0.0, 0.1};          // Vitesse initiale (dt/dλ, dr/dλ, dθ/dλ, dφ/dλ)
     ldouble_a32 H = 1.0;
 
     ldouble_a32 r = sqrt_asm(powf(x[1], 2) + powf(a, 2) * powf(cos(x[2]), 2));
@@ -44,16 +33,6 @@ int main()
     ldouble_a32 l1 = (r * x[1] + a * x[3] * sinf(x[2])) / (powf(r, 2) + powf(a, 2));
     ldouble_a32 l2 = 0.0;
     ldouble_a32 l3 = (a * sin(x[2]) * (powf(r, 2) + powf(a, 2) - 2 * r)) / (powf(r, 2) + powf(a, 2));
-    
-	long double g_schwarzschild[4][4] = {0};
-	ldouble_a32 denominator = 1 - 2 * G * M / (powf(c, 2));
-	if (denominator != 0.0) {
-		g_schwarzschild[0][0] = -denominator;
-		g_schwarzschild[1][1] = 1 / denominator;
-		g_schwarzschild[2][2] = powf(r, 2);
-		g_schwarzschild[3][3] = powf(r, 2) * powf(sinf(M_PI / 2), 2);
-	}
-
     long double g_kerr_schild[4][4] = {
         {-1 + f * l0 * l0, f * l0 * l1, f * l0 * l2, f * l0 * l3},
         {f * l1 * l0, 1 + f * l1 * l1, f * l1 * l2, f * l1 * l3},
@@ -61,8 +40,7 @@ int main()
         {f * l3 * l0, f * l3 * l1, f * l3 * l2, 1 + f * l3 * l3}
     };
 
-	ldouble_a32 Q = 1.0;
-
+	ldouble_a32 Q = 1.03;
 	long double g_kerr_newman[4][4] = {0};
 
 	ldouble_a32 rho2_kn = powf(r, 2) + powf(a, 2) * powf(cos(x[1]), 2);
@@ -80,8 +58,9 @@ int main()
     long double riemann_tensor[4][4][4][4] = {0};
 
     christoffel(g_kerr, christoffel_sym);
-    riemann(g_kerr_newman, christoffel_sym, riemann_tensor);
-    geodesic(x, v, 5.4, christoffel_sym, 0.00001, store_geodesic_point);
+    riemann(g_kerr, christoffel_sym, riemann_tensor);
+    geodesic(x, v, 20.4, christoffel_sym, 0.00001, store_geodesic_point);
+	printf("Rs = %Lf\n", Rs * 1000);
     write_vtk_file("geodesic.vtk");
 	free(geodesic_points);
 

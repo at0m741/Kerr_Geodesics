@@ -31,6 +31,8 @@ fclean: clean
 
 re: fclean all
 
+re_mpi: fclean mpicc
+
 mpicc: COMPILER = $(MPI)
 mpicc: CFLAGS = $(MPICC_FLAGS)
 mpicc: $(OBJ)

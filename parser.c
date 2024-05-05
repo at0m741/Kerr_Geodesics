@@ -44,13 +44,13 @@ void write_vtk_file(const char *filename)
 
 void store_geodesic_point(long double x[4], long double lambda)
 {
-    long double r = x[1];
-    long double theta = x[2];
-    long double phi = x[3];
-    long double sin_theta = sin(theta);
-    long double cos_theta = cos(theta);
-    long double sin_phi = sin(phi);
-    long double cos_phi = cos(phi);
+    ldouble_a32 r = x[1];
+    ldouble_a32 theta = x[2];
+    ldouble_a32 phi = x[3];
+    ldouble_a32 sin_theta = sin(theta);
+    ldouble_a32 cos_theta = cos(theta);
+    ldouble_a32 sin_phi = sin(phi);
+    ldouble_a32 cos_phi = cos(phi);
 
     geodesic_points = realloc(geodesic_points, (num_points + 1000) * sizeof(*geodesic_points));
     if (geodesic_points == NULL)
@@ -58,10 +58,9 @@ void store_geodesic_point(long double x[4], long double lambda)
         fprintf(stderr, "Error: failed to allocate memory for geodesic_points\n");
         exit(1);
     }
-
-    geodesic_points[num_points][0] = r * sin_theta * cos_phi;
-    geodesic_points[num_points][1] = r * sin_theta * sin_phi;
-    geodesic_points[num_points][2] = r * cos_theta;
+	geodesic_points[num_points][0] = r * sin_theta * cos_phi;
+	geodesic_points[num_points][1] = r * sin_theta * sin_phi;
+	geodesic_points[num_points][2] = r * cos_theta;
 	geodesic_points[num_points][3] = lambda; 
 
     num_points++;

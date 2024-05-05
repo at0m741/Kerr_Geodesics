@@ -5,6 +5,7 @@ extern int num_points;
 
 void christoffel(long double g[4][4], long double christoffel[4][4][4])
 {
+	#pragma omp parallel for
     for (int mu = 0; mu < 4; mu++) {
         for (int beta = 0; beta < 4; beta++) {
             for (int nu = 0; nu < 4; nu++) {
@@ -21,6 +22,7 @@ void christoffel(long double g[4][4], long double christoffel[4][4][4])
 
 void riemann(long double g[4][4], long double christoffel[4][4][4], long double riemann[4][4][4][4])
 {
+	#pragma omp parallel for
     for (int i = 1; i < 4; i++) {
         for (int j = 1; j < 4; j++) {
             for (int k = 1; k < 4; k++) {
