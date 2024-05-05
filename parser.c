@@ -1,10 +1,10 @@
 #include "geodesics.h"
 
-
+extern long double (*geodesic_points)[4];
+extern int num_points;
 void write_vtk_file(const char *filename)
 {
-	long double (*geodesic_points)[4] = NULL;
-	int num_points = 0;
+	//long double (*geodesic_points)[4] = NULL;
     FILE *file = fopen(filename, "w");
     if (file == NULL)
     {
@@ -39,14 +39,11 @@ void write_vtk_file(const char *filename)
         fprintf(file, "%Lf\n", geodesic_points[i][3]);
     }
     fclose(file);
-	free(geodesic_points);
 }
 
 
 void store_geodesic_point(long double x[4], long double lambda)
 {
-	long double (*geodesic_points)[4] = NULL;
-	int num_points = 0;
     long double r = x[1];
     long double theta = x[2];
     long double phi = x[3];

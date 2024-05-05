@@ -10,7 +10,7 @@
 #define c 299792458
 #define G 6.67430e-11
 #define M 1.9884e23
-#define a 2.0
+#define a 2.6
 #define ALIGNMENT 32
 #define BLOCK_SIZE 1000
 typedef long double __attribute__((aligned(32))) ldouble_a32;

@@ -1,5 +1,8 @@
 #include "geodesics.h"
 
+extern long double (*geodesic_points)[4];
+extern int num_points;
+
 void geodesic(long double x[4], long double v[4], long double lambda_max, long double christoffel[4][4][4], long double step_size, void (*store_point)(long double[], long double))
 {
     long double k1[4], k2[4], k3[4], k4[4];

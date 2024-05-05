@@ -1,17 +1,19 @@
 #include "geodesics.h"
 
+extern long double (*geodesic_points)[4];
+extern int num_points;
+
 static inline double sqrt_asm(double n)
 {
     double result;
-    asm("fld %1;"
+    asm("fldl %1;"
         "fsqrt;"
-        "fstp %0;"
+        "fstpl %0;"
         : "=m" (result)
         : "m" (n));
     return result;
 }
-long double (*geodesic_points)[4] = NULL;
-int num_points = 0;
+
 
 int main()
 {
@@ -22,7 +24,7 @@ int main()
     long double v[4] = {100.0, 1.01, 1.0, 1.0};        // Vitesse initiale (dr/dλ, dθ/dλ, dφ/dλ, dt/dλ)
 	// long double x[4] = {Rs * 4, M_PI / 2, 0.0, 0.0}; // Position initiale (t, r, θ, φ)
 	// long double v[4] = {1.0, 0.0, 0.0, 0.1};          // Vitesse initiale (dt/dλ, dr/dλ, dθ/dλ, dφ/dλ)
-    ldouble_a32 H = 10.0;
+    ldouble_a32 H = 1.0;
 
     ldouble_a32 r = sqrt_asm(powf(x[1], 2) + powf(a, 2) * powf(cos(x[2]), 2));
     ldouble_a32 f = 2 * r * H / (powf(r, 2) + powf(a, 2) * powf(cos(x[2]), 2));
@@ -79,7 +81,7 @@ int main()
 
     christoffel(g_kerr, christoffel_sym);
     riemann(g_kerr_newman, christoffel_sym, riemann_tensor);
-    geodesic(x, v, 10.4, christoffel_sym, 0.0001, store_geodesic_point);
+    geodesic(x, v, 5.4, christoffel_sym, 0.00001, store_geodesic_point);
     write_vtk_file("geodesic.vtk");
 	free(geodesic_points);
 

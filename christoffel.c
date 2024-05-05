@@ -1,5 +1,8 @@
 #include "geodesics.h"
 
+extern long double (*geodesic_points)[4];
+extern int num_points;
+
 void christoffel(long double g[4][4], long double christoffel[4][4][4])
 {
     for (int mu = 0; mu < 4; mu++) {
