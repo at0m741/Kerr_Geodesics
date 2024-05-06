@@ -17,7 +17,7 @@ void geodesic(double x[4], double v[4], double lambda_max, double christoffel[4]
 	
     #pragma omp parallel shared(lambda, step, x, v) private(k1, k2, k3, k4, temp_x, temp_v)
     {
-        while (lambda < lambda_max)
+        for(; lambda < lambda_max;)
         {
             #pragma omp single
             {
