@@ -83,7 +83,7 @@ int main(int argc, char **argv)
 
     christoffel(g_kerr, christoffel_sym);
     riemann(g_kerr, christoffel_sym, riemann_tensor);
-    geodesic(x, v, 10.4, christoffel_sym, 0.00001, store_geodesic_point);
+    geodesic(x, v, 10.0, christoffel_sym, 0.000001, store_geodesic_point);
 	printf("Rs = %f\n", Rs * 1000);
 	print_arch();
     write_vtk_file("geodesic.vtk");

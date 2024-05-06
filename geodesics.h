@@ -10,7 +10,7 @@
 #define MAX_POINTS 100000
 #define c 299792458
 #define G 6.67430e-11
-#define M 1.9884e22
+#define M 1.9884e26
 #define a 2.9
 #define BLOCK_SIZE 1000
 
@@ -24,7 +24,7 @@
 	0
 #endif
 typedef double __attribute__((aligned(ALIGNMENT))) ldouble_a;
-
+#define BUFFER_SIZE 1024
 #if defined(__LINUX__) || defined(__linux__)
 	#define sqrt_asm sqrt_asm_linux
 	#define Plateform "Linux"
@@ -43,6 +43,18 @@ static inline double sqrt_asm(double n)
         : "m" (n));
     return result;
 }
+
+static inline double sqrt_asm_macos(double n)
+{
+	double result;
+	asm("fld %1;"
+		"fsqrt;"
+		"fstp %0;"
+		: "=m" (result)
+		: "m" (n));
+	return result;
+}
+
 
 void christoffel(double g[4][4], double christoffel[4][4][4]);
 void riemann(double g[4][4], double christoffel[4][4][4], double riemann[4][4][4][4]);

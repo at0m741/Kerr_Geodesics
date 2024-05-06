@@ -14,7 +14,6 @@ void geodesic(double x[4], double v[4], double lambda_max, double christoffel[4]
 	#else
 		printf("OpenMP is not supported\n");
 	#endif
-	
     #pragma omp parallel shared(lambda, step, x, v) private(k1, k2, k3, k4, temp_x, temp_v)
     {
         for(; lambda < lambda_max;)
