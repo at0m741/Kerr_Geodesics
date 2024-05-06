@@ -31,7 +31,11 @@ void print_arch()
 int main(int argc, char **argv)
 {
 	ldouble_a Rs = 2 * G * M / powf(c, 2);
+    size_t i;
+    struct timespec start, end;
 
+    i = 0;
+    clock_gettime(1, &start);
 	
     // double x[4] = {Rs * 4, M_PI / 2, M_PI * 2, Rs}; // Position initiale (r, θ, φ, t)
     // double v[4] = {100.0, 1.01, 1.0, 1.0};        // Vitesse initiale (dr/dλ, dθ/dλ, dφ/dλ, dt/dλ)
@@ -87,7 +91,16 @@ int main(int argc, char **argv)
 	printf("Rs = %f\n", Rs * 1000);
 	print_arch();
     write_vtk_file("geodesic.vtk");
-	free(geodesic_points);
+	clock_gettime(1, &end);
 
-    return 0;
+    long seconds = end.tv_sec - start.tv_sec;
+    long ns = end.tv_nsec - start.tv_nsec;
+
+    double elapsed = seconds + ns*1e-9;
+    printf("time = %f\n", elapsed);
+	if (geodesic_points != NULL)
+	{
+		free(geodesic_points);
+	}
+	return 0;
 }

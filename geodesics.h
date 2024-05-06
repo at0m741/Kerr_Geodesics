@@ -6,25 +6,53 @@
 #include <stdlib.h>
 #include <string.h>
 #include <immintrin.h>
+#include <time.h>
 
 #define MAX_POINTS 100000
 #define c 299792458
 #define G 6.67430e-11
 #define M 1.9884e22
 #define a 0.9
-#define BLOCK_SIZE 1000
-
-#if  defined(__INTEL_COMPILER) || defined(__ICC)
-	#define ALIGNMENT 64
-	#define ARCH "KNL"
-#elif defined(__clang__) || defined(__GNUC__)
-	#define ALIGNMENT 32
-	#define ARCH "x86_64"
-#else
-	0
-#endif
-typedef double __attribute__((aligned(ALIGNMENT))) ldouble_a;
+#define BLOCK_SIZE 1024
 #define BUFFER_SIZE 1024
+
+#if defined(__INTEL_COMPILER) || defined(__ICC) || defined(__INTEL_LLVM_COMPILER)
+    #define ALIGNMENT 64
+    #define ARCH "KNL"
+    #define NUM_THREADS 256
+    #include <omp.h>
+    #include <mkl.h>
+    #include <mpi.h>
+    #include "MPI_init.h"
+
+#elif defined(__MIPC) && defined(USE_MPI)
+    #define ALIGNMENT 64
+    #define ARCH "KNL"
+    #define NUM_THREADS 256
+    #include <omp.h>
+    #include <mkl.h>
+    #include <mpi.h>
+    #include "MPI_init.h"
+
+#elif defined(__clang__) || defined(__GNUC__)
+    #define ALIGNMENT 32
+    #define ARCH "x86_64"
+    #define NUM_THREADS 16
+
+#elif defined(USE_MPI)
+    #define ALIGNMENT 32
+    #define ARCH "x86_64"
+    #define NUM_THREADS 16
+    #include <omp.h>
+    #include <mpi.h>
+    #include "MPI_init.h"
+
+#else
+    #error "Unsupported compiler or configuration"
+#endif
+
+typedef double __attribute__((aligned(ALIGNMENT))) ldouble_a;
+
 #if defined(__LINUX__) || defined(__linux__)
 	#define sqrt_asm sqrt_asm_linux
 	#define Plateform "Linux"
@@ -33,7 +61,8 @@ typedef double __attribute__((aligned(ALIGNMENT))) ldouble_a;
 	#define Plateform "Darwin (macOS)"
 #endif
 
-static inline double sqrt_asm(double n)
+
+inline double sqrt_asm(double n)
 {
     double result;
     asm("fld %1;"
@@ -55,7 +84,7 @@ static inline double sqrt_asm_macos(double n)
 	return result;
 }
 
-
+void sincos(double x, double *sin, double *cos);
 void christoffel(double g[4][4], double christoffel[4][4][4]);
 void riemann(double g[4][4], double christoffel[4][4][4], double riemann[4][4][4][4]);
 

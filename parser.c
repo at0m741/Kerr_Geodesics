@@ -3,6 +3,9 @@
 extern double (*geodesic_points)[4];
 extern int num_points;
 size_t capacity = 0;
+
+
+#pragma omp declare simd
 void write_vtk_file(const char *filename)
 {
 	//double (*geodesic_points)[4] = NULL;
@@ -82,4 +85,4 @@ void store_geodesic_point(double x[4], double lambda)
     geodesic_points[num_points][3] = lambda;
 
     num_points++;
-}
+}	
