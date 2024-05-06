@@ -12,12 +12,28 @@
 #define G 6.67430e-11
 #define M 1.9884e22
 #define a 2.9
-#define ALIGNMENT 32
 #define BLOCK_SIZE 1000
-typedef long double __attribute__((aligned(32))) ldouble_a32;
-typedef double __attribute__((aligned(32))) double_a32;
 
-static inline double_a32 sqrt_asm(double n)
+#if  defined(__INTEL_COMPILER) || defined(__ICC)
+	#define ALIGNMENT 64
+	#define ARCH "KNL"
+#elif defined(__clang__) || defined(__GNUC__)
+	#define ALIGNMENT 32
+	#define ARCH "x86_64"
+#else
+	0
+#endif
+typedef double __attribute__((aligned(ALIGNMENT))) ldouble_a;
+
+#if defined(__LINUX__) || defined(__linux__)
+	#define sqrt_asm sqrt_asm_linux
+	#define Plateform "Linux"
+#elif defined(__APPLE__) || defined(__MACH__)
+	#define sqrt_asm sqrt_asm_darwin
+	#define Plateform "Darwin (macOS)"
+#endif
+
+static inline double sqrt_asm(double n)
 {
     double result;
     asm("fld %1;"
@@ -28,11 +44,10 @@ static inline double_a32 sqrt_asm(double n)
     return result;
 }
 
-void christoffel(long double g[4][4], long double christoffel[4][4][4]);
-void riemann(long double g[4][4], long double christoffel[4][4][4], long double riemann[4][4][4][4]);
-
+void christoffel(double g[4][4], double christoffel[4][4][4]);
+void riemann(double g[4][4], double christoffel[4][4][4], double riemann[4][4][4][4]);
 
 void write_vtk_file(const char *filename);
-void store_geodesic_point(long double x[4], long double lambda);
+void store_geodesic_point(double x[4], double lambda);
 
-void geodesic(long double x[4], long double v[4], long double lambda_max, long double christoffel[4][4][4], long double step_size, void (*store_point)(long double[], long double));
+void geodesic(double x[4], double v[4], double lambda_max, double christoffel[4][4][4], double step_size, void (*store_point)(double[], double));
