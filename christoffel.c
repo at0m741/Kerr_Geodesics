@@ -11,20 +11,31 @@ void christoffel(double g[4][4], double christoffel[4][4][4])
 	#else
 		printf("OpenMP is not supported\n");
 	#endif
+
+    double (*g_aligned)[4] = aligned_alloc(ALIGNMENT, sizeof(double[4][4]));
+    double (*christoffel_aligned)[4][4] = aligned_alloc(ALIGNMENT, sizeof(double[4][4][4]));
+    memcpy(g_aligned, g, sizeof(double[4][4]));
+    memcpy(christoffel_aligned, christoffel, sizeof(double[4][4][4]));
+
+
     #pragma omp parallel for collapse(3)
     for (int mu = 0; mu < 4; mu++) {
         for (int beta = 0; beta < 4; beta++) {
             for (int nu = 0; nu < 4; nu++) {
                 double sum = 0;
-                #pragma omp simd reduction(+:sum) aligned(g:ALIGNMENT)
+                #pragma omp simd reduction(+:sum) aligned(g_aligned:ALIGNMENT)
                 for (int sigma = 0; sigma < 4; sigma++) {
-                    sum += 0.5 * (g[mu][sigma] * (g[sigma][beta] + g[beta][sigma] - g[beta][nu]));
+                    sum += 0.5 * (g_aligned[mu][sigma] * (g_aligned[sigma][beta] + g_aligned[beta][sigma] - g_aligned[beta][nu]));
                 }
-                christoffel[mu][beta][nu] = sum;
-                printf("Christoffel[%d][%d][%d] = %f\n", mu, beta, nu, christoffel[mu][beta][nu]);
+                christoffel_aligned[mu][beta][nu] = sum;
             }
         }
     }
+
+    memcpy(christoffel, christoffel_aligned, sizeof(double[4][4][4]));
+
+    free(g_aligned);
+    free(christoffel_aligned);
 }
 
 #pragma omp declare simd

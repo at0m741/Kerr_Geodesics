@@ -10,8 +10,8 @@
 #define MAX_POINTS 100000
 #define c 299792458
 #define G 6.67430e-11
-#define M 1.9884e26
-#define a 2.9
+#define M 1.9884e22
+#define a 0.9
 #define BLOCK_SIZE 1000
 
 #if  defined(__INTEL_COMPILER) || defined(__ICC)

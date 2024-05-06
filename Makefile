@@ -10,7 +10,7 @@ echo:
 
 CC = gcc
 MPI = mpicc
-FLAGS = -lm -O3 -gstabs -fopenmp -masm=intel -ffast-math -funroll-loops -mavx2 -fopt-info-vec-optimized -fopt-info-all  -fsanitize=address -fsanitize=undefined
+FLAGS = -lm -O3 -gstabs -fopenmp -masm=intel -ffast-math -funroll-loops -mavx2 -fopt-info-vec-optimized -fopt-info-all
 MPICC_FLAGS = -g -masm=intel -ffast-math -funroll-loops -mavx2 -fopt-info-vec-optimized -fopt-info-all
 KNL_FLAGS = -lm -g -fopenmp -masm=intel -ffast-math -funroll-loops -mavx512f -mavx512cd -mavx512bw -mavx512dq -mavx512vl -fopt-info-vec-optimized -fopt-info-all
 PROFILING_FLAGS = -pg -g -gstabs -fopenmp -ffast-math -funroll-loops -mavx2 -lm -fopt-info-vec-optimized	-fopt-info-all
