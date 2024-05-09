@@ -55,7 +55,7 @@ Paraview is needed to plot the results
 # TODO
 
 -Clean and optimize \
--Add mpi parallel code and Intel AVX2/AVX512 Intrinsics
+-Add mpi parallel code and Intel AVX2/AVX512 Intrinsics \
 -Make it work with bigger Mass and more metrics \
 -Translate paper, correct potential mistakes and add bibliography\
 
