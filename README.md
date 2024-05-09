@@ -13,9 +13,22 @@ Pour plus d'informations sur la théorie et les résultats de ce projet, veuille
 Assurez vous de disposer de GCC-1X ou MPICC (si vous souhaitez des calculs plus precis et plus laborieux) 
 
 ```bash
-make
+make x86
 ```
+si vous utilisez une architecture Intel Knight Landing qui utilise les avx512:
 
+```bash
+make knl
+```
+avec MPI (pas encore implementé de la bonne façon)
+
+```bash
+make mpi
+```
+or 
+```bash
+make mpicc
+```
 Pour visualizer vous aurez besoins du logiciel Paraview
 
 # Geodesic Simulation in Kerr Spacetime
@@ -27,10 +40,17 @@ For more information on the theory and results of this project, please refer to 
 # Usage
 Make sure you have GCC-1X or MPICC installed on your system if you want more accurate and laborious calculations.
 ```bash
-make
+make x86
 ```
-For more details on the operation and underlying theory, please see my paper. [papier](Simulation_de_trajectoires_de_geodesiques.pdf).
+if you are using a Intel Knight Landing system using AVX512 :
+```bash
+make knl
+```
+MPI code is not ready at the moment but.. soon
+
+For more details on the operation and underlying theory, please see my [paper](Simulation_de_trajectoires_de_geodesiques.pdf).
 Please note that the document is written in French, but a translation may be available later on.
+
 Paraview is needed to plot the results
 
 
