@@ -23,10 +23,6 @@ make knl
 avec MPI (pas encore implementé de la bonne façon)
 
 ```bash
-make mpi
-```
-or 
-```bash
 make mpicc
 ```
 Pour visualizer vous aurez besoins du logiciel Paraview
@@ -47,7 +43,9 @@ if you are using a Intel Knight Landing system using AVX512 :
 make knl
 ```
 MPI code is not ready at the moment but.. soon
-
+```bash
+make mpicc
+```
 For more details on the operation and underlying theory, please see my [paper](Simulation_de_trajectoires_de_geodesiques.pdf).
 Please note that the document is written in French, but a translation may be available later on.
 
