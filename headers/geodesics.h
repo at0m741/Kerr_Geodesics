@@ -11,12 +11,15 @@
 #define MAX_POINTS 100000
 #define c 299792458.0
 #define G 6.67430e-11
-#define M 1.9884e22
+#define M 1.0
 #define a 1.4
 #define BLOCK_SIZE 1024
 #define BUFFER_SIZE 1024
+#define DT 0.00000008
+#define max_dt 0.2
 
-#if defined(__INTEL_COMPILER) || defined(__ICC) || defined(__INTEL_LLVM_COMPILER)
+#if defined(__INTEL_COMPILER) || defined(__ICC) || \
+    defined(__INTEL_LLVM_COMPILER)
     #define ALIGNMENT 64
     #define ARCH "KNL"
     #define NUM_THREADS 256
@@ -38,14 +41,6 @@
     #define ALIGNMENT 32
     #define ARCH "x86_64"
     #define NUM_THREADS 16
-
-#elif defined(USE_MPI)
-    #define ALIGNMENT 32
-    #define ARCH "x86_64"
-    #define NUM_THREADS 16
-    #include <omp.h>
-    #include <mpi.h>
-    #include "MPI_init.h"
 
 #else
     #error "Unsupported compiler or configuration"

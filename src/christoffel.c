@@ -33,7 +33,6 @@ void christoffel(double g[4][4], double christoffel[4][4][4])
     }
 
     memcpy(christoffel, christoffel_aligned, sizeof(double[4][4][4]));
-
     free(g_aligned);
     free(christoffel_aligned);
 }

@@ -1,14 +1,13 @@
 #include "../headers/geodesics.h"
 
-extern double (*geodesic_points)[4];
+extern double (*geodesic_points)[5];
 extern int num_points;
-size_t capacity = 0;
+int capacity = 0;
 
 
 #pragma omp declare simd
 void write_vtk_file(const char *filename)
 {
-	double Rs = 2 * G * M / powf(c, 2);
     FILE *file = fopen(filename, "w");
     if (file == NULL)
     {
@@ -21,14 +20,15 @@ void write_vtk_file(const char *filename)
     fprintf(file, "ASCII\n");
     fprintf(file, "DATASET POLYDATA\n");
     fprintf(file, "POINTS %d double\n", num_points);
-
+    // store the points of the geodesic
+    #pragma omp simd aligned(geodesic_points: ALIGNMENT)
     for (int i = 0; i < num_points; ++i)
     {
         fprintf(file, "%f %f %f\n", geodesic_points[i][0], geodesic_points[i][1], geodesic_points[i][2]);
     }
 
+    // set the number of points in each line
     fprintf(file, "LINES %d %d\n", num_points - 1, 3 * (num_points - 1));
-
 	#pragma omp simd aligned(geodesic_points: ALIGNMENT)
     for (int i = 0; i < num_points - 1; ++i)
     {
@@ -38,14 +38,15 @@ void write_vtk_file(const char *filename)
     fprintf(file, "POINT_DATA %d\n", num_points);
     fprintf(file, "SCALARS lambda double\n");
     fprintf(file, "LOOKUP_TABLE default\n");
+    // store the value of lambda for each point for colloring
 	#pragma omp simd aligned(geodesic_points: ALIGNMENT)
     for (int i = 0; i < num_points; ++i)
     {
         fprintf(file, "%f\n", geodesic_points[i][3]);
     }
-	printf("VTK file %s has been written\n", filename);
 	printf("Number of points: %d\n", num_points);
-	printf("size = %ld mb\n", sizeof(*geodesic_points));
+	printf("VTK file %s has been written\n", filename);
+    //add RS 
 
     fclose(file);
 }
