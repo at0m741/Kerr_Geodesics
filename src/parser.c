@@ -21,13 +21,12 @@ void write_vtk_file(const char *filename)
     fprintf(file, "DATASET POLYDATA\n");
     fprintf(file, "POINTS %d double\n", num_points);
     // store the points of the geodesic
-    #pragma omp simd aligned(geodesic_points: ALIGNMENT)
+    #pragma omp for simd aligned(geodesic_points: ALIGNMENT)
     for (int i = 0; i < num_points; ++i)
     {
         fprintf(file, "%f %f %f\n", geodesic_points[i][0], geodesic_points[i][1], geodesic_points[i][2]);
     }
 
-    // set the number of points in each line
     fprintf(file, "LINES %d %d\n", num_points - 1, 3 * (num_points - 1));
 	#pragma omp simd aligned(geodesic_points: ALIGNMENT)
     for (int i = 0; i < num_points - 1; ++i)
@@ -38,7 +37,6 @@ void write_vtk_file(const char *filename)
     fprintf(file, "POINT_DATA %d\n", num_points);
     fprintf(file, "SCALARS lambda double\n");
     fprintf(file, "LOOKUP_TABLE default\n");
-    // store the value of lambda for each point for colloring
 	#pragma omp simd aligned(geodesic_points: ALIGNMENT)
     for (int i = 0; i < num_points; ++i)
     {
@@ -49,7 +47,56 @@ void write_vtk_file(const char *filename)
     //add RS 
 
     fclose(file);
+
+    //every 10 point must create a new file
+    // int num_files = num_points / 10000;
+    // int num_points_per_file = 10000;
+    // for (int i = 0; i < num_files; i++)
+    // {
+    //     char new_filename[100];
+    //     sprintf(new_filename, "%s_%d.vtk", filename, i);
+    //     FILE *new_file = fopen(new_filename, "w");
+    //     if (new_file == NULL)
+    //     {
+    //         fprintf(stderr, "Error: failed to open file %s\n", new_filename);
+    //         return;
+    //     }
+
+    //     fprintf(new_file, "# vtk DataFile Version 3.0\n");
+    //     fprintf(new_file, "Geodesic Points\n");
+    //     fprintf(new_file, "ASCII\n");
+    //     fprintf(new_file, "DATASET POLYDATA\n");
+    //     fprintf(new_file, "POINTS %d double\n", num_points_per_file);
+    //     // store the points of the geodesic
+    //     #pragma omp for simd aligned(geodesic_points: ALIGNMENT)
+    //     for (int j = 0; j < num_points_per_file; ++j)
+    //     {
+    //         fprintf(new_file, "%f %f %f\n", geodesic_points[i * num_points_per_file + j][0], geodesic_points[i * num_points_per_file + j][1], geodesic_points[i * num_points_per_file + j][2]);
+    //     }
+
+    //     // set the number of points in each line
+    //     fprintf(new_file, "LINES %d %d\n", num_points_per_file - 1, 3 * (num_points_per_file - 1));
+    //     #pragma omp simd aligned(geodesic_points: ALIGNMENT)
+    //     for (int j = 0; j < num_points_per_file - 1; ++j)
+    //     {
+    //         fprintf(new_file, "2 %d %d\n", j, j + 1);
+    //     }
+
+    //     fprintf(new_file, "POINT_DATA %d\n", num_points_per_file);
+    //     fprintf(new_file, "SCALARS lambda double\n");
+    //     fprintf(new_file, "LOOKUP_TABLE default\n");
+    //     // store the value of lambda for each point for colloring
+    //     #pragma omp simd aligned(geodesic_points: ALIGNMENT)
+    //     for (int j = 0; j < num_points_per_file; ++j)
+    //     {
+    //         fprintf(new_file, "%f\n", geodesic_points[i * num_points_per_file + j][3]);
+    //     }
+    //     printf("Number of points: %d\n", num_points_per_file);
+    //     printf("VTK file %s has been written\n", new_filename);
+    //     fclose(new_file);   
+    // }
 }
+
 
 #pragma omp declare simd
 void store_geodesic_point(double x[4], double lambda)
@@ -91,3 +138,57 @@ void store_geodesic_point(double x[4], double lambda)
 
     num_points++;
 }	
+
+void write_obj_file(const char *filename)
+{
+    FILE *file = fopen(filename, "w");
+    if (file == NULL)
+    {
+        fprintf(stderr, "Error: failed to open file %s\n", filename);
+        return;
+    }
+    for (int i = 0; i < num_points; ++i)
+    {
+        fprintf(file, "v %f %f %f\n", geodesic_points[i][0], geodesic_points[i][1], geodesic_points[i][2]);
+    }
+
+    // set the number of points in each line
+    for (int i = 1; i < num_points; ++i)
+    {
+        fprintf(file, "f %d %d %d\n", i, i + 1, i + 2);
+    }
+    fprintf(file, "\n");
+    printf("Number of points: %d\n", num_points);
+    printf("OBJ file %s has been written\n", filename);
+
+    fclose(file);
+}
+
+// void write_hdf5(const char *fileneame)
+// {
+//     hid_t file_id, dataset_id, dataspace_id;
+//     hsize_t dims[2] = {num_points, 5};
+//     herr_t status;
+//     file_id = H5Fcreate(fileneame, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+//     dataspace_id = H5Screate_simple(2, dims, NULL);
+//     dataset_id = H5Dcreate(file_id, "geodesic_points", H5T_NATIVE_DOUBLE, dataspace_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+//     status = H5Dwrite(dataset_id, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, geodesic_points);
+//     H5Dclose(dataset_id);
+//     H5Sclose(dataspace_id);
+//     H5Fclose(file_id);
+//     printf("HDF5 file %s has been written\n", fileneame);
+// }
+
+void write_binary(const char *filename)
+{
+    FILE *file = fopen(filename, "wb");
+    if (file == NULL)
+    {
+        fprintf(stderr, "Error: failed to open file %s\n", filename);
+        return;
+    }
+    fwrite(&num_points, sizeof(int), 1, file);
+    fwrite(geodesic_points, sizeof(double), num_points * 5, file);
+    printf("Binary file %s has been written\n", filename);
+    fclose(file);
+}

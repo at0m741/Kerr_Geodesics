@@ -15,14 +15,22 @@
 			#pragma ivdep
 			#pragma omp simd aligned(geodesic_points: ALIGNMENT)
 		#endif
-		MPI_init(&argc, &argv);
 		printf("MPI has been initialized over %s\n", ARCH);
 	}
 
 #elif USE_MPI
 	void __init_KNL_MPI(int argc, char **argv)
 	{
-		MPI_init(&argc, &argv);
-		printf("MPI has been initialized over %s\n", ARCH);
+		(void)argc;
+		(void)argv;
 	}
-#endif
+
+	void mpi_preliminary_task() {
+		int rank;
+		MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+		if (rank == 0) {
+			printf("Tâche préliminaire MPI exécutée par le processus %d\n", rank);
+		}
+		MPI_Barrier(MPI_COMM_WORLD);
+	}
+#endif	

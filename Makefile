@@ -8,9 +8,9 @@ CC = gcc
 MPI = mpicc
 FLAGS = -lm -O3 -Wopenmp-simd -mavx2 -gstabs -ftree-loop-optimize \
 		-ftree-loop-distribution -fopenmp -masm=intel -ffast-math \
-		-funroll-loops -mavx2 -Wall -Wextra -fopt-info-all
+		-funroll-loops -mavx2 -fopt-info-all -L/nfs/homes/ltouzali/.local/include/hdf5/lib -I/nfs/homes/ltouzali/.local/include/hdf5/include -lhdf5
 MPICC_FLAGS = -g -masm=intel -ffast-math -funroll-loops -mavx2 \
-			  -fopt-info-vec-optimized -fopt-info-all
+			  -fopt-info-vec-optimized -fopt-info-all -fopenmp -lm -DUSE_MPI -fopenmp 
 KNL_FLAGS = -lm -g -fopenmp -masm=intel -ffast-math -funroll-loops \
 			-mavx512f -mavx512cd -mavx512bw -mavx512dq -mavx512vl \
 			-fopt-info-vec-optimized -fopt-info-all
@@ -23,6 +23,7 @@ KNL_GCC_FLAGS = -lm -O3 -g -fopenmp -masm=intel -ffast-math -funroll-loops \
 SRC = $(wildcard src/*.c)
 OBJ = $(patsubst src/%.c,objs/%.o,$(SRC))
 
+$(shell export HDF5_DIR=/nfs/homes/ltouzali/.local/include/hdf5)
 $(OBJ): | objs
 
 objs:

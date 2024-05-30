@@ -7,17 +7,20 @@
 #include <string.h>
 #include <immintrin.h>
 #include <time.h>
+#include <mpi.h>
+#include <sys/time.h>
+#include "/nfs/homes/ltouzali/.local/include/hdf5/include/hdf5.h"
+#include "../src/hydro/hydro.h"
 
 #define MAX_POINTS 100000
 #define c 299792458.0
 #define G 6.67430e-11
 #define M 1.0
-#define a 1.4
+#define a 1.9
 #define BLOCK_SIZE 1024
 #define BUFFER_SIZE 1024
-#define DT 0.00000008
-#define max_dt 0.2
-
+#define DT 0.00000002
+#define max_dt 0.20
 #if defined(__INTEL_COMPILER) || defined(__ICC) || \
     defined(__INTEL_LLVM_COMPILER)
     #define ALIGNMENT 64
@@ -36,6 +39,7 @@
     #include <mkl.h>
     #include <mpi.h>
     #include "MPI_init.h"
+
 
 #elif defined(__clang__) || defined(__GNUC__)
     #define ALIGNMENT 32
@@ -85,5 +89,7 @@ void riemann(double g[4][4], double christoffel[4][4][4], double riemann[4][4][4
 
 void write_vtk_file(const char *filename);
 void store_geodesic_point(double x[4], double lambda);
+void write_obj_file(const char *filename);
+void write_hdf5(const char *filename);
 
 void geodesic(double x[4], double v[4], double lambda_max, double christoffel[4][4][4], double step_size, void (*store_point)(double[], double));

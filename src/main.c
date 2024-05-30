@@ -1,6 +1,6 @@
 #include "../headers/geodesics.h"
 
-extern double (*geodesic_points)[4];
+extern double (*geodesic_points)[5];
 extern int num_points;
 
 void print_arch()
@@ -33,9 +33,9 @@ int main(int argc, char **argv)
 	(void)argv;
 	ldouble_a Q = 1.0;
 	ldouble_a Rs = 2 * G * M / powf(c, 2);
-    double v[4] = {-7.0, 1.01, 1.0, 27.0};        // Vitesse initiale (dr/dλ, dθ/dλ, dφ/dλ, dt/dλ)
-    double x[4] = {Rs, M_PI / 2, 60 * M_PI, 0.0}; // Position initiale (r, θ, φ, t)
-    ldouble_a r = sqrt_asm(powf(x[1], 2) + powf(a, 2) * powf(cos(x[2]), 2));
+    double v[4] = {-70.0, 1.01, 1.0, 27.0};        // Vitesse initiale (dr/dλ, dθ/dλ, dφ/dλ, dt/dλ)
+    double x[4] = {0.0, M_PI / 2, 60 * M_PI, 0.0}; // Position initiale (r, θ, φ, t)
+    ldouble_a r = sqrt(powf(x[1], 2) + powf(a, 2) * powf(cos(x[2]), 2));
 	ldouble_a rho2_kn = powf(r, 2) + powf(a, 2) * powf(cos(x[1]), 2);
 	ldouble_a delta_kn = powf(r, 2) - Rs * r + powf(a, 2) + powf(Q, 2);
 	ldouble_a Sigma_kn = powf((powf(r, 2) + powf(a, 2)), 2) - powf(a, 2) * delta_kn *\
@@ -53,11 +53,50 @@ int main(int argc, char **argv)
 
     double riemann_tensor[4][4][4][4] = {0};
 
-    christoffel(g_kerr_newman, christoffel_sym);
-    riemann(g_kerr_newman, christoffel_sym, riemann_tensor);
-    geodesic(x, v, max_dt, christoffel_sym, DT, store_geodesic_point);
-    write_vtk_file("geodesic.vtk");
+	#ifdef USE_MPI
+		printf("MPI is defined\n");
+		MPI_Init(&argc, &argv);
+		omp_get_max_threads();
+		printf("Number of threads: %d\n", omp_get_max_threads());
+	    double start_time = MPI_Wtime();
+
+		int rank = 0;
+		MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+		if (rank == 0)
+		{
+			christoffel(g_kerr_newman, christoffel_sym);
+		}
+		MPI_Barrier(MPI_COMM_WORLD);
+		geodesic(x, v, max_dt, christoffel_sym, DT, store_geodesic_point);
+		if (rank == 0)
+		{	
+			write_vtk_file("geodesic.vtk");
+		}
+		double end_time = MPI_Wtime();
+		double elapsed_time = end_time - start_time;
+
+		int world_rank;
+		MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+		if (world_rank == 0) {
+			printf("Execution time: %f seconds\n", elapsed_time);
+		}
+
+		MPI_Finalize();	
+	#else
+		printf("MPI is not defined\n");
+    	christoffel(g_kerr_newman, christoffel_sym);
+    	riemann(g_kerr_newman, christoffel_sym, riemann_tensor);
+    	geodesic(x, v, max_dt, christoffel_sym, DT, store_geodesic_point);	
+	    write_vtk_file("geodesic.vtk");
+	#endif
+	//write_obj_file("geodesic.obj");
+
+	
+
+	//write_hdf5("geodesic.h5");
 	print_arch();
+	printf("num threads: %d\n", omp_get_max_threads());
 	if (geodesic_points != NULL)
 	{
 		free(geodesic_points);

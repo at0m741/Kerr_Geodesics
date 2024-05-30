@@ -1,6 +1,6 @@
 #include "../headers/geodesics.h"
 
-extern double (*geodesic_points)[4];
+extern double (*geodesic_points)[5];
 extern int num_points;
 
 void geodesic(double x[4], double v[4], double lambda_max, double christoffel[4][4][4], \
@@ -11,15 +11,22 @@ void geodesic(double x[4], double v[4], double lambda_max, double christoffel[4]
     double lambda = 0;
     short step = 0;
     (void)store_point;
-    #ifdef _OPENMP
-        printf("OpenMP is supported and used\n");
+    #ifdef USE_MPI
+        printf("MPI is defined for Runge-Kutta\n");
+        int rank , size;
+        MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+        MPI_Comm_size(MPI_COMM_WORLD, &size);
+    #elif _OPENMP
+        printf("OpenMP is supported and used\n");\
     #else
         printf("OpenMP is not supported\n");
     #endif
-    
     #pragma omp parallel shared(lambda, step, x, v) private(k1, k2, k3, k4, temp_x, temp_v)
     {
-        for(; lambda < lambda_max;)
+        double lambda_per_process = lambda_max / size;
+        double start_lambda = rank * lambda_per_process;
+        double end_lambda = start_lambda + lambda_per_process;
+        for(lambda = start_lambda; lambda < end_lambda;)
         {
             #pragma omp simd aligned(v, christoffel: ALIGNMENT)
             for (int mu = 0; mu < 4; mu++) {
@@ -32,7 +39,7 @@ void geodesic(double x[4], double v[4], double lambda_max, double christoffel[4]
                 }
                 temp_x[mu] = x[mu] + 0.5 * step_size * k1[mu];
                 temp_v[mu] = v[mu] + 0.5 * step_size * k1[mu];
-            }
+            }   
             
             #pragma omp simd aligned(temp_v, christoffel: ALIGNMENT)
             for (int mu = 0; mu < 4; mu++) {
@@ -97,7 +104,7 @@ void geodesic(double x[4], double v[4], double lambda_max, double christoffel[4]
             #pragma omp single
             {
                 store_geodesic_point(x, lambda);
-                if (step % 1000 == 0)
+                if (step % 10000 == 0)
                     printf("Cycle = %f, r = %f, θ = %f, φ = %f, t = %f\n", lambda, x[1], x[2], x[3], x[0]);
                 step++;
                 lambda += step_size;
