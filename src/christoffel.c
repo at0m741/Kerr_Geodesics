@@ -43,37 +43,6 @@ void christoffel(double g[4][4], double christoffel[4][4][4])
     free(christoffel_aligned);
 }
 
-#ifdef defined(MPI)
-
-    void christoffel_mpi(double g[4][4], double christoffel[4][4][4])
-    {
-        double (*g_aligned)[4] = aligned_alloc(ALIGNMENT, sizeof(double[4][4]));
-        double (*christoffel_aligned)[4][4][4] = aligned_alloc(ALIGNMENT, sizeof(double[4][4][4]));
-        memcpy(g_aligned, g, sizeof(double[4][4]));
-        memcpy(christoffel_aligned, christoffel, sizeof(double[4][4][4]));
-
-        #pragma omp parallel for collapse(3)
-        #pragma vector aligned
-        for (int mu = 0; mu < 4; mu++) {
-            for (int beta = 0; beta < 4; beta++) {
-                for (int nu = 0; nu < 4; nu++) {
-                    double sum = 0;
-                    #pragma omp simd reduction(+:sum) aligned(g_aligned:ALIGNMENT)
-                    #pragma vector aligned
-                    for (int sigma = 0; sigma < 4; sigma++) {
-                        sum += 0.5 * (g_aligned[mu][sigma] * (g_aligned[sigma][beta] + g_aligned[beta][sigma] - g_aligned[beta][nu]));
-                    }
-                    christoffel_aligned[mu][beta][nu] = sum;
-                }
-            }
-        }
-
-        memcpy(christoffel, christoffel_aligned, sizeof(double[4][4][4]));
-        free(g_aligned);
-        free(christoffel_aligned);
-    }
-
-#endif
 
 #pragma omp declare simd
 void riemann(double g[4][4], double christoffel[4][4][4], double riemann[4][4][4][4])

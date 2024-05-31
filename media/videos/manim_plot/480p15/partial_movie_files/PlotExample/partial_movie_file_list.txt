@@ -1,0 +1,2 @@
+# This file is used internally by FFMPEG.
+file 'file:/nfs/homes/ltouzali/Desktop/Kerr_Geodesics/media/videos/manim_plot/480p15/partial_movie_files/PlotExample/1185818338_634017564_2476101861.mp4'

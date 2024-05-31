@@ -16,11 +16,18 @@
 #define c 299792458.0
 #define G 6.67430e-11
 #define M 1.0
-#define a 1.9
+#define a 1.4
 #define BLOCK_SIZE 1024
 #define BUFFER_SIZE 1024
-#define DT 0.00000002
-#define max_dt 0.20
+#define SMALL 1.e-40
+#define NDIM 4
+#define TT 0
+#define DT 0.00000005
+#define max_dt 0.2
+
+#define DLOOP  for(j=0;j<NDIM;j++) for(k=0;k<NDIM;k++)
+
+
 #if defined(__INTEL_COMPILER) || defined(__ICC) || \
     defined(__INTEL_LLVM_COMPILER)
     #define ALIGNMENT 64
@@ -86,7 +93,8 @@ static inline double sqrt_asm_macos(double n)
 void sincos(double x, double *sin, double *cos);
 void christoffel(double g[4][4], double christoffel[4][4][4]);
 void riemann(double g[4][4], double christoffel[4][4][4], double riemann[4][4][4][4]);
-
+void Boyer_lindquist_coord(double *X, double *r, double *th);
+void gcov(double *X, double gcov[][NDIM]);
 void write_vtk_file(const char *filename);
 void store_geodesic_point(double x[4], double lambda);
 void write_obj_file(const char *filename);

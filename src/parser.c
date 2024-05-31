@@ -47,54 +47,6 @@ void write_vtk_file(const char *filename)
     //add RS 
 
     fclose(file);
-
-    //every 10 point must create a new file
-    // int num_files = num_points / 10000;
-    // int num_points_per_file = 10000;
-    // for (int i = 0; i < num_files; i++)
-    // {
-    //     char new_filename[100];
-    //     sprintf(new_filename, "%s_%d.vtk", filename, i);
-    //     FILE *new_file = fopen(new_filename, "w");
-    //     if (new_file == NULL)
-    //     {
-    //         fprintf(stderr, "Error: failed to open file %s\n", new_filename);
-    //         return;
-    //     }
-
-    //     fprintf(new_file, "# vtk DataFile Version 3.0\n");
-    //     fprintf(new_file, "Geodesic Points\n");
-    //     fprintf(new_file, "ASCII\n");
-    //     fprintf(new_file, "DATASET POLYDATA\n");
-    //     fprintf(new_file, "POINTS %d double\n", num_points_per_file);
-    //     // store the points of the geodesic
-    //     #pragma omp for simd aligned(geodesic_points: ALIGNMENT)
-    //     for (int j = 0; j < num_points_per_file; ++j)
-    //     {
-    //         fprintf(new_file, "%f %f %f\n", geodesic_points[i * num_points_per_file + j][0], geodesic_points[i * num_points_per_file + j][1], geodesic_points[i * num_points_per_file + j][2]);
-    //     }
-
-    //     // set the number of points in each line
-    //     fprintf(new_file, "LINES %d %d\n", num_points_per_file - 1, 3 * (num_points_per_file - 1));
-    //     #pragma omp simd aligned(geodesic_points: ALIGNMENT)
-    //     for (int j = 0; j < num_points_per_file - 1; ++j)
-    //     {
-    //         fprintf(new_file, "2 %d %d\n", j, j + 1);
-    //     }
-
-    //     fprintf(new_file, "POINT_DATA %d\n", num_points_per_file);
-    //     fprintf(new_file, "SCALARS lambda double\n");
-    //     fprintf(new_file, "LOOKUP_TABLE default\n");
-    //     // store the value of lambda for each point for colloring
-    //     #pragma omp simd aligned(geodesic_points: ALIGNMENT)
-    //     for (int j = 0; j < num_points_per_file; ++j)
-    //     {
-    //         fprintf(new_file, "%f\n", geodesic_points[i * num_points_per_file + j][3]);
-    //     }
-    //     printf("Number of points: %d\n", num_points_per_file);
-    //     printf("VTK file %s has been written\n", new_filename);
-    //     fclose(new_file);   
-    // }
 }
 
 
@@ -104,7 +56,7 @@ void store_geodesic_point(double x[4], double lambda)
     if (num_points >= capacity)
     {
         capacity = (capacity == 0) ? 1000 : capacity * 2;
-        double (*new_geodesic_points)[4] = aligned_alloc(ALIGNMENT, capacity * sizeof(*geodesic_points));
+        double (*new_geodesic_points)[5] = aligned_alloc(ALIGNMENT, capacity * sizeof(*geodesic_points));
         if (new_geodesic_points == NULL)
         {
             fprintf(stderr, "Error: failed to allocate memory for geodesic_points\n");
