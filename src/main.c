@@ -79,6 +79,20 @@ void Boyer_lindquist_coord(double *X, double *r, double *th)
     return;
 }
 
+void Write_Geodesics_to_binary_file(const char *filename, double (*geodesic_points)[5], int num_points)
+{
+    FILE *file = fopen(filename, "wb");
+    if (file == NULL)
+    {
+        fprintf(stderr, "Error: failed to open file %s\n", filename);
+        return;
+    }
+
+    fwrite(geodesic_points, sizeof(double), num_points * 5, file);
+    fclose(file);
+}
+
+
 int main(int argc, char **argv)
 {
 	#ifdef USE_MPI
@@ -87,7 +101,7 @@ int main(int argc, char **argv)
 		omp_get_max_threads();
 		printf("Number of threads: %d\n", omp_get_max_threads());
 	    double start_time = MPI_Wtime();
-		double x[4] = {0.0, M_PI / 2, 60 * M_PI, 10.0};
+		double x[4] = {0.0, M_PI / 2, 60 * M_PI, 0.0};
 		double v[4] = {-70.0, 1.01, 1.0, 27.0};
 		double christoffel_sym[4][4][4] = {0};
 		int rank = 0;
@@ -103,6 +117,7 @@ int main(int argc, char **argv)
 		if (rank == 0)
 		{	
 			write_vtk_file("geodesic.vtk");
+			Write_Geodesics_to_binary_file("geodesic.bin", geodesic_points, num_points);
 		}
 		double end_time = MPI_Wtime();
 		double elapsed_time = end_time - start_time;
