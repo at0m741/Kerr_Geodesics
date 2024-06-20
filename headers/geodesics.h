@@ -7,23 +7,23 @@
 #include <string.h>
 #include <immintrin.h>
 #include <time.h>
-#include <mpi.h>
+#include <xmmintrin.h>
+// #include <mpi.h>
 #include <sys/time.h>
 #include "/nfs/homes/ltouzali/.local/include/hdf5/include/hdf5.h"
-#include "../src/hydro/hydro.h"
 
 #define MAX_POINTS 100000
 #define c 299792458.0
 #define G 6.67430e-11
 #define M 1.0
-#define a 1.4
+#define a 0.935
 #define BLOCK_SIZE 1024
 #define BUFFER_SIZE 1024
 #define SMALL 1.e-40
 #define NDIM 4
 #define TT 0
-#define DT 0.00000005
-#define max_dt 0.2
+#define DT 0.0000005
+#define max_dt 0.5
 
 #define DLOOP  for(j=0;j<NDIM;j++) for(k=0;k<NDIM;k++)
 
@@ -60,35 +60,24 @@
 typedef double __attribute__((aligned(ALIGNMENT))) ldouble_a;
 
 #if defined(__LINUX__) || defined(__linux__)
-	#define sqrt_asm sqrt_asm_linux
+
 	#define Plateform "Linux"
 #elif defined(__APPLE__) || defined(__MACH__)
-	#define sqrt_asm sqrt_asm_darwin
 	#define Plateform "Darwin (macOS)"
 #endif
 
 
-inline double sqrt_asm(double n)
-{
-    double result;
-    asm("fld %1;"
-        "fsqrt;"
-        "fstp %0;"
-        : "=m" (result)
-        : "m" (n));
-    return result;
-}
+// double sqrt_asm(double n) {
+//     double result;
+//     asm("movsd %%xmm0, %1;"
+//         "sqrtsd %%xmm0, %%xmm0;"
+//         "movsd %0, %%xmm0;"
+//         : "=m" (result)
+//         : "m" (n)
+//         : "%xmm0");
+//     return result;
+// }
 
-static inline double sqrt_asm_macos(double n)
-{
-	double result;
-	asm("fld %1;"
-		"fsqrt;"
-		"fstp %0;"
-		: "=m" (result)
-		: "m" (n));
-	return result;
-}
 
 void sincos(double x, double *sin, double *cos);
 void christoffel(double g[4][4], double christoffel[4][4][4]);

@@ -129,10 +129,19 @@ int main(int argc, char **argv)
 		}
 	#else
 		printf("MPI is not defined\n");
+
+		double x[4] = {50.0, M_PI / 2, M_PI / 2, 20.0}; // pos = {t, th, phi, r}
+		double v[4] = {-20.2, 10.0, 12.0, 27.0}; // vel = {vt, vth, vphi, vr}
+		double christoffel_sym[4][4][4] = {0};
+		double g[4][4] = {0};
+		gcov(x, g);
+		christoffel(g, christoffel_sym);
+		geodesic(x, v, max_dt, christoffel_sym, DT, store_geodesic_point);
+		write_vtk_file("geodesic.vtk");
 	#endif
 
-	print_arch();
-	printf("num threads: %d\n", omp_get_max_threads());
+	// print_arch();
+	// printf("num threads: %d\n", omp_get_max_threads());
 	if (geodesic_points != NULL)
 	{
 		free(geodesic_points);

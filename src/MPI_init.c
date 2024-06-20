@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   MPI_init.c                                         :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: ltouzali <ltouzali@student.42.fr>          +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2024/06/17 15:51:37 by ltouzali          #+#    #+#             */
+/*   Updated: 2024/06/17 15:51:37 by ltouzali         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include "../headers/geodesics.h"
 
 #ifdef __INTEL_COMPILER
@@ -29,7 +41,7 @@
 		int rank;
 		MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 		if (rank == 0) {
-			printf("Tâche préliminaire MPI exécutée par le processus %d\n", rank);
+			printf("MPI first %d\n", rank);
 		}
 		MPI_Barrier(MPI_COMM_WORLD);
 	}
