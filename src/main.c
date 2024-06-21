@@ -127,21 +127,31 @@ int main(int argc, char **argv)
 		if (world_rank == 0) {
 			printf("Execution time: %f seconds\n", elapsed_time);
 		}
-	#else
-		printf("MPI is not defined\n");
+	#else 
+		__m256d dt = _mm256_set1_pd(DT);
+		__m256d x[4], v[4], g[4][4], christoffel_avx[4][4][4];
+		double x_vals[4] = {1600.0, M_PI / 2, M_PI / 2, 20.0};
+		double v_vals[4] = {-110.2, 10.0, 12.0, 27.0};
+		double g_vals[NDIM][NDIM] = {0};
 
-		double x[4] = {50.0, M_PI / 2, M_PI / 2, 20.0}; // pos = {t, th, phi, r}
-		double v[4] = {-20.2, 10.0, 12.0, 27.0}; // vel = {vt, vth, vphi, vr}
-		double christoffel_sym[4][4][4] = {0};
-		double g[4][4] = {0};
-		gcov(x, g);
-		christoffel(g, christoffel_sym);
-		geodesic(x, v, max_dt, christoffel_sym, DT, store_geodesic_point);
+		for (int i = 0; i < NDIM; i++) {
+			x[i] = _mm256_set1_pd(x_vals[i]);
+			v[i] = _mm256_set1_pd(v_vals[i]);
+		}
+
+		gcov(x_vals, g_vals);
+		for (int i = 0; i < NDIM; i++) {
+			for (int j = 0; j < NDIM; j++) {
+				g[i][j] = _mm256_set1_pd(g_vals[i][j]);
+			}
+		}
+		
+		christoffel_AVX(g, christoffel_avx);
+		geodesic_AVX(x, v, max_dt, christoffel_avx, dt);
 		write_vtk_file("geodesic.vtk");
 	#endif
-
-	// print_arch();
-	// printf("num threads: %d\n", omp_get_max_threads());
+	print_arch();
+	printf("num threads: %d\n", omp_get_max_threads());
 	if (geodesic_points != NULL)
 	{
 		free(geodesic_points);
