@@ -34,21 +34,21 @@ all: CFLAGS = $(FLAGS)
 all: $(NAME)
 
 $(NAME): objs $(OBJ)
-	$(CC) $(OBJ) -o $(NAME) $(FLAGS) &> opti_info.txt
+	$(CC) $(OBJ) -o $(NAME) $(FLAGS)
 	@echo $(NAME) "compiled with" $(FLAGS)
 	@echo "To run the program use: ./$(NAME)"
 
 $(NAME_MPI): objs $(OBJ)
-	$(MPI) $(OBJ) -o $(NAME_MPI) $(MPICC_FLAGS) &> opti_info.txt
+	$(MPI) $(OBJ) -o $(NAME_MPI) $(MPICC_FLAGS)
 
 $(NAME_KNL): objs $(OBJ)
-	$(MPI) $(OBJ) -o $(NAME_KNL) $(KNL_FLAGS) &> opti_info.txt
+	$(MPI) $(OBJ) -o $(NAME_KNL) $(KNL_FLAGS)
 
 $(NAME_PROFILING): objs $(OBJ)
-	$(CC) $(OBJ) -o $(NAME_PROFILING) $(PROFILING_FLAGS) &> opti_info.txt
+	$(CC) $(OBJ) -o $(NAME_PROFILING) $(PROFILING_FLAGS)
 
 $(NAME_KNL_GCC): objs $(OBJ)
-	$(CC) $(OBJ) -o $(NAME_KNL_GCC) $(KNL_GCC_FLAGS) &> opti_info.txt
+	$(CC) $(OBJ) -o $(NAME_KNL_GCC) $(KNL_GCC_FLAGS)
 
 objs/%.o: src/%.c
 	$(COMPILER) -c $< -o $@ $(CFLAGS)
@@ -89,7 +89,7 @@ re_knl_gcc: fclean_knl_gcc $(NAME_KNL_GCC)
 x86: COMPILER = $(CC)
 x86: CFLAGS = $(FLAGS)
 x86: objs $(OBJ)
-	$(CC) $(OBJ) -o $(NAME) $(FLAGS) &> optimization_info_x86.txt
+	$(CC) $(OBJ) -o $(NAME) $(FLAGS)
 	@echo "\n"
 	@echo "x86 version compiled"
 	@echo $(NAME) "compiled with" $(FLAGS)
