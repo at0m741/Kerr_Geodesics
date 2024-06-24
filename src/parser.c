@@ -6,7 +6,7 @@
 /*   By: ltouzali <ltouzali@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/17 15:51:31 by ltouzali          #+#    #+#             */
-/*   Updated: 2024/06/22 20:32:14 by ltouzali         ###   ########.fr       */
+/*   Updated: 2024/06/24 13:31:09 by ltouzali         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,9 +18,13 @@ extern double (*geodesic_points)[5];
 extern int num_points;
 int capacity = 0;
 
-
+/* 
+*  Write the geodesic points to a VTK file
+*  The VTK file will contain the geodesic points and the lambda values
+*  The lambda values are the affine parameter values
+*  The VTK file can be visualized using Paraview
+*/
 #ifdef __AVX2__
-
 
 #pragma omp declare simd
 void write_vtk_file(const char *filename)
@@ -64,7 +68,7 @@ void write_vtk_file(const char *filename)
     fclose(file);
 }
 
-void store_geodesic_point_AVX(__m256d x[4], double lambda) {
+inline void store_geodesic_point_AVX(__m256d x[4], double lambda) {
     if (num_points >= capacity) {
         capacity = (capacity == 0) ? 1000 : capacity * 2;
         double (*new_geodesic_points)[5] = aligned_alloc(ALIGNMENT, capacity * sizeof(*geodesic_points));
@@ -86,7 +90,7 @@ void store_geodesic_point_AVX(__m256d x[4], double lambda) {
     _mm256_storeu_pd(theta_vals, x[2]);
     _mm256_storeu_pd(phi_vals, x[3]);
 
-
+    #pragma omp for simd aligned(geodesic_points: ALIGNMENT)
     for (int i = 0; i < 4; i++) 
     {
         double r = r_vals[i];
@@ -190,7 +194,7 @@ void store_geodesic_point(double x[4], double lambda)
 
 
     num_points++;
-}	
+}
 
 #endif
 

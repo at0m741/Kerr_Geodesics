@@ -1,36 +1,57 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   christoffel.c                                      :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: ltouzali <ltouzali@student.42.fr>          +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2024/06/23 18:12:02 by ltouzali          #+#    #+#             */
+/*   Updated: 2024/06/23 20:14:15 by ltouzali         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include "../headers/geodesics.h"
 
 extern double (*geodesic_points)[5];
 extern int num_points;
-
+/*
+*  Calculate the Christoffel symbols
+*  The Christoffel symbols are calculated using the metric tensor
+*  and the inverse metric tensor
+*  All calculations are done in parallel using OpenMP and AVX2 instructions 
+*/
 #ifdef __AVX2__
     #include <immintrin.h>
 
 
     void christoffel_AVX(__m256d g[4][4], __m256d christoffel[4][4][4]) {
-        printf("use AVX2 for Christoffel Symbols\n");
+        printf("using AVX2 for Christoffel Symbols\n");
         __m256d (*g_aligned)[4] = aligned_alloc(ALIGNMENT, sizeof(__m256d[4][4]));
         __m256d (*christoffel_aligned)[4][4] = aligned_alloc(ALIGNMENT, sizeof(__m256d[4][4][4]));
         memcpy(g_aligned, g, sizeof(__m256d[4][4]));
         memcpy(christoffel_aligned, christoffel, sizeof(__m256d[4][4][4]));
 
-        #pragma omp simd aligned (g_aligned, christoffel_aligned: ALIGNMENT)
+        // Precompute frequently used products and broadcast them outside the innermost loop
+        __m256d half = _mm256_set1_pd(0.5);
+
         for (int mu = 0; mu < 4; mu++) {
             for (int beta = 0; beta < 4; beta++) {
                 for (int nu = 0; nu < 4; nu++) {
                     __m256d sum = _mm256_setzero_pd();
+
                     for (int sigma = 0; sigma < 4; sigma++) {
-                        __m256d g_mu_sigma = _mm256_broadcast_sd((const double*)&g_aligned[mu][sigma]);
-                        __m256d g_sigma_beta = _mm256_broadcast_sd((const double*)&g_aligned[sigma][beta]);
-                        __m256d g_beta_sigma = _mm256_broadcast_sd((const double*)&g_aligned[beta][sigma]);
-                        __m256d g_beta_nu = _mm256_broadcast_sd((const double*)&g_aligned[beta][nu]);
+                        __m256d g_mu_sigma = _mm256_broadcast_sd(&g_aligned[mu][sigma]);
+                        __m256d g_sigma_beta = _mm256_broadcast_sd(&g_aligned[sigma][beta]);
+                        __m256d g_beta_sigma = _mm256_broadcast_sd(&g_aligned[beta][sigma]);
+                        __m256d g_beta_nu = _mm256_broadcast_sd(&g_aligned[beta][nu]);
 
                         __m256d term1 = _mm256_mul_pd(g_mu_sigma, g_sigma_beta);
                         __m256d term2 = _mm256_mul_pd(g_mu_sigma, g_beta_sigma);
                         __m256d term3 = _mm256_mul_pd(g_mu_sigma, g_beta_nu);
 
-                        sum = _mm256_add_pd(sum, _mm256_mul_pd(_mm256_set1_pd(0.5), _mm256_sub_pd(_mm256_add_pd(term1, term2), term3)));
+                        sum = _mm256_add_pd(sum, _mm256_mul_pd(half, _mm256_sub_pd(_mm256_add_pd(term1, term2), term3)));
                     }
+
                     christoffel_aligned[mu][beta][nu] = sum;
                 }
             }
@@ -40,6 +61,7 @@ extern int num_points;
         free(g_aligned);
         free(christoffel_aligned);
     }
+
 #else
     #pragma omp declare simd
     void christoffel(double g[4][4], double christoffel[4][4][4])

@@ -50,15 +50,12 @@
 
 #elif defined(__clang__) || defined(__GNUC__)
     #define NUM_THREADS 16
-
 #else
     #error "Unsupported compiler or configuration"
 #endif
-
 typedef double __attribute__((aligned(ALIGNMENT))) ldouble_a;
 
 #if defined(__LINUX__) || defined(__linux__)
-
 	#define Plateform "Linux"
 #elif defined(__APPLE__) || defined(__MACH__)
 	#define Plateform "Darwin (macOS)"
@@ -68,8 +65,10 @@ typedef double __attribute__((aligned(ALIGNMENT))) ldouble_a;
 
 
 #ifdef __AVX512F__
+
     #define VEC_TYPE __m512d
     #define VEC_MUL_PD(a, b) _mm512_mul_pd(a, b)
+    
     #define VEC_SUB_PD(a, b) _mm512_sub_pd(a, b)
     #define VEC_ADD_PD(a, b) _mm512_add_pd(a, b)
     #define VEC_DIV_PD(a, b) _mm512_div_pd(a, b)
@@ -78,23 +77,24 @@ typedef double __attribute__((aligned(ALIGNMENT))) ldouble_a;
     #define VEC_STORE_PD(a, b) _mm512_store_pd(a, b)
     #define VEC_CVTSD_F64(a) _mm512_cvtsd_f64(a)
     #define CALCULATE_K_AVX2(k, src_v) \
-    for (int mu = 0; mu < 4; mu++) { \
-        k[mu] = src_v[mu]; \
-        for (int alpha = 0; alpha < 4; alpha++) { \
-            __m512d product1 = _mm512_mul_pd(christoffel[mu][alpha][0], \
-                                _mm512_mul_pd(src_v[alpha], src_v[0])); \
-            __m512d product2 = _mm512_mul_pd(christoffel[mu][alpha][1], \
-                                _mm512_mul_pd(src_v[alpha], src_v[1])); \
-            __m512d product3 = _mm512_mul_pd(christoffel[mu][alpha][2], \
-                                _mm512_mul_pd(src_v[alpha], src_v[2])); \
-            __m512d product4 = _mm512_mul_pd(christoffel[mu][alpha][3], \
-                                _mm512_mul_pd(src_v[alpha], src_v[3])); \
-            k[mu] = _mm512_sub_pd(k[mu], product1); \
-            k[mu] = _mm512_sub_pd(k[mu], product2); \
-            k[mu] = _mm512_sub_pd(k[mu], product3); \
-            k[mu] = _mm512_sub_pd(k[mu], product4); \
-        } \
-    }
+        for (int mu = 0; mu < 4; mu++) { \
+            k[mu] = src_v[mu]; \
+            for (int alpha = 0; alpha < 4; alpha++) { \
+                __m512d src_v_alpha_src_v0 = _mm512_mul_pd(src_v[alpha], src_v[0]); \
+                __m512d src_v_alpha_src_v1 = _mm512_mul_pd(src_v[alpha], src_v[1]); \
+                __m512d src_v_alpha_src_v2 = _mm512_mul_pd(src_v[alpha], src_v[2]); \
+                __m512d src_v_alpha_src_v3 = _mm512_mul_pd(src_v[alpha], src_v[3]); \
+                __m512d product1 = _mm512_mul_pd(christoffel[mu][alpha][0], src_v_alpha_src_v0); \
+                __m512d product2 = _mm512_mul_pd(christoffel[mu][alpha][1], src_v_alpha_src_v1); \
+                __m512d product3 = _mm512_mul_pd(christoffel[mu][alpha][2], src_v_alpha_src_v2); \
+                __m512d product4 = _mm512_mul_pd(christoffel[mu][alpha][3], src_v_alpha_src_v3); \
+                k[mu] = _mm512_sub_pd(k[mu], product1); \
+                k[mu] = _mm512_sub_pd(k[mu], product2); \
+                k[mu] = _mm512_sub_pd(k[mu], product3); \
+                k[mu] = _mm512_sub_pd(k[mu], product4); \
+            } \
+        }
+
 
     #define UPDATE_POSITIONS_AVX2(x, v, k, step) \
         for (int mu = 0; mu < 4; mu++) { \
@@ -102,8 +102,20 @@ typedef double __attribute__((aligned(ALIGNMENT))) ldouble_a;
             temp_v[mu] = _mm512_add_pd(v[mu], _mm512_mul_pd(step, k[mu])); \
         }
 
+/* 
+*  Use of the AVX2 instruction set for the geodesic calculation
+*  The AVX2 instruction set is used to calculate the geodesic
+
+*/
+
 #elif AVX2
+    /*
+    *  AVX2 instruction set for the geodesic calculation
+    *  The AVX2 instruction set is used to calculate the geodesic 
+    */
     #define VEC_TYPE __m256d
+    #define CHECK_NAN_PD(v) _mm256_cmp_pd(v, v, _CMP_UNORD_Q)
+    #define HANDLE_NAN(v, replacement) _mm256_blendv_pd(v, replacement, CHECK_NAN_PD(v))   
     #define VEC_MUL_PD(a, b) _mm256_mul_pd(a, b)
     #define VEC_SUB_PD(a, b) _mm256_sub_pd(a, b)
     #define VEC_ADD_PD(a, b) _mm256_add_pd(a, b)
@@ -112,18 +124,23 @@ typedef double __attribute__((aligned(ALIGNMENT))) ldouble_a;
     #define VEC_LOAD_PD(a)   _mm256_load_pd(a)
     #define VEC_STORE_PD(a, b) _mm256_store_pd(a, b)
     #define VEC_CVTSD_F64(a) _mm256_cvtsd_f64(a)
+    /*
+    *  Defined loop for the calculation of the Christoffel symbols
+    *  The loop is used to calculate the Geodesics equation
+    *  using the Christoffel symbols
+    */
     #define CALCULATE_K_AVX2(k, src_v) \
     for (int mu = 0; mu < 4; mu++) { \
         k[mu] = src_v[mu]; \
         for (int alpha = 0; alpha < 4; alpha++) { \
-            __m256d product1 = _mm256_mul_pd(christoffel[mu][alpha][0], \
-                                _mm256_mul_pd(src_v[alpha], src_v[0])); \
-            __m256d product2 = _mm256_mul_pd(christoffel[mu][alpha][1], \
-                                _mm256_mul_pd(src_v[alpha], src_v[1])); \
-            __m256d product3 = _mm256_mul_pd(christoffel[mu][alpha][2], \
-                                _mm256_mul_pd(src_v[alpha], src_v[2])); \
-            __m256d product4 = _mm256_mul_pd(christoffel[mu][alpha][3], \
-                                _mm256_mul_pd(src_v[alpha], src_v[3])); \
+            __m256d src_v_alpha_src_v0 = _mm256_mul_pd(src_v[alpha], src_v[0]); \
+            __m256d src_v_alpha_src_v1 = _mm256_mul_pd(src_v[alpha], src_v[1]); \
+            __m256d src_v_alpha_src_v2 = _mm256_mul_pd(src_v[alpha], src_v[2]); \
+            __m256d src_v_alpha_src_v3 = _mm256_mul_pd(src_v[alpha], src_v[3]); \
+            __m256d product1 = _mm256_mul_pd(christoffel[mu][alpha][0], src_v_alpha_src_v0); \
+            __m256d product2 = _mm256_mul_pd(christoffel[mu][alpha][1], src_v_alpha_src_v1); \
+            __m256d product3 = _mm256_mul_pd(christoffel[mu][alpha][2], src_v_alpha_src_v2); \
+            __m256d product4 = _mm256_mul_pd(christoffel[mu][alpha][3], src_v_alpha_src_v3); \
             k[mu] = _mm256_sub_pd(k[mu], product1); \
             k[mu] = _mm256_sub_pd(k[mu], product2); \
             k[mu] = _mm256_sub_pd(k[mu], product3); \
@@ -131,6 +148,9 @@ typedef double __attribute__((aligned(ALIGNMENT))) ldouble_a;
         } \
     }
 
+    /* 
+    *  Update the positions of the geodesic using the AVX2 instruction set
+    */
     #define UPDATE_POSITIONS_AVX2(x, v, k, step) \
         for (int mu = 0; mu < 4; mu++) { \
             temp_x[mu] = _mm256_add_pd(x[mu], _mm256_mul_pd(step, k[mu])); \
@@ -154,11 +174,17 @@ void write_hdf5(const char *filename);
 void gcov(double *X, double gcov[][NDIM]);
 void geodesic(double x[4], double v[4], double lambda_max, double christoffel[4][4][4],\
               double step_size, void (*store_point)(double[], double));
-
-
+/* 
+*  AVX2 and AVX512F intrinsics for the exponential, sine and cosine functions
+*/
 __m256d _mm256_exp_pd(__m256d x); 
 __m256d _mm256_sin_pd(__m256d x); 
 __m256d _mm256_cos_pd(__m256d x); 
+/*
+*  AVX2 and AVX512F intrinsics for the geodesic calculation
+* The AVX2 and AVX512F instruction sets are used to calculate the geodesic
+* same for Christoffel symbols and step size
+*/
 void geodesic_AVX(VEC_TYPE x[4], VEC_TYPE v[4], double lambda_max, \
                   VEC_TYPE christoffel[4][4][4], VEC_TYPE step_size);
 void store_geodesic_point_AVX(__m256d x[4], double lambda);
