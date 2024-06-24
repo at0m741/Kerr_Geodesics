@@ -82,7 +82,7 @@ int main(int argc, char **argv)
 	#else 
 		__m256d dt = _mm256_set1_pd(DT);
 		__m256d x[4], v[4], g[4][4], christoffel_avx[4][4][4];
-		double x_vals[4] = {1600.0, M_PI / 2, M_PI / 2, 20.0};
+		double x_vals[4] = {160.0, M_PI / 2, M_PI / 2, 20.0};
 		double v_vals[4] = {-110.2, 10.0, 12.0, 27.0};
 		double g_vals[NDIM][NDIM] = {0};
 
@@ -100,7 +100,7 @@ int main(int argc, char **argv)
 		
 		christoffel_AVX(g, christoffel_avx);
 		geodesic_AVX(x, v, max_dt, christoffel_avx, dt);
-		write_vtk_file("geodesic.vtk");
+		// write_vtk_file("geodesic.vtk");
 	#endif
 	print_arch();
 	printf("num threads: %d\n", omp_get_max_threads());

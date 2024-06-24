@@ -8,22 +8,22 @@
 #include <immintrin.h>
 #include <time.h>
 #include <xmmintrin.h>
+#include "/nfs/homes/ltouzali/sgoinfre/intel/mkl/2024.2/include/mkl.h"
 // #include <mpi.h>
 #include <sys/time.h>
-#include "/nfs/homes/ltouzali/.local/include/hdf5/include/hdf5.h"
 
 #define MAX_POINTS 100000
 #define c 299792458.0
 #define G 6.67430e-11
 #define M 1.0
 #define a 0.935
-#define BLOCK_SIZE 1024
+#define BLOCK_SIZE 2
 #define BUFFER_SIZE 1024
 #define SMALL 1.e-40
 #define NDIM 4
 #define TT 0
 #define DT 0.0000005
-#define max_dt 3.1
+#define max_dt 1.0
 #define ALIGNMENT 32
 #define AVX2 1
 #define ARCH "AVX2"
@@ -129,22 +129,19 @@ typedef double __attribute__((aligned(ALIGNMENT))) ldouble_a;
     *  The loop is used to calculate the Geodesics equation
     *  using the Christoffel symbols
     */
+
     #define CALCULATE_K_AVX2(k, src_v) \
     for (int mu = 0; mu < 4; mu++) { \
         k[mu] = src_v[mu]; \
-        for (int alpha = 0; alpha < 4; alpha++) { \
-            __m256d src_v_alpha_src_v0 = _mm256_mul_pd(src_v[alpha], src_v[0]); \
-            __m256d src_v_alpha_src_v1 = _mm256_mul_pd(src_v[alpha], src_v[1]); \
-            __m256d src_v_alpha_src_v2 = _mm256_mul_pd(src_v[alpha], src_v[2]); \
-            __m256d src_v_alpha_src_v3 = _mm256_mul_pd(src_v[alpha], src_v[3]); \
-            __m256d product1 = _mm256_mul_pd(christoffel[mu][alpha][0], src_v_alpha_src_v0); \
-            __m256d product2 = _mm256_mul_pd(christoffel[mu][alpha][1], src_v_alpha_src_v1); \
-            __m256d product3 = _mm256_mul_pd(christoffel[mu][alpha][2], src_v_alpha_src_v2); \
-            __m256d product4 = _mm256_mul_pd(christoffel[mu][alpha][3], src_v_alpha_src_v3); \
-            k[mu] = _mm256_sub_pd(k[mu], product1); \
-            k[mu] = _mm256_sub_pd(k[mu], product2); \
-            k[mu] = _mm256_sub_pd(k[mu], product3); \
-            k[mu] = _mm256_sub_pd(k[mu], product4); \
+        for (int alpha_block = 0; alpha_block < 4; alpha_block += BLOCK_SIZE) { \
+            for (int alpha = alpha_block; alpha < alpha_block + BLOCK_SIZE && alpha < 4; alpha++) { \
+                _mm_prefetch((const char *)&christoffel[mu][alpha][0], _MM_HINT_T1); \
+                for (int beta = 0; beta < 4; beta++) { \
+                    __m256d src_v_alpha_src_v = _mm256_mul_pd(src_v[alpha], src_v[beta]); \
+                    __m256d product = _mm256_mul_pd(christoffel[mu][alpha][beta], src_v_alpha_src_v); \
+                    k[mu] = _mm256_sub_pd(k[mu], product); \
+                } \
+            } \
         } \
     }
 
@@ -163,7 +160,7 @@ typedef double __attribute__((aligned(ALIGNMENT))) ldouble_a;
 #endif
 
 void sincos(double x, double *sin, double *cos);
-void christoffel(double g[4][4], double christoffel[4][4][4]);
+// void christoffel(double g[4][4], double christoffel[4][4][4]);
 void riemann(double g[4][4], double christoffel[4][4][4], double riemann[4][4][4][4]);
 void Boyer_lindquist_coord(double *X, double *r, double *th);
 void gcov(double *X, double gcov[][NDIM]);
@@ -185,6 +182,7 @@ __m256d _mm256_cos_pd(__m256d x);
 * The AVX2 and AVX512F instruction sets are used to calculate the geodesic
 * same for Christoffel symbols and step size
 */
+void christoffel_AVX(__m256d g[4][4], __m256d christoffel[4][4][4]);
 void geodesic_AVX(VEC_TYPE x[4], VEC_TYPE v[4], double lambda_max, \
                   VEC_TYPE christoffel[4][4][4], VEC_TYPE step_size);
 void store_geodesic_point_AVX(__m256d x[4], double lambda);

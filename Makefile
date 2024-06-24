@@ -6,9 +6,9 @@ NAME_KNL_GCC = geodesic_solver_knl_gcc
 
 CC = gcc
 MPI = mpicc
-FLAGS = -lm -O3 -Wopenmp-simd -mavx2 -gstabs -ftree-loop-optimize \
-		-ftree-loop-distribution -fopenmp -masm=intel -ffast-math \
-		-funroll-loops -mavx2 -fopt-info-all -L/nfs/homes/ltouzali/.local/include/hdf5/lib -I/nfs/homes/ltouzali/.local/include/hdf5/include -lhdf5
+FLAGS = -g -lm -O3 -Wopenmp-simd -mavx2 -gstabs -ftree-loop-optimize \
+		-ftree-loop-distribution -fopenmp -masm=intel -ffast-math -march=native -mtune=native \
+		-funroll-loops -mavx2 -fopt-info-all -fopt-info-vec-optimized
 MPICC_FLAGS = -g -masm=intel -ffast-math -funroll-loops -mavx2 \
 			  -fopt-info-vec-optimized -fopt-info-all -fopenmp -lm -DUSE_MPI -fopenmp 
 KNL_FLAGS = -lm -g -fopenmp -masm=intel -ffast-math -funroll-loops \

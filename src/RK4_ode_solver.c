@@ -6,24 +6,25 @@
 /*   By: ltouzali <ltouzali@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/23 17:50:41 by ltouzali          #+#    #+#             */
-/*   Updated: 2024/06/24 14:33:54 by ltouzali         ###   ########.fr       */
+/*   Updated: 2024/06/25 00:05:14 by ltouzali         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../headers/geodesics.h"
 
 #ifdef AVX2
+// #pragma omp declare simd
 void geodesic_AVX(__m256d x[4], __m256d v[4], double lambda_max, __m256d christoffel[4][4][4], __m256d step_size) 
 {
+    int step = 0;
+    double lambda = 0.0;
     __attribute__((aligned(32))) __m256d k1[4], k2[4], k3[4], k4[4],\
                                          temp_x[4], temp_v[4];
-    double lambda = 0.0;
-    int step = 0;
 
     while (lambda < lambda_max) {
         #pragma omp simd aligned(temp_v, christoffel: 32)
         CALCULATE_K_AVX2(k1, v)
-        #pragma omp critical
+        #pragma omp simd aligned(temp_v, christoffel: 32)
         UPDATE_POSITIONS_AVX2(x, v, k1, step_size)
         #pragma omp simd aligned(temp_v, christoffel: 32)
         CALCULATE_K_AVX2(k2, temp_v)
@@ -34,9 +35,11 @@ void geodesic_AVX(__m256d x[4], __m256d v[4], double lambda_max, __m256d christo
         #pragma omp simd aligned(temp_v, christoffel: 32)
         CALCULATE_K_AVX2(k4, temp_v)
         UPDATE_POSITIONS_AVX2(x, v, k4, step_size)
-
+        #pragma omp prefetch
         #pragma omp simd aligned(x, v, k1, k2, k3, k4: 32)
         for (int mu = 0; mu < 4; mu++) {
+            _mm_prefetch((const char *)&x[mu], _MM_HINT_T0);
+            _mm_prefetch((const char *)&v[mu], _MM_HINT_T0);
             __m256d k1_term = k1[mu];
             __m256d k2_term = _mm256_mul_pd(_mm256_set1_pd(2.0), k2[mu]);
             __m256d k3_term = _mm256_mul_pd(_mm256_set1_pd(2.0), k3[mu]);

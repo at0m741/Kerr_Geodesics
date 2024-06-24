@@ -6,7 +6,7 @@
 /*   By: ltouzali <ltouzali@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/17 15:51:31 by ltouzali          #+#    #+#             */
-/*   Updated: 2024/06/24 13:31:09 by ltouzali         ###   ########.fr       */
+/*   Updated: 2024/06/24 21:12:15 by ltouzali         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,6 +17,7 @@
 extern double (*geodesic_points)[5];
 extern int num_points;
 int capacity = 0;
+#define __AVX2__ 1
 
 /* 
 *  Write the geodesic points to a VTK file
@@ -29,6 +30,7 @@ int capacity = 0;
 #pragma omp declare simd
 void write_vtk_file(const char *filename)
 {
+    printf("using AVX2 for writing VTK file\n");
     FILE *file = fopen(filename, "w");
     if (file == NULL)
     {
@@ -85,25 +87,29 @@ inline void store_geodesic_point_AVX(__m256d x[4], double lambda) {
         geodesic_points = new_geodesic_points;
     }
 
-    double r_vals[4], theta_vals[4], phi_vals[4];
-    _mm256_storeu_pd(r_vals, x[1]);
-    _mm256_storeu_pd(theta_vals, x[2]);
-    _mm256_storeu_pd(phi_vals, x[3]);
+    // double r_vals[4], theta_vals[4], phi_vals[4];
+    // _mm256_storeu_pd(r_vals, x[1]);
+    // _mm256_storeu_pd(theta_vals, x[2]);
+    // _mm256_storeu_pd(phi_vals, x[3]);
 
     #pragma omp for simd aligned(geodesic_points: ALIGNMENT)
     for (int i = 0; i < 4; i++) 
     {
-        double r = r_vals[i];
-        double theta = theta_vals[i];
-        double phi = phi_vals[i];
-        double sin_theta = sinf(theta);
-        double cos_theta = cosf(theta);
-        double sin_phi = sinf(phi);
-        double cos_phi = cosf(phi);
+        __m256d r = x[1];
+        __m256d theta = x[2];
+        __m256d phi = x[3];
+        __m256d sin_theta = _mm256_sin_pd(theta);
+        __m256d cos_theta = _mm256_cos_pd(theta);
+        __m256d sin_phi = _mm256_sin_pd(phi);
+        __m256d cos_phi = _mm256_cos_pd(phi);
+        double r_vals[4], theta_vals[4], phi_vals[4];
+        _mm256_storeu_pd(r_vals, r);
+        _mm256_storeu_pd(theta_vals, theta);
+        _mm256_storeu_pd(phi_vals, phi);
 
-        geodesic_points[num_points][0] = r * sin_theta * cos_phi;
-        geodesic_points[num_points][1] = r * sin_theta * sin_phi;
-        geodesic_points[num_points][2] = r * cos_theta;
+        geodesic_points[num_points][0] = r_vals[i] * sin_theta[i] * cos_phi[i];
+        geodesic_points[num_points][1] = r_vals[i] * sin_theta[i] * sin_phi[i];
+        geodesic_points[num_points][2] = r_vals[i] * cos_theta[i];
         geodesic_points[num_points][3] = lambda;
         num_points++;
     }
