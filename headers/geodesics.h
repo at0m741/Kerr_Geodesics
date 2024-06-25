@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   geodesics.h                                        :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: ltouzali <ltouzali@student.42.fr>          +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2024/06/25 15:03:15 by ltouzali          #+#    #+#             */
+/*   Updated: 2024/06/25 17:23:15 by ltouzali         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #pragma once
 
 #include <math.h>
@@ -8,8 +20,6 @@
 #include <immintrin.h>
 #include <time.h>
 #include <xmmintrin.h>
-#include "/nfs/homes/ltouzali/sgoinfre/intel/mkl/2024.2/include/mkl.h"
-// #include <mpi.h>
 #include <sys/time.h>
 
 #define MAX_POINTS 100000
@@ -17,13 +27,13 @@
 #define G 6.67430e-11
 #define M 1.0
 #define a 0.935
-#define BLOCK_SIZE 2
+#define BLOCK_SIZE 4
 #define BUFFER_SIZE 1024
 #define SMALL 1.e-40
 #define NDIM 4
 #define TT 0
 #define DT 0.0000005
-#define max_dt 1.0
+#define max_dt 5.0
 #define ALIGNMENT 32
 #define AVX2 1
 #define ARCH "AVX2"
@@ -60,7 +70,6 @@ typedef double __attribute__((aligned(ALIGNMENT))) ldouble_a;
 #elif defined(__APPLE__) || defined(__MACH__)
 	#define Plateform "Darwin (macOS)"
 #endif
-
 #define DLOOP  for(j=0;j<NDIM;j++) for(k=0;k<NDIM;k++)
 
 
@@ -102,13 +111,22 @@ typedef double __attribute__((aligned(ALIGNMENT))) ldouble_a;
             temp_v[mu] = _mm512_add_pd(v[mu], _mm512_mul_pd(step, k[mu])); \
         }
 
-/* 
-*  Use of the AVX2 instruction set for the geodesic calculation
-*  The AVX2 instruction set is used to calculate the geodesic
-
-*/
 
 #elif AVX2
+
+    /* 
+    *  Use of the AVX2 instruction set for the geodesic calculation
+    *  The AVX2 instruction set is used to calculate the geodesic
+    * @param x[4] - the position of the geodesic
+    * @param v[4] - the velocity of the geodesic
+    * @param lambda_max - the maximum value of the affine parameter
+    * @param christoffel[4][4][4] - the Christoffel symbols
+    * @param step_size - the step size for the geodesic calculation
+    * the equation is : \frac{d^2 x^\mu}{d\lambda^2} + 
+                        \Gamma^\mu_{\alpha \beta} 
+                        \frac{d x^\alpha}{d\lambda}
+                        \frac{d x^\beta}{d\lambda} = 0
+    */
     /*
     *  AVX2 instruction set for the geodesic calculation
     *  The AVX2 instruction set is used to calculate the geodesic 
@@ -129,13 +147,12 @@ typedef double __attribute__((aligned(ALIGNMENT))) ldouble_a;
     *  The loop is used to calculate the Geodesics equation
     *  using the Christoffel symbols
     */
-
     #define CALCULATE_K_AVX2(k, src_v) \
     for (int mu = 0; mu < 4; mu++) { \
         k[mu] = src_v[mu]; \
         for (int alpha_block = 0; alpha_block < 4; alpha_block += BLOCK_SIZE) { \
             for (int alpha = alpha_block; alpha < alpha_block + BLOCK_SIZE && alpha < 4; alpha++) { \
-                _mm_prefetch((const char *)&christoffel[mu][alpha][0], _MM_HINT_T1); \
+                _mm_prefetch((const char *)&christoffel[mu][alpha][0], _MM_HINT_NTA); \
                 for (int beta = 0; beta < 4; beta++) { \
                     __m256d src_v_alpha_src_v = _mm256_mul_pd(src_v[alpha], src_v[beta]); \
                     __m256d product = _mm256_mul_pd(christoffel[mu][alpha][beta], src_v_alpha_src_v); \
@@ -150,6 +167,8 @@ typedef double __attribute__((aligned(ALIGNMENT))) ldouble_a;
     */
     #define UPDATE_POSITIONS_AVX2(x, v, k, step) \
         for (int mu = 0; mu < 4; mu++) { \
+            _mm_prefetch((const char *)&temp_x[mu], _MM_HINT_NTA); \
+            _mm_prefetch((const char *)&temp_v[mu], _MM_HINT_NTA); \
             temp_x[mu] = _mm256_add_pd(x[mu], _mm256_mul_pd(step, k[mu])); \
             temp_v[mu] = _mm256_add_pd(v[mu], _mm256_mul_pd(step, k[mu])); \
         }
@@ -160,7 +179,12 @@ typedef double __attribute__((aligned(ALIGNMENT))) ldouble_a;
 #endif
 
 void sincos(double x, double *sin, double *cos);
-// void christoffel(double g[4][4], double christoffel[4][4][4]);
+/** 
+    * @brief riemann - Calculate the Riemann tensor (optional but can be called from main after the Christoffel symbols are calculated)
+    * @param g - the metric tensor
+    * @param christoffel - the Christoffel symbols
+    * @param riemann - the Riemann tensor
+*/
 void riemann(double g[4][4], double christoffel[4][4][4], double riemann[4][4][4][4]);
 void Boyer_lindquist_coord(double *X, double *r, double *th);
 void gcov(double *X, double gcov[][NDIM]);

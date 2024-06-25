@@ -1,6 +1,17 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   main.c                                             :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: ltouzali <ltouzali@student.42.fr>          +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2024/06/25 15:03:26 by ltouzali          #+#    #+#             */
+/*   Updated: 2024/06/25 18:32:34 by ltouzali         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include "../headers/geodesics.h"
 
-#define DLOOP  for(int j=0;j<NDIM;j++) for(int k=0;k<NDIM;k++)
 
 extern double (*geodesic_points)[5];
 extern int num_points;
@@ -79,11 +90,11 @@ int main(int argc, char **argv)
 		if (world_rank == 0) {
 			printf("Execution time: %f seconds\n", elapsed_time);
 		}
-	#else 
+	#elif AVX2 
 		__m256d dt = _mm256_set1_pd(DT);
 		__m256d x[4], v[4], g[4][4], christoffel_avx[4][4][4];
-		double x_vals[4] = {160.0, M_PI / 2, M_PI / 2, 20.0};
-		double v_vals[4] = {-110.2, 10.0, 12.0, 27.0};
+		double x_vals[4] = {1600.0, M_PI / 2, M_PI, 20.0};
+		double v_vals[4] = {80.2, 10.0, 12.0, 27.0};
 		double g_vals[NDIM][NDIM] = {0};
 
 		for (int i = 0; i < NDIM; i++) {
@@ -100,7 +111,8 @@ int main(int argc, char **argv)
 		
 		christoffel_AVX(g, christoffel_avx);
 		geodesic_AVX(x, v, max_dt, christoffel_avx, dt);
-		// write_vtk_file("geodesic.vtk");
+		write_vtk_file("geodesic.vtk");
+
 	#endif
 	print_arch();
 	printf("num threads: %d\n", omp_get_max_threads());

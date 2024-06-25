@@ -6,7 +6,7 @@
 /*   By: ltouzali <ltouzali@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/22 14:44:57 by ltouzali          #+#    #+#             */
-/*   Updated: 2024/06/22 14:46:09 by ltouzali         ###   ########.fr       */
+/*   Updated: 2024/06/25 16:56:18 by ltouzali         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,9 +14,8 @@
 
 extern double (*geodesic_points)[5];
 extern int num_points;
-int j, k;
-#define DLOOP  for(j=0;j<NDIM;j++) for(k=0;k<NDIM;k++)
-
+int i, j , k;
+#pragma omp declare simd
 void gcov(double *X, double gcov[][NDIM])
 {
     DLOOP gcov[j][k] = 0.;
@@ -27,21 +26,22 @@ void gcov(double *X, double gcov[][NDIM])
 	double hslope = 0.3;
     Boyer_lindquist_coord(X, &r, &th);
     double sth, cth, s2, rho2;
-    cth = cos(th);
-    sth = sin(th);
-    s2 = sth * sth;
+    cth  = cosf(th);
+    sth  = sinf(th);
+    s2   = sth * sth;
     rho2 = r * r + a * a * cth * cth;
 
     gcov[TT][TT] = (-1. + 2. * r / rho2);
-    gcov[TT][1] = (2. * r / rho2);
-    gcov[TT][3] = (-2. * a * r * s2 / rho2);
-    gcov[1][TT] = gcov[TT][1];
-    gcov[1][1] = (1. + 2. * r / rho2);
-    gcov[1][3] = (-a * s2 * (1. + 2. * r / rho2));
-    gcov[2][2] = rho2;
-    gcov[3][TT] = gcov[TT][3];
-    gcov[3][1] = gcov[1][3];
-    gcov[3][3] = s2 * (rho2 + a * a * s2 * (1. + 2. * r / rho2));
+    gcov[TT][1]  = (2. * r / rho2);
+    gcov[TT][3]  = (-2. * a * r * s2 / rho2);
+    gcov[1][TT]  = gcov[TT][1];
+    gcov[1][1]   = (1. + 2. * r / rho2);
+    gcov[1][3]   = (-a * s2 * (1. + 2. * r / rho2));
+    gcov[2][2]   = rho2;
+    gcov[3][TT]  = gcov[TT][3];
+    gcov[3][1]   = gcov[1][3];
+    gcov[3][3]   = s2 * (rho2 + a * a * s2 *\
+                 (1. + 2. * r / rho2));
 
 }
 
