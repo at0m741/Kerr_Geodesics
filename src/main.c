@@ -6,7 +6,7 @@
 /*   By: ltouzali <ltouzali@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/25 15:03:26 by ltouzali          #+#    #+#             */
-/*   Updated: 2024/06/25 18:32:34 by ltouzali         ###   ########.fr       */
+/*   Updated: 2024/06/26 19:04:20 by ltouzali         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -93,7 +93,7 @@ int main(int argc, char **argv)
 	#elif AVX2 
 		__m256d dt = _mm256_set1_pd(DT);
 		__m256d x[4], v[4], g[4][4], christoffel_avx[4][4][4];
-		double x_vals[4] = {1600.0, M_PI / 2, M_PI, 20.0};
+		double x_vals[4] = {160.0, M_PI / 2, M_PI, 20.0};
 		double v_vals[4] = {80.2, 10.0, 12.0, 27.0};
 		double g_vals[NDIM][NDIM] = {0};
 

@@ -22,22 +22,12 @@ make mpicc
 ```
 Paraview is needed to plot the results
 
-# Results and benchmarks
-The results are stored in the results folder. The code will generate a .vtk file with the results of the simulation.\
-The code is able to simulate the geodesic trajectory of a particle. All the code is written in C and optimized for the Intel Knight Landing architecture.\
-Intel AVX2 and AVX512 intrinsics are used to optimize the code.\
-
-For 4 millions of iterations, the code takes 2.1 seconds to compute Christoffel symbols and geodesic equations (Runge-Kutta 4th order method have been used).\
-At the moment, I'm planing to rewrite a custom fprintf function to write the results in a file (writing on VTK file is the slowest part of the execution).\
-```bash
 
 # TODO
--Add the possibility to change the metric \
--Add cacheline optimizations \
+
+-Clean and optimize \
+-Add mpi parallel code and Intel AVX2/AVX512 Intrinsics \
 -Make it work with bigger Mass and more metrics \
 -Translate paper, correct potential mistakes and add bibliography\
--Add MPI code to simulate multiple particles at the same time\
--Add a custom fprintf function to write the results in a file\
--Add an adaptive step size method to optimize the code\
 
 

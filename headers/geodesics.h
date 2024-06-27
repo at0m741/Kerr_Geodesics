@@ -6,7 +6,7 @@
 /*   By: ltouzali <ltouzali@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/25 15:03:15 by ltouzali          #+#    #+#             */
-/*   Updated: 2024/06/25 17:23:15 by ltouzali         ###   ########.fr       */
+/*   Updated: 2024/06/27 15:41:14 by ltouzali         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,7 +33,7 @@
 #define NDIM 4
 #define TT 0
 #define DT 0.0000005
-#define max_dt 5.0
+#define max_dt 4.0
 #define ALIGNMENT 32
 #define AVX2 1
 #define ARCH "AVX2"
@@ -127,6 +127,14 @@ typedef double __attribute__((aligned(ALIGNMENT))) ldouble_a;
                         \frac{d x^\alpha}{d\lambda}
                         \frac{d x^\beta}{d\lambda} = 0
     */
+
+
+    #define ALIGNED_32 __attribute__((aligned(32)))
+    #define LOOP_OVER_3_INDICES for (int mu = 0; mu < 4; mu++) \
+                            for (int beta = 0; beta < 4; beta++) \
+                            for (int nu = 0; nu < 4; nu++)
+
+    #define LOOP_OVER_SIGMA for (int sigma = 0; sigma < 4; sigma++)
     /*
     *  AVX2 instruction set for the geodesic calculation
     *  The AVX2 instruction set is used to calculate the geodesic 
