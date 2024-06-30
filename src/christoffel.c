@@ -6,7 +6,7 @@
 /*   By: ltouzali <ltouzali@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/23 18:12:02 by ltouzali          #+#    #+#             */
-/*   Updated: 2024/06/27 15:54:53 by ltouzali         ###   ########.fr       */
+/*   Updated: 2024/06/30 15:07:13 by ltouzali         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,47 +26,85 @@ extern int num_points;
     #include <immintrin.h>
 
     #pragma omp declare simd
-    void christoffel_AVX(__m256d g[4][4], __m256d christoffel[4][4][4]) 
-    {
-        ALIGNED_32 __m256d (*g_aligned)[4] = aligned_alloc(32, sizeof(__m256d[4][4]));
-        ALIGNED_32 __m256d (*christoffel_aligned)[4][4] = aligned_alloc(32, sizeof(__m256d[4][4][4]));
-        ALIGNED_32 __m256d half = _mm256_set1_pd(0.5);
-        memcpy(g_aligned, g, sizeof(__m256d[4][4]));
-        memcpy(christoffel_aligned, christoffel, sizeof(__m256d[4][4][4]));
-        printf("using AVX2 for Christoffel Symbols\n");
-        #pragma omp for simd aligned(g_aligned, christoffel_aligned: ALIGNMENT)
-        LOOP_OVER_3_INDICES {
-            ALIGNED_32 __m256d sum = _mm256_setzero_pd();
-            #pragma unroll
-            LOOP_OVER_SIGMA {
-                if (sigma + 1 < 4) {
-                    _mm_prefetch(sigma, _MM_HINT_T0);
-                    _mm_prefetch((const char *)&g_aligned[mu][sigma + 1], _MM_HINT_T0);
-                    _mm_prefetch((const char *)&christoffel_aligned[mu][sigma + 1], _MM_HINT_T1);
+
+
+void print_m256d(__m256d x) {
+    double *ptr = (double *)&x;
+    for (int i = 0; i < 4; i++) {
+        printf("%f ", ptr[i]);
+    }
+    printf("\n");
+}
+
+
+void christoffel_AVX(__m256d g[4][4], __m256d christoffel[4][4][4]) 
+{
+    __m256d (*g_aligned)[4];
+    __m256d (*christoffel_aligned)[4][4];
+
+    if (posix_memalign((void **)&g_aligned, 32, sizeof(__m256d[4][4])) != 0) {
+        perror("Failed to allocate memory for g_aligned");
+        exit(EXIT_FAILURE);
+    }
+    if (posix_memalign((void **)&christoffel_aligned, 32, sizeof(__m256d[4][4][4])) != 0) {
+        perror("Failed to allocate memory for christoffel_aligned");
+        free(g_aligned);
+        exit(EXIT_FAILURE);
+    }
+
+    __m256d half = _mm256_set1_pd(0.5);
+
+    memcpy(g_aligned, g, sizeof(__m256d[4][4]));
+    memcpy(christoffel_aligned, christoffel, sizeof(__m256d[4][4][4]));
+
+    printf("using AVX2 for Christoffel Symbols\n");
+
+    #pragma omp parallel for collapse(2) schedule(static)
+    for (int mu = 0; mu < 4; mu++) {
+        for (int beta = 0; beta < 4; beta++) {
+            for (int nu = 0; nu < 4; nu++) {
+                __m256d sum = _mm256_setzero_pd();
+
+                for (int sigma = 0; sigma < 4; sigma++) {
+                    if (sigma + 1 < 4) {
+                        _mm_prefetch((const char *)&g_aligned[mu][sigma + 1], _MM_HINT_T0);
+                        _mm_prefetch((const char *)&g_aligned[sigma][beta], _MM_HINT_T0);
+                        _mm_prefetch((const char *)&g_aligned[beta][sigma + 1], _MM_HINT_T1);
+                    }
+
+                    __m256d g_mu_sigma = g_aligned[mu][sigma];
+                    __m256d g_sigma_beta = g_aligned[sigma][beta];
+                    __m256d g_beta_sigma = g_aligned[beta][sigma];
+                    __m256d g_beta_nu = g_aligned[beta][nu];
+
+                    __m256d term1 = _mm256_mul_pd(g_mu_sigma, g_sigma_beta);
+                    __m256d term2 = _mm256_mul_pd(g_mu_sigma, g_beta_sigma);
+                    __m256d term3 = _mm256_mul_pd(g_mu_sigma, g_beta_nu);
+
+                    sum = _mm256_add_pd(sum, _mm256_mul_pd(half, _mm256_sub_pd(_mm256_add_pd(term1, term2), term3)));
                 }
 
-                ALIGNED_32 __m256d g_mu_sigma = _mm256_broadcast_sd((double *)&g_aligned[mu][sigma]);
-                ALIGNED_32 __m256d g_sigma_beta = _mm256_broadcast_sd((double *)&g_aligned[sigma][beta]);
-                ALIGNED_32 __m256d g_beta_sigma = _mm256_broadcast_sd((double *)&g_aligned[beta][sigma]);
-                ALIGNED_32 __m256d g_beta_nu = _mm256_broadcast_sd((double *)&g_aligned[beta][nu]);
-
-                ALIGNED_32 __m256d term1 = _mm256_mul_pd(g_mu_sigma, g_sigma_beta);
-                ALIGNED_32 __m256d term2 = _mm256_mul_pd(g_mu_sigma, g_beta_sigma);
-                ALIGNED_32 __m256d term3 = _mm256_mul_pd(g_mu_sigma, g_beta_nu);
-
-                sum = _mm256_add_pd(sum, _mm256_mul_pd(half, _mm256_sub_pd(_mm256_add_pd(term1, term2), term3)));
+                christoffel_aligned[mu][beta][nu] = sum;
             }
-
-            christoffel_aligned[mu][beta][nu] = sum;
         }
-
-        _mm256_zeroupper();
-        _mm_empty();
-        memcpy(christoffel, christoffel_aligned, sizeof(__m256d[4][4][4]));
-        // free(g_aligned);
-        _mm_free(g_aligned);
-        _mm_free(christoffel_aligned);
     }
+    #pragma omp simd
+    for (int mu = 0; mu < 4; mu++) {
+        for (int beta = 0; beta < 4; beta++) {
+            for (int nu = 0; nu < 4; nu++) {
+                printf("Christoffel[%d][%d][%d] = %f\n", mu, beta, nu, _mm256_cvtsd_f64(christoffel_aligned[mu][beta][nu]));
+            }
+        }
+    }
+
+    _mm256_zeroupper();
+    _mm_empty();
+
+    memcpy(christoffel, christoffel_aligned, sizeof(__m256d[4][4][4]));
+
+    free(g_aligned);
+    free(christoffel_aligned);
+}
 
 #else
 
