@@ -12,11 +12,11 @@ Make sure you have GCC-1X or MPICC installed on your system if you want more acc
 ```bash
 make x86
 ```
-if you are using a Intel Knight Landing system using AVX512 :
+(not working atm) if you are using a Intel Knight Landing system using AVX512 :
 ```bash
 make knl
 ```
-MPI code is not ready at the moment but.. soon
+(not working atm) MPI code is not ready at the moment but.. soon
 ```bash
 make mpicc
 ```
