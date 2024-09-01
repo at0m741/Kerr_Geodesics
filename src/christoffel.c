@@ -6,7 +6,7 @@
 /*   By: ltouzali <ltouzali@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/23 18:12:02 by ltouzali          #+#    #+#             */
-/*   Updated: 2024/09/01 12:39:12 by at0m             ###   ########.fr       */
+/*   Updated: 2024/09/01 19:33:17 by at0m             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -52,8 +52,8 @@ void christoffel_AVX(VEC_TYPE g[4][4], VEC_TYPE christoffel[4][4][4])
 
     memcpy(g_aligned, g, sizeof(VEC_TYPE[4][4]));
     memcpy(christoffel_aligned, christoffel, sizeof(VEC_TYPE[4][4][4]));
-
-    #pragma omp parallel for collapse(2) schedule(static)
+	
+	#pragma omp simd
     for (int mu = 0; mu < 4; mu++) 
 	{
         for (int beta = 0; beta < 4; beta++) 

@@ -6,7 +6,7 @@
 /*   By: ltouzali <ltouzali@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/25 15:03:26 by ltouzali          #+#    #+#             */
-/*   Updated: 2024/09/01 02:47:40 by at0m             ###   ########.fr       */
+/*   Updated: 2024/09/01 20:00:46 by at0m             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -57,14 +57,16 @@ int main(int argc, char **argv)
 
 	gcov(x_vals, g_vals);
 	gcon(x_vals[1], x_vals[2], g_vals);
-
+	printf("Compute Christoffel symbols\n");
 	#pragma omp for simd
 	for (int i = 0; i < NDIM; i++) 
 		for (int j = 0; j < NDIM; j++)
 			g[i][j] = VEC_SET_PD(g_vals[i][j]);
 		
 	christoffel_AVX(g, christoffel_avx);
+	printf("Compute geodesics equations using Runge Kutta..\n");
 	geodesic_AVX(x, v, max_dt, christoffel_avx, dt);
+	printf("writing to file..\n");
 	write_vtk_file("geodesic.vtk");
 
 	if (geodesic_points != NULL)

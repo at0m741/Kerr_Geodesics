@@ -10,7 +10,7 @@ AVX2_FLAGS = -g -lm -O3 -Wopenmp-simd -mavx2 -gstabs -ftree-loop-optimize \
 
 AVX512_FLAGS = -g -lm -O3 -Wopenmp-simd -mavx512f -mavx512cd -mavx512bw -mavx512dq -mavx512vl \
 		-gstabs -ftree-loop-optimize -ftree-loop-distribution -fopenmp -masm=intel -ffast-math \
-		-march=native -mtune=native -funroll-loops -flto -falign-functions=32 -fsanitize=address -DAVX512F
+		-march=native -mtune=native -funroll-loops -flto -falign-functions=64 -fsanitize=address -DAVX512F
 
 PROFILING_FLAGS = -pg -g -gstabs -fopenmp -ffast-math -funroll-loops \
 				  -mavx2 -lm -fopt-info-vec-optimized -fopt-info-all \

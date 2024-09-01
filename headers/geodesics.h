@@ -6,7 +6,7 @@
 /*   By: ltouzali <ltouzali@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/25 15:03:15 by ltouzali          #+#    #+#             */
-/*   Updated: 2024/09/01 02:38:10 by at0m             ###   ########.fr       */
+/*   Updated: 2024/09/01 20:02:16 by at0m             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,7 +33,7 @@
 #define SMALL 1.e-40
 #define NDIM 4
 #define TT 0
-#define DT 0.0000005
+#define DT 0.00000005
 #define max_dt 1.0
 
 

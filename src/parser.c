@@ -6,7 +6,7 @@
 /*   By: ltouzali <ltouzali@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/17 15:51:31 by ltouzali          #+#    #+#             */
-/*   Updated: 2024/09/01 02:39:30 by at0m             ###   ########.fr       */
+/*   Updated: 2024/09/01 19:56:45 by at0m             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -110,4 +110,3 @@ void store_geodesic_point_AVX(VEC_TYPE x[4], double lambda) {
         num_points++;
     }
 }
-

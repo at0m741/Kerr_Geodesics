@@ -6,7 +6,7 @@
 /*   By: ltouzali <ltouzali@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/23 17:50:41 by ltouzali          #+#    #+#             */
-/*   Updated: 2024/09/01 02:44:44 by at0m             ###   ########.fr       */
+/*   Updated: 2024/09/01 20:04:23 by at0m             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,47 +25,35 @@
 
 void geodesic_AVX(VEC_TYPE x[4], VEC_TYPE v[4], double lambda_max, VEC_TYPE christoffel[4][4][4], VEC_TYPE step_size) 
 {
-    int		step = 0;
-    double	lambda = 0.0;
-
+    int step = 0;
+    double lambda = 0.0;
+	
     __attribute__((aligned(ALIGNMENT))) VEC_TYPE k1[4], k2[4], k3[4], k4[4];
     __attribute__((aligned(ALIGNMENT))) VEC_TYPE temp_x[4], temp_v[4];
-	
-	printf("aligned over %d\n", ALIGNMENT);
-    printf("using %s for geodesic\n", ARCH);
-
-    while (lambda < lambda_max) 
-    {
-        #pragma omp simd aligned(temp_v, christoffel: ALIGNMENT)
-        CALCULATE_K(k1, v, christoffel)
-        #pragma omp simd aligned(temp_v, christoffel: ALIGNMENT)
-        UPDATE_POSITIONS(x, v, k1, step_size, temp_x, temp_v)
-        
-        #pragma omp simd aligned(temp_v, christoffel: ALIGNMENT)
-        CALCULATE_K(k2, temp_v, christoffel)
-        UPDATE_POSITIONS(x, v, k2, step_size, temp_x, temp_v)
-
-        #pragma omp simd aligned(temp_v, christoffel: ALIGNMENT)
-        CALCULATE_K(k3, temp_v, christoffel)
-        UPDATE_POSITIONS(x, v, k3, step_size, temp_x, temp_v)
-
-        #pragma omp simd aligned(temp_v, christoffel: ALIGNMENT)
-        CALCULATE_K(k4, temp_v, christoffel)
-        UPDATE_POSITIONS(x, v, k4, step_size, temp_x, temp_v)
-
-        /*
-			* Update the position and velocity vectors
-			* All over K-terms and step
-        */
-	
-        #pragma omp critical
+	#pragma omp parallel
+	{	
+        while (lambda < lambda_max) 
         {
-            #pragma omp prefetch
+            #pragma omp for simd aligned(temp_v, christoffel: ALIGNMENT) nowait
+            CALCULATE_K(k1, v, christoffel)
+            #pragma omp for simd aligned(temp_v, christoffel: ALIGNMENT) nowait
+            UPDATE_POSITIONS(x, v, k1, step_size, temp_x, temp_v)
+
+            #pragma omp for simd aligned(temp_v, christoffel: ALIGNMENT) nowait
+            CALCULATE_K(k2, temp_v, christoffel)
+            UPDATE_POSITIONS(x, v, k2, step_size, temp_x, temp_v)
+
+            #pragma omp for simd aligned(temp_v, christoffel: ALIGNMENT) nowait
+            CALCULATE_K(k3, temp_v, christoffel)
+            UPDATE_POSITIONS(x, v, k3, step_size, temp_x, temp_v)
+
+            #pragma omp for simd aligned(temp_v, christoffel: ALIGNMENT) nowait
+            CALCULATE_K(k4, temp_v, christoffel)
+            UPDATE_POSITIONS(x, v, k4, step_size, temp_x, temp_v)
+
             #pragma omp simd aligned(x, v, k1, k2, k3, k4: ALIGNMENT)
             for (int mu = 0; mu < 4; mu++) 
             {
-                _mm_prefetch((const char *)&x[mu], _MM_HINT_T0);
-                _mm_prefetch((const char *)&v[mu], _MM_HINT_T0);
                 ALIGNED VEC_TYPE k1_term = k1[mu];
                 ALIGNED VEC_TYPE k2_term = VEC_MUL_PD(VEC_SET1_PD(2.0), k2[mu]);
                 ALIGNED VEC_TYPE k3_term = VEC_MUL_PD(VEC_SET1_PD(2.0), k3[mu]);
@@ -76,18 +64,19 @@ void geodesic_AVX(VEC_TYPE x[4], VEC_TYPE v[4], double lambda_max, VEC_TYPE chri
                 x[mu] = VEC_ADD_PD(x[mu], step_sum);
                 v[mu] = VEC_ADD_PD(v[mu], step_sum);
             }
-        }
 
-        lambda += VEC_EXTRACT_D(step_size);
-        store_geodesic_point_AVX(x, lambda);
-    }
+            #pragma omp critical
+            {
+                lambda += VEC_EXTRACT_D(step_size);
+                store_geodesic_point_AVX(x, lambda);
+                step++;
+            }
+        }
+	}
 
 #ifdef AVX2
-	_mm256_zeroupper();
+    _mm256_zeroupper();
 #endif
 
     printf("Geodesics computed\n");
 }
-
-
-
