@@ -8,26 +8,20 @@ This project contains a C code to simulate geodesic trajectories in Kerr spaceti
 For more details on the operation and underlying theory, please see my [paper](Geodesics_trajectories_simulation (4).pdf).
 
 # Usage
-Make sure you have GCC-1X or MPICC installed on your system if you want more accurate and laborious calculations.
+Make sure you have GCC-1X installed on your system.
 ```bash
-make x86
+make avx2
 ```
-(not working atm) if you are using a Intel Knight Landing system using AVX512 :
+If you are using a Intel Knight Landing or anyother system that can use AVX512 :
 ```bash
-make knl
-```
-(not working atm) MPI code is not ready at the moment but.. soon
-```bash
-make mpicc
+make avx512
 ```
 Paraview is needed to plot the results
 
 
 # TODO
 
--Clean and optimize \
--Add mpi parallel code and Intel AVX2/AVX512 Intrinsics \
 -Make it work with bigger Mass and more metrics \
--Translate paper, correct potential mistakes and add bibliography\
+-Paper correct potential mistakes and add bibliography\
 
 

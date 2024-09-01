@@ -6,16 +6,14 @@
 /*   By: ltouzali <ltouzali@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/23 17:50:41 by ltouzali          #+#    #+#             */
-/*   Updated: 2024/06/30 15:02:27 by ltouzali         ###   ########.fr       */
+/*   Updated: 2024/09/01 02:44:44 by at0m             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../headers/geodesics.h"
-#include <immintrin.h>
 
-#ifdef AVX2
 /**
- * @brief Calculate the k1, k2, k3, k4 terms for the geodesic equation
+	* @brief Calculate the k1, k2, k3, k4 terms for the geodesic equation
     * @param x the position vector
     * @param v the velocity vector
     * @param k the k term
@@ -25,101 +23,71 @@
             then compare k4 and k5 to get the error and adjust the step size 
 */
 
-    void geodesic_AVX(__m256d x[4], __m256d v[4], double lambda_max, __m256d christoffel[4][4][4], __m256d step_size) 
+void geodesic_AVX(VEC_TYPE x[4], VEC_TYPE v[4], double lambda_max, VEC_TYPE christoffel[4][4][4], VEC_TYPE step_size) 
+{
+    int		step = 0;
+    double	lambda = 0.0;
+
+    __attribute__((aligned(ALIGNMENT))) VEC_TYPE k1[4], k2[4], k3[4], k4[4];
+    __attribute__((aligned(ALIGNMENT))) VEC_TYPE temp_x[4], temp_v[4];
+	
+	printf("aligned over %d\n", ALIGNMENT);
+    printf("using %s for geodesic\n", ARCH);
+
+    while (lambda < lambda_max) 
     {
-        int step = 0;
-        double lambda = 0.0;
-        __attribute__((aligned(32))) __m256d k1[4], k2[4], k3[4], k4[4], k5[4],\
-                                            temp_x[4], temp_v[4];
-        printf("using AVX2 for geodesic\n");
+        #pragma omp simd aligned(temp_v, christoffel: ALIGNMENT)
+        CALCULATE_K(k1, v, christoffel)
+        #pragma omp simd aligned(temp_v, christoffel: ALIGNMENT)
+        UPDATE_POSITIONS(x, v, k1, step_size, temp_x, temp_v)
+        
+        #pragma omp simd aligned(temp_v, christoffel: ALIGNMENT)
+        CALCULATE_K(k2, temp_v, christoffel)
+        UPDATE_POSITIONS(x, v, k2, step_size, temp_x, temp_v)
 
-        while (lambda < lambda_max) {
-            adjust_step_size(christoffel, x, v, step_size, 0.01, 0.9);
+        #pragma omp simd aligned(temp_v, christoffel: ALIGNMENT)
+        CALCULATE_K(k3, temp_v, christoffel)
+        UPDATE_POSITIONS(x, v, k3, step_size, temp_x, temp_v)
 
-            #pragma omp simd aligned(temp_v, christoffel: 32)
-            CALCULATE_K_AVX2(k1, v)
-            #pragma omp simd aligned(temp_v, christoffel: 32)
-            UPDATE_POSITIONS_AVX2(x, v, k1, step_size)
-            
-            #pragma omp simd aligned(temp_v, christoffel: 32)
-            CALCULATE_K_AVX2(k2, temp_v)
-            UPDATE_POSITIONS_AVX2(x, v, k2, step_size)
+        #pragma omp simd aligned(temp_v, christoffel: ALIGNMENT)
+        CALCULATE_K(k4, temp_v, christoffel)
+        UPDATE_POSITIONS(x, v, k4, step_size, temp_x, temp_v)
 
-            #pragma omp simd aligned(temp_v, christoffel: 32)
-            CALCULATE_K_AVX2(k3, temp_v)
-            UPDATE_POSITIONS_AVX2(x, v, k3, step_size)
-
-            #pragma omp simd aligned(temp_v, christoffel: 32)
-            CALCULATE_K_AVX2(k4, temp_v)
-            UPDATE_POSITIONS_AVX2(x, v, k4, step_size)
-    
-            /*
-            *update the position and velocity vectors 
-            */
-            #pragma omp critical
+        /*
+			* Update the position and velocity vectors
+			* All over K-terms and step
+        */
+	
+        #pragma omp critical
+        {
+            #pragma omp prefetch
+            #pragma omp simd aligned(x, v, k1, k2, k3, k4: ALIGNMENT)
+            for (int mu = 0; mu < 4; mu++) 
             {
-                #pragma omp prefetch
-                #pragma omp simd aligned(x, v, k1, k2, k3, k4: 32)
-                for (int mu = 0; mu < 4; mu++) {
-                    _mm_prefetch((const char *)&x[mu], _MM_HINT_T0);
-                    _mm_prefetch((const char *)&v[mu], _MM_HINT_T0);
-                    ALIGNED_32 __m256d k1_term = k1[mu];
-                    ALIGNED_32 __m256d k2_term = VEC_MUL_PD(VEC_SET1_PD(2.0), k2[mu]);
-                    ALIGNED_32 __m256d k3_term = VEC_MUL_PD(VEC_SET1_PD(2.0), k3[mu]);
-                    ALIGNED_32 __m256d k4_term = k4[mu];
-                    ALIGNED_32 __m256d sum_k = VEC_ADD_PD(VEC_ADD_PD(k1_term, k4_term), \
-                                    VEC_ADD_PD(k2_term, k3_term));
-                    ALIGNED_32 __m256d step_sum = VEC_DIV_PD(VEC_MUL_PD(step_size, sum_k), \
-                                    VEC_SET1_PD(6.0));
+                _mm_prefetch((const char *)&x[mu], _MM_HINT_T0);
+                _mm_prefetch((const char *)&v[mu], _MM_HINT_T0);
+                ALIGNED VEC_TYPE k1_term = k1[mu];
+                ALIGNED VEC_TYPE k2_term = VEC_MUL_PD(VEC_SET1_PD(2.0), k2[mu]);
+                ALIGNED VEC_TYPE k3_term = VEC_MUL_PD(VEC_SET1_PD(2.0), k3[mu]);
+                ALIGNED VEC_TYPE k4_term = k4[mu];
+                ALIGNED VEC_TYPE sum_k = VEC_ADD_PD(VEC_ADD_PD(k1_term, k4_term), VEC_ADD_PD(k2_term, k3_term));
+                ALIGNED VEC_TYPE step_sum = VEC_DIV_PD(VEC_MUL_PD(step_size, sum_k), VEC_SET1_PD(6.0));
 
-                    x[mu] = VEC_ADD_PD(x[mu], step_sum);
-                    v[mu] = VEC_ADD_PD(v[mu], step_sum);
-                }
+                x[mu] = VEC_ADD_PD(x[mu], step_sum);
+                v[mu] = VEC_ADD_PD(v[mu], step_sum);
             }
-
-            lambda += _mm256_cvtsd_f64(step_size);
-            store_geodesic_point_AVX(x, lambda);
         }
 
-        printf("Geodesics computed\n");
+        lambda += VEC_EXTRACT_D(step_size);
+        store_geodesic_point_AVX(x, lambda);
     }
 
-#elif __AVX512F__
-    void geodesic_AVX(__m512d x[4], __m512d v[4], double lambda_max, __m512d christoffel[4][4][4], __m512d step_size) 
-    {
-        __attribute__((aligned(64))) __m512d k1[4], k2[4], k3[4], k4[4],\
-                                            temp_x[4], temp_v[4];
-        double lambda = 0.0;
-        int step = 0;
-
-        while (lambda < lambda_max) {
-            #pragma omp simd aligned(temp_v, christoffel: 64)
-            CALCULATE_K_AVX512(k1, v)
-            UPDATE_POSITIONS_AVX512(x, v, k1, step_size)
-            #pragma omp simd aligned(temp_v, christoffel: 64)
-            CALCULATE_K_AVX512(k2, temp_v)
-            UPDATE_POSITIONS_AVX512(x, v, k2, step_size)
-            #pragma omp simd aligned(temp_v, christoffel: 64)
-            CALCULATE_K_AVX512(k3, temp_v)
-            UPDATE_POSITIONS_AVX512(x, v, k3, step_size)
-            #pragma omp simd aligned(temp_v, christoffel: 64)
-            CALCULATE_K_AVX512(k4, temp_v)
-            #pragma omp simd aligned(x, v, k1, k2, k3, k4: 64)
-            for (int mu = 0; mu < 4; mu++) {
-                __m512d k1_term = k1[mu];
-                __m512d k2_term = _mm512_mul_pd(_mm512_set1_pd(2.0), k2[mu]);
-                __m512d k3_term = _mm512_mul_pd(_mm512_set1_pd(2.0), k3[mu]);
-                __m512d k4_term = k4[mu];
-                __m512d sum_k = _mm512_add_pd(_mm512_add_pd(k1_term, k4_term), _mm512_add_pd(k2_term, k3_term));
-                __m512d step_sum = _mm512_div_pd(_mm512_mul_pd(step_size, sum_k), _mm512_set1_pd(6.0));
-
-                x[mu] = _mm512_add_pd(x[mu], step_sum);
-                v[mu] = _mm512_add_pd(v[mu], step_sum);
-            }
-
-            lambda += _mm512_cvtsd_f64(step_size);
-            store_geodesic_point_AVX(x, lambda);
-        }
-        printf("using AVX512 for geodesic\n");
-    }
+#ifdef AVX2
+	_mm256_zeroupper();
 #endif
+
+    printf("Geodesics computed\n");
+}
+
+
+

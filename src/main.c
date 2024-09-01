@@ -6,20 +6,19 @@
 /*   By: ltouzali <ltouzali@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/25 15:03:26 by ltouzali          #+#    #+#             */
-/*   Updated: 2024/06/30 16:00:24 by ltouzali         ###   ########.fr       */
+/*   Updated: 2024/09/01 02:47:40 by at0m             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../headers/geodesics.h"
 
 
-extern double (*geodesic_points)[5];
-extern int num_points;
+extern double	(*geodesic_points)[5];
+extern int		num_points;
 
 void print_arch()
 {
 	printf("Architecture: %s\n", ARCH);
-	printf("OS: %s\n", Plateform);
 	if (ALIGNMENT == 64)
 	{
 		printf("AVX-512 is supported\n");
@@ -41,109 +40,35 @@ void print_arch()
 }
 
 
-
-void Write_Geodesics_to_binary_file(const char *filename, double (*geodesic_points)[5], int num_points)
-{
-    FILE *file = fopen(filename, "wb");
-    if (file == NULL)
-    {
-        fprintf(stderr, "Error: failed to open file %s\n", filename);
-        return;
-    }
-
-    fwrite(geodesic_points, sizeof(double), num_points * 5, file);
-    fclose(file);
-}
-
-void remove_repetitive_value_vtk(double (*geodesic_points)[5], int *num_points)
-{
-	int i, j;
-	printf("num_points: %d\n", *num_points);
-	#pragma omp parallel for simd
-	for (i = 0; i < *num_points; i++)
-	{
-		for (j = i + 1; j < *num_points; j++)
-		{
-			if (geodesic_points[i][0] == geodesic_points[j][0] && geodesic_points[i][1] == geodesic_points[j][1] && geodesic_points[i][2] == geodesic_points[j][2])
-			{
-				geodesic_points[j][0] = geodesic_points[j + 1][0];
-				geodesic_points[j][1] = geodesic_points[j + 1][1];
-				geodesic_points[j][2] = geodesic_points[j + 1][2];
-				geodesic_points[j][3] = geodesic_points[j + 1][3];
-				geodesic_points[j][4] = geodesic_points[j + 1][4];
-				(*num_points)--;
-			}
-		}
-	}
-	printf("num_points: %d\n", *num_points);
-}
-
 int main(int argc, char **argv)
 {
-	#ifdef USE_MPI
-		printf("MPI is defined\n");
-		MPI_Init(&argc, &argv);
-		omp_get_max_threads();
-		printf("Number of threads: %d\n", omp_get_max_threads());
-	    double start_time = MPI_Wtime();
-		double x[4] = {0.0, M_PI / 2, 60 * M_PI, 0.0};
-		double v[4] = {-70.0, 1.01, 1.0, 27.0};
-		double christoffel_sym[4][4][4] = {0};
-		int rank = 0;
-		MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-		double g[4][4] = {0};
-		gcov(x, g);
-		if (rank == 0)
-		{
-			christoffel(g, christoffel_sym);
-		}
-		MPI_Barrier(MPI_COMM_WORLD);
-		geodesic(x, v, max_dt, christoffel_sym, DT, store_geodesic_point);
-		if (rank == 0)
-		{	
-			write_vtk_file("geodesic.vtk");
-			Write_Geodesics_to_binary_file("geodesic.bin", geodesic_points, num_points);
-		}
-		double end_time = MPI_Wtime();
-		double elapsed_time = end_time - start_time;
-
-		int world_rank;
-		MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
-		if (world_rank == 0) {
-			printf("Execution time: %f seconds\n", elapsed_time);
-		}
-	#elif AVX2 
-		__m256d dt = _mm256_set1_pd(DT);
-		__m256d x[4], v[4], g[4][4], christoffel_avx[4][4][4];
-		double x_vals[4] = {20.0, M_PI * 2.3, 1.1, 0.0};
-		double v_vals[4] = {10.2, 1.0, -1.0, 27.0};
-		double g_vals[NDIM][NDIM] = {0};
-
-		for (int i = 0; i < NDIM; i++) {
-			x[i] = _mm256_set1_pd(x_vals[i]);
-			v[i] = _mm256_set1_pd(v_vals[i]);
-		}
-
-		gcov(x_vals, g_vals);
-		printf("\n");
-		gcon(x_vals[1], x_vals[2], g_vals);
-		for (int i = 0; i < NDIM; i++) {
-			for (int j = 0; j < NDIM; j++) {
-				g[i][j] = _mm256_set1_pd(g_vals[i][j]);
-			}
-		}
-		
-		christoffel_AVX(g, christoffel_avx);
-		geodesic_AVX(x, v, max_dt, christoffel_avx, dt);
-		// remove_repetitive_value_vtk(geodesic_points, &num_points);
-		write_vtk_file("geodesic.vtk");
-
-	#endif
-	print_arch();
-	printf("num threads: %d\n", omp_get_max_threads());
-	if (geodesic_points != NULL)
+	VEC_TYPE	dt = VEC_SET_PD(DT);
+	VEC_TYPE	x[4], v[4], g[4][4], christoffel_avx[4][4][4];
+	double		x_vals[4] = {20.0, M_PI * 2.3, 1.1, 0.0};
+	double		v_vals[4] = {10.2, 1.0, -1.0, 27.0};
+	double		g_vals[NDIM][NDIM] = {0};
+	
+	#pragma omp for simd
+	for (int i = 0; i < NDIM; i++) 
 	{
-		free(geodesic_points);
+		x[i] = VEC_SET_PD(x_vals[i]);
+		v[i] = VEC_SET_PD(v_vals[i]);
 	}
+
+	gcov(x_vals, g_vals);
+	gcon(x_vals[1], x_vals[2], g_vals);
+
+	#pragma omp for simd
+	for (int i = 0; i < NDIM; i++) 
+		for (int j = 0; j < NDIM; j++)
+			g[i][j] = VEC_SET_PD(g_vals[i][j]);
+		
+	christoffel_AVX(g, christoffel_avx);
+	geodesic_AVX(x, v, max_dt, christoffel_avx, dt);
+	write_vtk_file("geodesic.vtk");
+
+	if (geodesic_points != NULL)
+		free(geodesic_points);
+
 	return 0;
 }
