@@ -5,7 +5,7 @@
 This project contains a C code to simulate geodesic trajectories in Kerr spacetime, which describe a rotating black hole.
 
 # Theory
-For more details on the operation and underlying theory, please see my [paper]([Paper](https://github.com/at0m741/Kerr_Geodesics/blob/main/Geodesics_trajectories_simulation%20(4).pdf)).
+For more details on the operation and underlying theory, please see my [[Paper](https://github.com/at0m741/Kerr_Geodesics/blob/main/Geodesics_trajectories_simulation%20(4).pdf)]pdf).
 
 # Usage
 Make sure you have GCC-1X installed on your system.
