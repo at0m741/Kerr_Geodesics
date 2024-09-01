@@ -6,7 +6,7 @@
 /*   By: ltouzali <ltouzali@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/23 18:12:02 by ltouzali          #+#    #+#             */
-/*   Updated: 2024/09/01 02:42:19 by at0m             ###   ########.fr       */
+/*   Updated: 2024/09/01 12:39:12 by at0m             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,13 +35,13 @@ void christoffel_AVX(VEC_TYPE g[4][4], VEC_TYPE christoffel[4][4][4])
     VEC_TYPE (*g_aligned)[4];
     VEC_TYPE (*christoffel_aligned)[4][4];
 
-    if (posix_memalign((void **)&g_aligned, 32, sizeof(VEC_TYPE[4][4])) != 0) 
+    if (posix_memalign((void **)&g_aligned, ALIGNMENT, sizeof(VEC_TYPE[4][4])) != 0) 
 	{
         perror("Failed to allocate memory for g_aligned");
         exit(EXIT_FAILURE);
     }
 
-    if (posix_memalign((void **)&christoffel_aligned, 32, sizeof(VEC_TYPE[4][4][4])) != 0) 
+    if (posix_memalign((void **)&christoffel_aligned, ALIGNMENT, sizeof(VEC_TYPE[4][4][4])) != 0) 
 	{
         perror("Failed to allocate memory for christoffel_aligned");
         free(g_aligned);
