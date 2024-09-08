@@ -6,7 +6,7 @@
 /*   By: ltouzali <ltouzali@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/23 18:12:02 by ltouzali          #+#    #+#             */
-/*   Updated: 2024/09/01 19:33:17 by at0m             ###   ########.fr       */
+/*   Updated: 2024/09/08 22:32:50 by at0m             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,7 +14,7 @@
 
 extern double (*geodesic_points)[5];
 extern int num_points;
-
+#define DELTA 1.e-5
 /*
 *  Calculate the Christoffel symbols
 *  The Christoffel symbols are calculated using the metric tensor
@@ -34,7 +34,7 @@ void christoffel_AVX(VEC_TYPE g[4][4], VEC_TYPE christoffel[4][4][4])
 {
     VEC_TYPE (*g_aligned)[4];
     VEC_TYPE (*christoffel_aligned)[4][4];
-
+    
     if (posix_memalign((void **)&g_aligned, ALIGNMENT, sizeof(VEC_TYPE[4][4])) != 0) 
 	{
         perror("Failed to allocate memory for g_aligned");
@@ -56,9 +56,9 @@ void christoffel_AVX(VEC_TYPE g[4][4], VEC_TYPE christoffel[4][4][4])
 	#pragma omp simd
     for (int mu = 0; mu < 4; mu++) 
 	{
-        for (int beta = 0; beta < 4; beta++) 
+        for (int nu = 0; nu < 4; nu++) 
 		{
-            for (int nu = 0; nu < 4; nu++) 
+            for (int beta = 0; beta < 4; beta++) 
 			{
                 VEC_TYPE sum = VEC_SET0_PD();
                 for (int sigma = 0; sigma < 4; sigma++) 
@@ -71,18 +71,17 @@ void christoffel_AVX(VEC_TYPE g[4][4], VEC_TYPE christoffel[4][4][4])
                     }
 
                     VEC_TYPE g_mu_sigma = g_aligned[mu][sigma];
-                    VEC_TYPE g_sigma_beta = g_aligned[sigma][beta];
+                    VEC_TYPE g_nu_sigma = g_aligned[nu][sigma];
                     VEC_TYPE g_beta_sigma = g_aligned[beta][sigma];
-                    VEC_TYPE g_beta_nu = g_aligned[beta][nu];
 
-                    VEC_TYPE term1 = VEC_MUL_PD(g_mu_sigma, g_sigma_beta);
+                    VEC_TYPE term1 = VEC_MUL_PD(g_nu_sigma, g_beta_sigma);
                     VEC_TYPE term2 = VEC_MUL_PD(g_mu_sigma, g_beta_sigma);
-                    VEC_TYPE term3 = VEC_MUL_PD(g_mu_sigma, g_beta_nu);
+                    VEC_TYPE term3 = VEC_MUL_PD(g_mu_sigma, g_nu_sigma);
 
                     sum = VEC_ADD_PD(sum, VEC_MUL_PD(half, VEC_SUB_PD(VEC_ADD_PD(term1, term2), term3)));
                 }
 
-                christoffel_aligned[mu][beta][nu] = sum;
+                christoffel_aligned[mu][nu][beta] = sum;
             }
         }
     }
@@ -90,9 +89,23 @@ void christoffel_AVX(VEC_TYPE g[4][4], VEC_TYPE christoffel[4][4][4])
 #ifdef DEBUG
     #pragma omp simd
     for (int mu = 0; mu < 4; mu++) 
-        for (int beta = 0; beta < 4; beta++) 
-            for (int nu = 0; nu < 4; nu++) 
-                printf("Christoffel[%d][%d][%d] = %f\n", mu, beta, nu, _mm256_cvtsd_f64(christoffel_aligned[mu][beta][nu]));
+        for (int nu = 0; nu < 4; nu++) 
+            for (int beta = 0; beta < 4; beta++) 
+                printf("Christoffel[%d][%d][%d] = %f\n", mu, nu, beta, _mm256_cvtsd_f64(christoffel_aligned[mu][nu][beta]));
+	for (int mu = 0; mu < 4; mu++) 
+	{
+		for (int nu = 0; nu < 4; nu++) 
+		{
+			for (int beta = 0; beta < 4; beta++) 
+			{
+				if (fabs(_mm256_cvtsd_f64(christoffel_aligned[mu][nu][beta]) - _mm256_cvtsd_f64(christoffel_aligned[mu][beta][nu])) > DELTA) 
+				{
+					printf("Christoffel[%d][%d][%d] != Christoffel[%d][%d][%d]\n", mu, nu, beta, mu, beta, nu);
+					exit(EXIT_FAILURE);
+				}
+			}
+		}
+	}
 #endif
 
 #ifdef AVX512F 

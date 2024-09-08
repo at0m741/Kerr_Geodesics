@@ -2,11 +2,11 @@ NAME = geodesic_solver
 NAME_PROFILING = geodesic_solver_profiling
 NAME_KNL_GCC = geodesic_solver_knl_gcc
 
-CC = gcc
+CC = /usr/local/opt/llvm/bin/clang
 
-AVX2_FLAGS = -g -lm -O3 -Wopenmp-simd -mavx2 -gstabs -ftree-loop-optimize \
-		-ftree-loop-distribution -fopenmp -masm=intel -ffast-math -march=native -mtune=native \
-		-funroll-loops -mavx2 -flto -falign-functions=32 -fsanitize=address -DAVX2
+AVX2_FLAGS = -g -lm -O3 -Wopenmp-simd -mavx2 \
+		-fopenmp -masm=intel -ffast-math -march=native -mtune=native \
+		-funroll-loops -mavx2 -flto -falign-functions=32 -fsanitize=address -DAVX2 -DDEBUG -fopenmp-simd 
 
 AVX512_FLAGS = -g -lm -O3 -Wopenmp-simd -mavx512f -mavx512cd -mavx512bw -mavx512dq -mavx512vl \
 		-gstabs -ftree-loop-optimize -ftree-loop-distribution -fopenmp -masm=intel -ffast-math \

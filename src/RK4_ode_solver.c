@@ -6,7 +6,7 @@
 /*   By: ltouzali <ltouzali@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/23 17:50:41 by ltouzali          #+#    #+#             */
-/*   Updated: 2024/09/01 20:04:23 by at0m             ###   ########.fr       */
+/*   Updated: 2024/09/05 22:20:33 by at0m             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,8 +28,18 @@ void geodesic_AVX(VEC_TYPE x[4], VEC_TYPE v[4], double lambda_max, VEC_TYPE chri
     int step = 0;
     double lambda = 0.0;
 	
-    __attribute__((aligned(ALIGNMENT))) VEC_TYPE k1[4], k2[4], k3[4], k4[4];
-    __attribute__((aligned(ALIGNMENT))) VEC_TYPE temp_x[4], temp_v[4];
+    VEC_TYPE *k1, *k2, *k3, *k4;
+	if (posix_memalign((void**)&k1, ALIGNMENT, 4 * sizeof(VEC_TYPE)) != 0 ||
+		posix_memalign((void**)&k2, ALIGNMENT, 4 * sizeof(VEC_TYPE)) != 0 ||
+		posix_memalign((void**)&k3, ALIGNMENT, 4 * sizeof(VEC_TYPE)) != 0 ||
+		posix_memalign((void**)&k4, ALIGNMENT, 4 * sizeof(VEC_TYPE)) != 0) 
+	{
+		perror("Memory allocation failed");
+		exit(1);
+	}    
+	__attribute__((aligned(ALIGNMENT))) VEC_TYPE temp_x[4], temp_v[4];
+
+	printf("Computing geodesics\n");
 	#pragma omp parallel
 	{	
         while (lambda < lambda_max) 
@@ -70,6 +80,13 @@ void geodesic_AVX(VEC_TYPE x[4], VEC_TYPE v[4], double lambda_max, VEC_TYPE chri
                 lambda += VEC_EXTRACT_D(step_size);
                 store_geodesic_point_AVX(x, lambda);
                 step++;
+				/* if (step % 1000 == 0) */
+				/* { */
+				/* 	printf("progress: %f\n", lambda / lambda_max); */
+				/* 	printf("step: %d\n", step); */
+				/* 	printf("x[0]: %f\n", VEC_EXTRACT_D(x[0])); */
+				/* 	printf("x[1]: %f\n", VEC_EXTRACT_D(x[1])); */
+				/* }	 */
             }
         }
 	}
@@ -77,6 +94,10 @@ void geodesic_AVX(VEC_TYPE x[4], VEC_TYPE v[4], double lambda_max, VEC_TYPE chri
 #ifdef AVX2
     _mm256_zeroupper();
 #endif
+	free(k1);
+	free(k2);
+	free(k3);
+	free(k4);
 
     printf("Geodesics computed\n");
 }
