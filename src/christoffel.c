@@ -6,7 +6,7 @@
 /*   By: ltouzali <ltouzali@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/23 18:12:02 by ltouzali          #+#    #+#             */
-/*   Updated: 2024/09/08 23:17:40 by at0m             ###   ########.fr       */
+/*   Updated: 2024/09/08 23:19:19 by at0m             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -65,23 +65,16 @@ void christoffel_AVX(VEC_TYPE g[4][4], VEC_TYPE christoffel[4][4][4], VEC_TYPE g
 
 				for (int sigma = 0; sigma < 4; sigma++) 
 				{
-					// Prendre en compte les dérivées partielles des composants de la métrique
 					VEC_TYPE dg_sigma_nu_dbeta = DIFFERENCE_FINITE(g_aligned[sigma][nu], g_aligned[sigma + 1][nu], beta);
 					VEC_TYPE dg_sigma_beta_dnu = DIFFERENCE_FINITE(g_aligned[sigma][beta], g_aligned[sigma + 1][beta], nu);
 					VEC_TYPE dg_nu_beta_dsigma = DIFFERENCE_FINITE(g_aligned[nu][beta], g_aligned[nu][beta + 1], sigma);
 
-					// Calculer chaque terme de la formule du symbole de Christoffel
 					VEC_TYPE term1 = VEC_MUL_PD(gcon[sigma][mu], VEC_ADD_PD(dg_sigma_nu_dbeta, dg_sigma_beta_dnu));
 					VEC_TYPE term2 = VEC_MUL_PD(gcon[sigma][mu], dg_nu_beta_dsigma);
 
-					// Soustraction des termes comme dans la formule
 					sum = VEC_ADD_PD(sum, VEC_SUB_PD(term1, term2));
 				}
-
-				// Appliquer le facteur de 1/2
 				sum = VEC_MUL_PD(half, sum);
-
-				// Stocker dans la matrice des symboles de Christoffel
 				christoffel_aligned[mu][nu][beta] = sum;
 			}
 		}
