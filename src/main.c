@@ -6,7 +6,7 @@
 /*   By: ltouzali <ltouzali@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/25 15:03:26 by ltouzali          #+#    #+#             */
-/*   Updated: 2024/09/08 22:06:04 by at0m             ###   ########.fr       */
+/*   Updated: 2024/09/08 23:17:20 by at0m             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,10 +43,11 @@ void print_arch()
 int main(int argc, char **argv)
 {
 	VEC_TYPE	dt = VEC_SET_PD(DT);
-	VEC_TYPE	x[4], v[4], g[4][4], christoffel_avx[4][4][4];
+	VEC_TYPE	x[4], v[4], g[4][4], christoffel_avx[4][4][4], g_contr[4][4];
 	double		x_vals[4] = {20.0, M_PI * 2.3, 1.1, 0.0};
 	double		v_vals[4] = {10.2, 1.0, -1.0, 27.0};
 	double		g_vals[NDIM][NDIM] = {0};
+	double		g_con[NDIM][NDIM] = {0};
 	
 	#pragma omp for simd
 	for (int i = 0; i < NDIM; i++) 
@@ -56,14 +57,19 @@ int main(int argc, char **argv)
 	}
 
 	gcov(x_vals, g_vals);
-	gcon(x_vals[1], x_vals[2], g_vals);
+	gcon(x_vals[1], x_vals[2], g_con);
 	printf("Compute Christoffel symbols\n");
 	#pragma omp for simd
 	for (int i = 0; i < NDIM; i++) 
 		for (int j = 0; j < NDIM; j++)
 			g[i][j] = VEC_SET_PD(g_vals[i][j]);
-		
-	christoffel_AVX(g, christoffel_avx);
+	
+	#pragma omp for simd
+	for (int i = 0; i < NDIM; i++) 
+		for (int j = 0; j < NDIM; j++)
+			g_contr[i][j] = VEC_SET_PD(g_con[i][j]);
+
+	christoffel_AVX(g, christoffel_avx, g_contr);
 	printf("Compute geodesics equations using Runge Kutta..\n");
 	geodesic_AVX(x, v, max_dt, christoffel_avx, dt);
 	printf("writing to file..\n");

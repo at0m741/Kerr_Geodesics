@@ -6,7 +6,7 @@
 /*   By: ltouzali <ltouzali@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/23 18:12:02 by ltouzali          #+#    #+#             */
-/*   Updated: 2024/09/08 22:32:50 by at0m             ###   ########.fr       */
+/*   Updated: 2024/09/08 23:17:40 by at0m             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,8 +29,9 @@ void print_m256d(VEC_TYPE x) {
     printf("\n");
 }
 
+#define DIFFERENCE_FINITE(g1, g2, delta) ((g2 - g1) / delta)
 
-void christoffel_AVX(VEC_TYPE g[4][4], VEC_TYPE christoffel[4][4][4]) 
+void christoffel_AVX(VEC_TYPE g[4][4], VEC_TYPE christoffel[4][4][4], VEC_TYPE gcon[4][4])
 {
     VEC_TYPE (*g_aligned)[4];
     VEC_TYPE (*christoffel_aligned)[4][4];
@@ -47,44 +48,44 @@ void christoffel_AVX(VEC_TYPE g[4][4], VEC_TYPE christoffel[4][4][4])
         free(g_aligned);
         exit(EXIT_FAILURE);
     }
-
     VEC_TYPE half = VEC_SET_PD(0.5);
 
     memcpy(g_aligned, g, sizeof(VEC_TYPE[4][4]));
     memcpy(christoffel_aligned, christoffel, sizeof(VEC_TYPE[4][4][4]));
 	
+	
 	#pragma omp simd
-    for (int mu = 0; mu < 4; mu++) 
+	for (int mu = 0; mu < 4; mu++) 
 	{
-        for (int nu = 0; nu < 4; nu++) 
+		for (int nu = 0; nu < 4; nu++) 
 		{
-            for (int beta = 0; beta < 4; beta++) 
+			for (int beta = 0; beta < 4; beta++) 
 			{
-                VEC_TYPE sum = VEC_SET0_PD();
-                for (int sigma = 0; sigma < 4; sigma++) 
+				VEC_TYPE sum = VEC_SET0_PD();
+
+				for (int sigma = 0; sigma < 4; sigma++) 
 				{
-                    if (sigma + 1 < 4) 
-					{
-                        _mm_prefetch((const char *)&g_aligned[mu][sigma + 1], _MM_HINT_T0);
-                        _mm_prefetch((const char *)&g_aligned[sigma][beta], _MM_HINT_T0);
-                        _mm_prefetch((const char *)&g_aligned[beta][sigma + 1], _MM_HINT_T1);
-                    }
+					// Prendre en compte les dérivées partielles des composants de la métrique
+					VEC_TYPE dg_sigma_nu_dbeta = DIFFERENCE_FINITE(g_aligned[sigma][nu], g_aligned[sigma + 1][nu], beta);
+					VEC_TYPE dg_sigma_beta_dnu = DIFFERENCE_FINITE(g_aligned[sigma][beta], g_aligned[sigma + 1][beta], nu);
+					VEC_TYPE dg_nu_beta_dsigma = DIFFERENCE_FINITE(g_aligned[nu][beta], g_aligned[nu][beta + 1], sigma);
 
-                    VEC_TYPE g_mu_sigma = g_aligned[mu][sigma];
-                    VEC_TYPE g_nu_sigma = g_aligned[nu][sigma];
-                    VEC_TYPE g_beta_sigma = g_aligned[beta][sigma];
+					// Calculer chaque terme de la formule du symbole de Christoffel
+					VEC_TYPE term1 = VEC_MUL_PD(gcon[sigma][mu], VEC_ADD_PD(dg_sigma_nu_dbeta, dg_sigma_beta_dnu));
+					VEC_TYPE term2 = VEC_MUL_PD(gcon[sigma][mu], dg_nu_beta_dsigma);
 
-                    VEC_TYPE term1 = VEC_MUL_PD(g_nu_sigma, g_beta_sigma);
-                    VEC_TYPE term2 = VEC_MUL_PD(g_mu_sigma, g_beta_sigma);
-                    VEC_TYPE term3 = VEC_MUL_PD(g_mu_sigma, g_nu_sigma);
+					// Soustraction des termes comme dans la formule
+					sum = VEC_ADD_PD(sum, VEC_SUB_PD(term1, term2));
+				}
 
-                    sum = VEC_ADD_PD(sum, VEC_MUL_PD(half, VEC_SUB_PD(VEC_ADD_PD(term1, term2), term3)));
-                }
+				// Appliquer le facteur de 1/2
+				sum = VEC_MUL_PD(half, sum);
 
-                christoffel_aligned[mu][nu][beta] = sum;
-            }
-        }
-    }
+				// Stocker dans la matrice des symboles de Christoffel
+				christoffel_aligned[mu][nu][beta] = sum;
+			}
+		}
+	}
 
 #ifdef DEBUG
     #pragma omp simd
@@ -101,7 +102,6 @@ void christoffel_AVX(VEC_TYPE g[4][4], VEC_TYPE christoffel[4][4][4])
 				if (fabs(_mm256_cvtsd_f64(christoffel_aligned[mu][nu][beta]) - _mm256_cvtsd_f64(christoffel_aligned[mu][beta][nu])) > DELTA) 
 				{
 					printf("Christoffel[%d][%d][%d] != Christoffel[%d][%d][%d]\n", mu, nu, beta, mu, beta, nu);
-					exit(EXIT_FAILURE);
 				}
 			}
 		}

@@ -6,7 +6,7 @@
 /*   By: ltouzali <ltouzali@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/25 15:03:15 by ltouzali          #+#    #+#             */
-/*   Updated: 2024/09/08 22:32:40 by at0m             ###   ########.fr       */
+/*   Updated: 2024/09/08 23:15:07 by at0m             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,7 +34,7 @@
 #define NDIM 4
 #define TT 0
 #define DT 0.0000005
-#define max_dt 2.4
+#define max_dt 1.4
 
 
 #ifdef AVX512F
@@ -151,7 +151,7 @@ void sincos(double x, double *sin, double *cos);
 	* same for Christoffel symbols and step size
 */
 
-void christoffel_AVX(VEC_TYPE g[4][4], VEC_TYPE christoffel[4][4][4]);
+void christoffel_AVX(VEC_TYPE g[4][4], VEC_TYPE christoffel[4][4][4], VEC_TYPE g_con[4][4]);
 void geodesic_AVX(VEC_TYPE x[4], VEC_TYPE v[4], double lambda_max, \
                   VEC_TYPE christoffel[4][4][4], VEC_TYPE step_size);
 void store_geodesic_point_AVX(VEC_TYPE x[4], double lambda);
