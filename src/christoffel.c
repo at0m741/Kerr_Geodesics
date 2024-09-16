@@ -6,7 +6,7 @@
 /*   By: ltouzali <ltouzali@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/23 18:12:02 by ltouzali          #+#    #+#             */
-/*   Updated: 2024/09/08 23:19:19 by at0m             ###   ########.fr       */
+/*   Updated: 2024/09/09 17:07:09 by at0m             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,140 +14,82 @@
 
 extern double (*geodesic_points)[5];
 extern int num_points;
-#define DELTA 1.e-5
+
 /*
 *  Calculate the Christoffel symbols
 *  The Christoffel symbols are calculated using the metric tensor
 *  and the inverse metric tensor
 *  All calculations are done in parallel using OpenMP and AVX2 instructions 
 */
+#define DERIV_CENTREE(f, X, h, gcov_out_forward, gcov_out_backward, i, j) ({ \
+    double X_forward[NDIM], X_backward[NDIM]; \
+    for (int k = 0; k < NDIM; ++k) { \
+        X_forward[k] = X[k]; \
+        X_backward[k] = X[k]; \
+    } \
+    X_forward[i] += (h); \
+    X_backward[i] -= (h); \
+    f(X_forward, gcov_out_forward); \
+    f(X_backward, gcov_out_backward); \
+    (gcov_out_forward[j][j] - gcov_out_backward[j][j]) / (2.0 * (h)); \
+})
 
-void print_m256d(VEC_TYPE x) {
-    double *ptr = (double *)&x;
-    for (int i = 0; i < 4; i++)
-        printf("%f ", ptr[i]);
-    printf("\n");
-}
+void christoffel_symbols(double X[NDIM], double h, double gamma[NDIM][NDIM][NDIM]) {
+    double _gcov[NDIM][NDIM];
+    double _gcon[NDIM][NDIM];
+    double dgcov_mu[NDIM][NDIM][NDIM];
 
-#define DIFFERENCE_FINITE(g1, g2, delta) ((g2 - g1) / delta)
+    double gcov_forward[NDIM][NDIM], gcov_backward[NDIM][NDIM];
 
-void christoffel_AVX(VEC_TYPE g[4][4], VEC_TYPE christoffel[4][4][4], VEC_TYPE gcon[4][4])
-{
-    VEC_TYPE (*g_aligned)[4];
-    VEC_TYPE (*christoffel_aligned)[4][4];
-    
-    if (posix_memalign((void **)&g_aligned, ALIGNMENT, sizeof(VEC_TYPE[4][4])) != 0) 
-	{
-        perror("Failed to allocate memory for g_aligned");
-        exit(EXIT_FAILURE);
+    gcov(X, _gcov);
+    invert_using_gsl(_gcov, _gcon);
+	verify_metric(_gcov, _gcon);
+    for (int mu = 0; mu < NDIM; mu++) {
+        for (int nu = 0; nu < NDIM; nu++) {
+            for (int sigma = 0; sigma < NDIM; sigma++) {
+                dgcov_mu[mu][nu][sigma] = DERIV_CENTREE(gcov, X, h, gcov_forward, gcov_backward, mu, sigma);
+                printf("dgcov_mu[%d][%d][%d] = %f\n", mu, nu, sigma, dgcov_mu[mu][nu][sigma]);
+            }
+        }
     }
 
-    if (posix_memalign((void **)&christoffel_aligned, ALIGNMENT, sizeof(VEC_TYPE[4][4][4])) != 0) 
-	{
-        perror("Failed to allocate memory for christoffel_aligned");
-        free(g_aligned);
-        exit(EXIT_FAILURE);
-    }
-    VEC_TYPE half = VEC_SET_PD(0.5);
+    VEC_TYPE vec_gcon, vec_dgcov_mu_nu_sigma, vec_dgcov_nu_mu_sigma, vec_dgcov_sigma_mu_nu;
+    VEC_TYPE vec_sum, vec_half, vec_gamma_lambda_mu_nu;
 
-    memcpy(g_aligned, g, sizeof(VEC_TYPE[4][4]));
-    memcpy(christoffel_aligned, christoffel, sizeof(VEC_TYPE[4][4][4]));
-	
-	
-	#pragma omp simd
-	for (int mu = 0; mu < 4; mu++) 
-	{
-		for (int nu = 0; nu < 4; nu++) 
-		{
-			for (int beta = 0; beta < 4; beta++) 
-			{
-				VEC_TYPE sum = VEC_SET0_PD();
+    vec_half = VEC_SET1_PD(0.5);  // Préparer la constante 0.5 en vecteur AVX
 
-				for (int sigma = 0; sigma < 4; sigma++) 
-				{
-					VEC_TYPE dg_sigma_nu_dbeta = DIFFERENCE_FINITE(g_aligned[sigma][nu], g_aligned[sigma + 1][nu], beta);
-					VEC_TYPE dg_sigma_beta_dnu = DIFFERENCE_FINITE(g_aligned[sigma][beta], g_aligned[sigma + 1][beta], nu);
-					VEC_TYPE dg_nu_beta_dsigma = DIFFERENCE_FINITE(g_aligned[nu][beta], g_aligned[nu][beta + 1], sigma);
+    for (int lambda = 0; lambda < NDIM; lambda++) {
+        for (int mu = 0; mu < NDIM; mu++) {
+            for (int nu = 0; nu < NDIM; nu++) {
+                vec_sum = VEC_SET0_PD();  // Initialiser la somme à 0
 
-					VEC_TYPE term1 = VEC_MUL_PD(gcon[sigma][mu], VEC_ADD_PD(dg_sigma_nu_dbeta, dg_sigma_beta_dnu));
-					VEC_TYPE term2 = VEC_MUL_PD(gcon[sigma][mu], dg_nu_beta_dsigma);
+                for (int sigma = 0; sigma < NDIM; sigma++) {
+                    vec_gcon = VEC_SET1_PD(_gcon[lambda][sigma]);
 
-					sum = VEC_ADD_PD(sum, VEC_SUB_PD(term1, term2));
-				}
-				sum = VEC_MUL_PD(half, sum);
-				christoffel_aligned[mu][nu][beta] = sum;
-			}
-		}
-	}
+                    vec_dgcov_mu_nu_sigma   = VEC_SET1_PD(dgcov_mu[mu][nu][sigma]);
+                    vec_dgcov_nu_mu_sigma   = VEC_SET1_PD(dgcov_mu[nu][mu][sigma]);
+                    vec_dgcov_sigma_mu_nu   = VEC_SET1_PD(dgcov_mu[sigma][mu][nu]);
 
-#ifdef DEBUG
-    #pragma omp simd
-    for (int mu = 0; mu < 4; mu++) 
-        for (int nu = 0; nu < 4; nu++) 
-            for (int beta = 0; beta < 4; beta++) 
-                printf("Christoffel[%d][%d][%d] = %f\n", mu, nu, beta, _mm256_cvtsd_f64(christoffel_aligned[mu][nu][beta]));
-	for (int mu = 0; mu < 4; mu++) 
-	{
-		for (int nu = 0; nu < 4; nu++) 
-		{
-			for (int beta = 0; beta < 4; beta++) 
-			{
-				if (fabs(_mm256_cvtsd_f64(christoffel_aligned[mu][nu][beta]) - _mm256_cvtsd_f64(christoffel_aligned[mu][beta][nu])) > DELTA) 
-				{
-					printf("Christoffel[%d][%d][%d] != Christoffel[%d][%d][%d]\n", mu, nu, beta, mu, beta, nu);
-				}
-			}
-		}
-	}
-#endif
+                    VEC_TYPE vec_term = VEC_ADD_PD(vec_dgcov_mu_nu_sigma, vec_dgcov_nu_mu_sigma);
+                    vec_term = VEC_SUB_PD(vec_term, vec_dgcov_sigma_mu_nu);
+                    vec_term = VEC_MUL_PD(vec_gcon, vec_term);
 
-#ifdef AVX512F 
-	printf("AVX512");
-#endif
-#ifdef AVX2
-    _mm256_zeroupper();
-#endif
-    memcpy(christoffel, christoffel_aligned, sizeof(VEC_TYPE[4][4][4]));
-    free(g_aligned);
-    free(christoffel_aligned);
-}
-
-
-
-void riemann(double g[4][4], double christoffel[4][4][4], double riemann[4][4][4][4])
-{
-
-#ifdef _OPENMP
-    printf("OpenMP is supported and used\n");
-#else
-    printf("OpenMP is not supported\n");
-#endif
-    
-	#pragma omp parallel for collapse(4)
-    for (int i = 1; i < 4; i++) 
-	{
-        for (int j = 1; j < 4; j++) 
-		{
-            for (int k = 1; k < 4; k++) 
-			{
-                for (int l = 1; l < 4; l++) 
-				{
-                    double sum = 0;
-                    #pragma omp simd reduction(+:sum) aligned(christoffel,g:ALIGNMENT)
-                    for (int m = 0; m < 4; m++) 
-                    {
-                        sum += (1 / (2 * g[0][0])) * (christoffel[k][i][m] *\
-													  christoffel[m][j][k] - christoffel[k][j][m] * christoffel[m][i][k]);
-                        sum += (1 / (2 * g[0][0])) * (christoffel[k][i][m] * (g[m][j] * g[k][k] - g[m][k] * g[j][k]) - \
-													  christoffel[k][j][m] * (g[m][i] * g[k][k] - g[m][k] * g[i][k]));
-                        sum += (1 / (2 * g[0][0])) * (christoffel[m][i][k] * (g[m][j] * g[k][k] - g[m][k] * g[j][k]) - \
-													  christoffel[m][j][k] * (g[m][i] * g[k][k] - g[m][k] * g[i][k]));
-                    }
-					riemann[i][j][k][l] = sum;
-                    printf("Riemann[%d][%d][%d][%d] = %f\n", i, j, k, l, riemann[i][j][k][l]);
+                    vec_sum = VEC_ADD_PD(vec_sum, vec_term);  // Ajouter au vecteur somme
                 }
+
+                vec_gamma_lambda_mu_nu = VEC_MUL_PD(vec_sum, vec_half);  // Multiplier par 0.5
+                gamma[lambda][mu][nu] = VEC_EXTRACT_D(vec_gamma_lambda_mu_nu);  // Extraire et stocker
+            }
+        }
+    }
+
+    printf("Christoffel symbols calculated\n");
+    printf("result : \n");
+    for (int i = 0; i < NDIM; i++) {
+        for (int j = 0; j < NDIM; j++) {
+            for (int k = 0; k < NDIM; k++) {
+                printf("gamma[%d][%d][%d] = %f\n", i, j, k, gamma[i][j][k]);
             }
         }
     }
 }
-    

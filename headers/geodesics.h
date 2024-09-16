@@ -6,7 +6,7 @@
 /*   By: ltouzali <ltouzali@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/25 15:03:15 by ltouzali          #+#    #+#             */
-/*   Updated: 2024/09/08 23:15:07 by at0m             ###   ########.fr       */
+/*   Updated: 2024/09/09 23:44:35 by at0m             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,19 +23,35 @@
 #include <sys/time.h>
 #include <fcntl.h>
 
+#undef a
+#undef G
+#undef M
+#undef c
+#undef BLOCK_SIZE
+#undef BUFFER_SIZE
+#undef SMALL
+#undef NDIM
+#undef TT
+#undef DT
+#undef max_dt
+
+#include <gsl/gsl_linalg.h>
+#include <gsl/gsl_matrix.h>
+#include <gsl/gsl_permutation.h>
 #define MAX_POINTS 100000
-#define c 299792458.0
-#define G 6.67430e-11
+#define c 1.0 
+#define G 1.0
 #define M 1.0
-#define a 0.935
+#define a 0.9375
 #define BLOCK_SIZE 4
 #define BUFFER_SIZE 1024
 #define SMALL 1.e-40
 #define NDIM 4
 #define TT 0
-#define DT 0.0000005
-#define max_dt 1.4
+#define DT 0.0000004
+#define max_dt 7.0
 
+#define TOLERANCE 1e-6
 
 #ifdef AVX512F
 	#pragma message "AVX512"
@@ -88,6 +104,34 @@ typedef double __attribute__((aligned(ALIGNMENT))) ldouble_a;
 #endif
 
 
+
+#define CHECK_GEODESIC_STABILITY_AVX(x, v, g, energy_initial, L_initial, threshold) { \
+    VEC_TYPE energy_vec = VEC_SET0_PD(); \
+    VEC_TYPE L_vec = VEC_SET0_PD(); \
+    VEC_TYPE norm_vec = VEC_SET0_PD(); \
+    \
+    for (int mu = 0; mu < 4; mu++) { \
+        for (int nu = 0; nu < 4; nu++) { \
+            VEC_TYPE g_mu_nu = g[mu][nu]; \
+            VEC_TYPE v_mu = v[mu]; \
+            VEC_TYPE v_nu = v[nu]; \
+            VEC_TYPE energy_term = VEC_MUL_PD(g_mu_nu, VEC_MUL_PD(v_mu, v_nu)); \
+            energy_vec = VEC_SUB_PD(energy_vec, energy_term); \
+            norm_vec = VEC_ADD_PD(norm_vec, VEC_MUL_PD(g_mu_nu, VEC_MUL_PD(v_mu, v_nu))); \
+        } \
+    } \
+    \
+    VEC_TYPE g_phi_phi = g[3][3]; \
+    VEC_TYPE v_phi = v[3]; \
+    L_vec = VEC_MUL_PD(g_phi_phi, v_phi); \
+    \
+    double energy = VEC_EXTRACT_D(energy_vec); \
+    double L = VEC_EXTRACT_D(L_vec); \
+    double norm = VEC_EXTRACT_D(norm_vec); \
+    \
+  }
+
+
 #define CALCULATE_K(k, src_v, christoffel) \
     for (int mu = 0; mu < 4; mu++) { \
         k[mu] = src_v[mu]; \
@@ -109,13 +153,9 @@ typedef double __attribute__((aligned(ALIGNMENT))) ldouble_a;
 
 #define UPDATE_POSITIONS(x, v, k, step, temp_x, temp_v) \
     for (int mu = 0; mu < 4; mu++) { \
-        _mm_prefetch((const char *)&temp_x[mu], _MM_HINT_NTA); \
-        _mm_prefetch((const char *)&temp_v[mu], _MM_HINT_NTA); \
         temp_x[mu] = VEC_ADD_PD(x[mu], VEC_MUL_PD(step, k[mu])); \
         temp_v[mu] = VEC_ADD_PD(v[mu], VEC_MUL_PD(step, k[mu])); \
     }
-
-
 /** 
     * @brief riemann - Calculate the Riemann tensor (optional but can be called from main after the Christoffel symbols are calculated)
     * @param g - the metric tensor
@@ -151,7 +191,11 @@ void sincos(double x, double *sin, double *cos);
 	* same for Christoffel symbols and step size
 */
 
-void christoffel_AVX(VEC_TYPE g[4][4], VEC_TYPE christoffel[4][4][4], VEC_TYPE g_con[4][4]);
+void christoffel_symbols(double X[NDIM], double h, double gamma[NDIM][NDIM][NDIM]); 
 void geodesic_AVX(VEC_TYPE x[4], VEC_TYPE v[4], double lambda_max, \
-                  VEC_TYPE christoffel[4][4][4], VEC_TYPE step_size);
+                  VEC_TYPE christoffel[4][4][4], VEC_TYPE step_size, VEC_TYPE g[4][4]);
 void store_geodesic_point_AVX(VEC_TYPE x[4], double lambda);
+void invert_metric(double gcov[][NDIM], double gcon[][NDIM]);
+void invert_using_gsl(double gcov[NDIM][NDIM], double gcon[NDIM][NDIM]);
+void Boyer_lindquist_coord(double *X, double *r, double *th);
+void verify_metric(double gcov[NDIM][NDIM], double gcon[NDIM][NDIM]);
