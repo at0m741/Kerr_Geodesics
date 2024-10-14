@@ -3,13 +3,13 @@ NAME_PROFILING = geodesic_solver_profiling
 NAME_KNL_GCC = geodesic_solver_knl_gcc
 
 
-CC = /usr/local/opt/llvm/bin/clang
+CC = gcc
 
-AVX2_FLAGS = -lm -O3 -Wopenmp -mavx2 \
-             -fopenmp -masm=intel -ffast-math -march=native -mtune=native \
-             -funroll-loops -flto -falign-functions=32 -fsanitize=address \
-             -DAVX2 \
-             -I/usr/local/Cellar/gsl/2.8/include/ -L/usr/local/opt/gsl/lib -lgsl -lgslcblas
+AVX2_FLAGS = -lm -O3 -fopenmp -mavx2 \
+             -masm=intel -ffast-math -march=native -mtune=native \
+             -funroll-loops -flto -falign-functions=32 \
+             -DAVX2 -g\
+             
 
 AVX512_FLAGS = -g -lm -O3 -Wopenmp-simd -mavx512f -mavx512cd -mavx512bw -mavx512dq -mavx512vl \
 		-gstabs -ftree-loop-optimize -ftree-loop-distribution -fopenmp -masm=intel -ffast-math \

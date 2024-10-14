@@ -6,7 +6,7 @@
 /*   By: ltouzali <ltouzali@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/25 15:03:26 by ltouzali          #+#    #+#             */
-/*   Updated: 2024/09/09 23:44:51 by at0m             ###   ########.fr       */
+/*   Updated: 2024/10/09 23:54:52 by babonnet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -53,6 +53,7 @@ void initialize_light_geodesic(double v[4], double g[4][4]) {
                 + g[3][3] * v[3] * v[3];
 
     v[2] = sqrt(fabs(-term / g[2][2]));
+	v[2] = 0.0;
     printf("Initialized velocity for light: v[0] = %f, v[1] = %f, v[2] = %f, v[3] = %f\n",
            v[0], v[1], v[2], v[3]);
 }
@@ -61,7 +62,7 @@ int main(int argc, char **argv)
 {
 	VEC_TYPE	dt = VEC_SET_PD(DT);
 	VEC_TYPE	x[4], v[4], g[4][4], christoffel_avx[4][4][4], g_contr[4][4];
-	double		x_vals[4] = {3.0, M_PI / 2.0, 0.0, 0.0};
+	double		x_vals[4] = {4.0, M_PI / 2.0, M_PI/1.3, 0.0};; // {r, theta, phi, t}
 	double		v_vals[4] = {1.0, 0.4, 0.0, 1.0};
 	double		g_vals[NDIM][NDIM] = {0};
 	double		g_con[NDIM][NDIM] = {0};
@@ -94,11 +95,11 @@ int main(int argc, char **argv)
 			for (int k = 0; k < NDIM; k++)
 				christoffel_avx[i][j][k] = VEC_SET_PD(dgcov_mu[i][j][k]);
 	gcov(x_vals, g_vals);
+
 	#pragma omp for simd
 	for (int i = 0; i < NDIM; i++) 
 		for (int j = 0; j < NDIM; j++)
 			g[i][j] = VEC_SET_PD(g_vals[i][j]);
-	initialize_light_geodesic(v_vals, g_vals);
 
 	printf("Compute geodesics equations using Runge Kutta..\n");
 	geodesic_AVX(x, v, max_dt, christoffel_avx, dt, g); 

@@ -6,7 +6,7 @@
 /*   By: ltouzali <ltouzali@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/25 15:03:15 by ltouzali          #+#    #+#             */
-/*   Updated: 2024/09/09 23:44:35 by at0m             ###   ########.fr       */
+/*   Updated: 2024/10/10 00:14:31 by babonnet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,9 +35,6 @@
 #undef DT
 #undef max_dt
 
-#include <gsl/gsl_linalg.h>
-#include <gsl/gsl_matrix.h>
-#include <gsl/gsl_permutation.h>
 #define MAX_POINTS 100000
 #define c 1.0 
 #define G 1.0
@@ -48,8 +45,8 @@
 #define SMALL 1.e-40
 #define NDIM 4
 #define TT 0
-#define DT 0.0000004
-#define max_dt 7.0
+#define DT 0.0000002
+#define max_dt 7.6
 
 #define TOLERANCE 1e-6
 
@@ -175,7 +172,7 @@ void gcov(double *X, double gcov[][NDIM]);
 void gcon(double r, double th, double gcon[][NDIM]);
 void geodesic(double x[4], double v[4], double lambda_max, double christoffel[4][4][4],\
               double step_size, void (*store_point)(double[], double));
-
+double calculate_angular_momentum(double v[4], double g[4][4]);
 /* 
 	* AVX2 and AVX512F intrinsics for the exponential, sine and cosine functions
 */
@@ -196,6 +193,6 @@ void geodesic_AVX(VEC_TYPE x[4], VEC_TYPE v[4], double lambda_max, \
                   VEC_TYPE christoffel[4][4][4], VEC_TYPE step_size, VEC_TYPE g[4][4]);
 void store_geodesic_point_AVX(VEC_TYPE x[4], double lambda);
 void invert_metric(double gcov[][NDIM], double gcon[][NDIM]);
-void invert_using_gsl(double gcov[NDIM][NDIM], double gcon[NDIM][NDIM]);
+int inverse_matrix(double mat[NDIM][NDIM], double inverse[NDIM][NDIM]); 
 void Boyer_lindquist_coord(double *X, double *r, double *th);
 void verify_metric(double gcov[NDIM][NDIM], double gcon[NDIM][NDIM]);

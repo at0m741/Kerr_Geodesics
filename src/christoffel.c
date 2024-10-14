@@ -6,7 +6,7 @@
 /*   By: ltouzali <ltouzali@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/23 18:12:02 by ltouzali          #+#    #+#             */
-/*   Updated: 2024/09/09 17:07:09 by at0m             ###   ########.fr       */
+/*   Updated: 2024/10/09 23:19:55 by babonnet         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -42,7 +42,7 @@ void christoffel_symbols(double X[NDIM], double h, double gamma[NDIM][NDIM][NDIM
     double gcov_forward[NDIM][NDIM], gcov_backward[NDIM][NDIM];
 
     gcov(X, _gcov);
-    invert_using_gsl(_gcov, _gcon);
+	inverse_matrix(_gcov, _gcon);
 	verify_metric(_gcov, _gcon);
     for (int mu = 0; mu < NDIM; mu++) {
         for (int nu = 0; nu < NDIM; nu++) {
