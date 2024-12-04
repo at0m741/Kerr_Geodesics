@@ -73,7 +73,6 @@ int inverse_matrix(double mat[NDIM][NDIM], double inverse[NDIM][NDIM]) {
     double det = determinant4x4(mat);
     double cofactorMat[NDIM][NDIM];
     cofactor(mat, cofactorMat);
-
     double adjugate[NDIM][NDIM];
     transpose(cofactorMat, adjugate);
 
