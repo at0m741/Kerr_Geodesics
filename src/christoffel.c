@@ -6,7 +6,7 @@
 /*   By: ltouzali <ltouzali@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/23 18:12:02 by ltouzali          #+#    #+#             */
-/*   Updated: 2024/10/09 23:19:55 by babonnet         ###   ########.fr       */
+/*   Updated: 2024/12/12 02:48:23 by at0m             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,18 +21,7 @@ extern int num_points;
 *  and the inverse metric tensor
 *  All calculations are done in parallel using OpenMP and AVX2 instructions 
 */
-#define DERIV_CENTREE(f, X, h, gcov_out_forward, gcov_out_backward, i, j) ({ \
-    double X_forward[NDIM], X_backward[NDIM]; \
-    for (int k = 0; k < NDIM; ++k) { \
-        X_forward[k] = X[k]; \
-        X_backward[k] = X[k]; \
-    } \
-    X_forward[i] += (h); \
-    X_backward[i] -= (h); \
-    f(X_forward, gcov_out_forward); \
-    f(X_backward, gcov_out_backward); \
-    (gcov_out_forward[j][j] - gcov_out_backward[j][j]) / (2.0 * (h)); \
-})
+
 
 void christoffel_symbols(double X[NDIM], double h, double gamma[NDIM][NDIM][NDIM]) {
     double _gcov[NDIM][NDIM];

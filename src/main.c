@@ -6,7 +6,7 @@
 /*   By: ltouzali <ltouzali@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/25 15:03:26 by ltouzali          #+#    #+#             */
-/*   Updated: 2024/10/09 23:54:52 by babonnet         ###   ########.fr       */
+/*   Updated: 2024/12/12 02:43:19 by at0m             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -62,7 +62,7 @@ int main(int argc, char **argv)
 {
 	VEC_TYPE	dt = VEC_SET_PD(DT);
 	VEC_TYPE	x[4], v[4], g[4][4], christoffel_avx[4][4][4], g_contr[4][4];
-	double		x_vals[4] = {4.0, M_PI / 2.0, M_PI/1.3, 0.0};; // {r, theta, phi, t}
+	double		x_vals[4] = {0.4, M_PI / 2.0, M_PI, 1.0};; // {r, theta, phi, t}
 	double		v_vals[4] = {1.0, 0.4, 0.0, 1.0};
 	double		g_vals[NDIM][NDIM] = {0};
 	double		g_con[NDIM][NDIM] = {0};

@@ -6,11 +6,12 @@
 /*   By: ltouzali <ltouzali@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/23 17:50:41 by ltouzali          #+#    #+#             */
-/*   Updated: 2024/09/09 18:01:43 by at0m             ###   ########.fr       */
+/*   Updated: 2024/12/12 02:35:18 by at0m             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../headers/geodesics.h"
+#include <immintrin.h>
 
 /**
 	* @brief Calculate the k1, k2, k3, k4 terms for the geodesic equation
@@ -23,13 +24,14 @@
             then compare k4 and k5 to get the error and adjust the step size 
 */
 
-void geodesic_AVX(VEC_TYPE x[4], VEC_TYPE v[4], double lambda_max, VEC_TYPE christoffel[4][4][4], VEC_TYPE step_size, VEC_TYPE g[4][4]) 
+void geodesic_AVX(VEC_TYPE x[4], VEC_TYPE v[4], double lambda_max, VEC_TYPE christoffel[4][4][4], \
+				  VEC_TYPE step_size, VEC_TYPE g[4][4]) 
 {
     int step = 0;
     double lambda = 0.0;
     double energy_initial = 0.0, L_initial = 0.0;
-    double threshold = 1e-6; 
-
+    double threshold = 1e-6;
+	double gcon[4][4];
     VEC_TYPE energy_vec = VEC_SET0_PD();
     VEC_TYPE L_vec = VEC_SET0_PD();
 

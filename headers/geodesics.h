@@ -6,7 +6,7 @@
 /*   By: ltouzali <ltouzali@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/06/25 15:03:15 by ltouzali          #+#    #+#             */
-/*   Updated: 2024/10/10 00:14:31 by babonnet         ###   ########.fr       */
+/*   Updated: 2024/12/12 02:48:57 by at0m             ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -45,7 +45,7 @@
 #define SMALL 1.e-40
 #define NDIM 4
 #define TT 0
-#define DT 0.0000002
+#define DT 0.0000004
 #define max_dt 7.6
 
 #define TOLERANCE 1e-6
@@ -70,7 +70,6 @@
 #endif
 
 #ifdef AVX2
-	#pragma message "AVX2"
     #define ARCH				"AVX2"
     #define ALIGNMENT			32
     #define VEC_TYPE			__m256d
@@ -100,7 +99,18 @@ typedef double __attribute__((aligned(ALIGNMENT))) ldouble_a;
 	#define Plateform "Darwin (macOS)"
 #endif
 
-
+#define DERIV_CENTREE(f, X, h, gcov_out_forward, gcov_out_backward, i, j) ({ \
+    double X_forward[NDIM], X_backward[NDIM]; \
+    for (int k = 0; k < NDIM; ++k) { \
+        X_forward[k] = X[k]; \
+        X_backward[k] = X[k]; \
+    } \
+    X_forward[i] += (h); \
+    X_backward[i] -= (h); \
+    f(X_forward, gcov_out_forward); \
+    f(X_backward, gcov_out_backward); \
+    (gcov_out_forward[j][j] - gcov_out_backward[j][j]) / (2.0 * (h)); \
+})
 
 #define CHECK_GEODESIC_STABILITY_AVX(x, v, g, energy_initial, L_initial, threshold) { \
     VEC_TYPE energy_vec = VEC_SET0_PD(); \
