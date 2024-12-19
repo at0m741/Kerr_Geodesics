@@ -12,7 +12,6 @@
 
 #include "../headers/geodesics.h"
 
-
 extern double	(*geodesic_points)[5];
 extern int		num_points;
 
