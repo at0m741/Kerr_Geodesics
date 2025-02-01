@@ -1,19 +1,17 @@
-/* ************************************************************************** */
-/*                                                                            */
-/*                                                        :::      ::::::::   */
-/*   metric.c                                           :+:      :+:    :+:   */
-/*                                                    +:+ +:+         +:+     */
-/*   By: ltouzali <ltouzali@student.42.fr>          +#+  +:+       +#+        */
-/*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/06/22 14:44:57 by ltouzali          #+#    #+#             */
-/*   Updated: 2024/10/10 00:09:41 by babonnet         ###   ########.fr       */
-/*                                                                            */
-/* ************************************************************************** */
+/*
+*  Calculate the Christoffel symbols
+*  The Christoffel symbols are calculated using the metric tensor
+*  and the inverse metric tensor
+*  All calculations are done in parallel using OpenMP and AVX2 instructions 
+*/
+#include "Geodesics.h"
 
-#include "../headers/geodesics.h"
-extern double		(*geodesic_points)[5];
-extern int			num_points;
-int					i, j, k;
+extern double (*geodesic_points)[5];
+extern int num_points;
+int	i, j, k;
+#define TOLERANCE 1e-10
+#define DELTA 1e-6
+
 
 double determinant3x3(double mat[3][3]) {
     return mat[0][0] * (mat[1][1] * mat[2][2] - mat[1][2] * mat[2][1])
@@ -151,18 +149,66 @@ inline void gcov(double *X, double gcov[][NDIM])
     gcov[3][3] = (r * r + a * a + (2.0 * M * r * a * a * sin_theta2) / Sigma) * sin_theta2; 
     gcov[0][3] = gcov[3][0] = -((2.0 * M * r * a * sin_theta2) / Sigma);
 
+	for (i = 0; i < NDIM; i++) {
+		for (j = 0; j < NDIM; j++) {
+			printf("gcov[%d][%d] = %f\n", i, j, gcov[i][j]);
+		}
+	}
+
 }
 
+/*  */
+/* inline double calculate_angular_momentum(double v[4], double g[4][4]) { */
+/*     double g_phi_phi = g[3][3]; */
+/*     double g_t_phi = g[0][3]; */
+/*  */
+/*     double L_z = g_phi_phi * v[3] + g_t_phi * v[0]; */
+/*  */
+/*     return L_z; */
+/* } */
 
-inline double calculate_angular_momentum(double v[4], double g[4][4]) {
-    double g_phi_phi = g[3][3];
-    double g_t_phi = g[0][3];
 
-    double L_z = g_phi_phi * v[3] + g_t_phi * v[0];
+void calculate_metric(double x[NDIM], double g[NDIM][NDIM], double g_inv[NDIM][NDIM]) {
+    double r = x[1];
+    double theta = x[2];
+    
+    double sin_theta = sin(theta);
+    double cos_theta = cos(theta);
+    double sin_theta2 = sin_theta * sin_theta;
+    double cos_theta2 = cos_theta * cos_theta;
+    
+    double Sigma = r * r + a * a * cos_theta2;
+    double Delta = r * r - 2.0 * M * r + a * a;
+    
+    memset(g, 0, sizeof(double) * NDIM * NDIM);
+    memset(g_inv, 0, sizeof(double) * NDIM * NDIM);
+    
+    g[0][0] = -(1.0 - (2.0 * M * r) / Sigma);
+    g[1][1] = Sigma / Delta;
+    g[2][2] = Sigma;
+    g[3][3] = sin_theta2 * (r * r + a * a + (2.0 * M * r * a * a * sin_theta2) / Sigma);
+    g[0][3] = - (2.0 * M * r * a * sin_theta2) / Sigma;
+    g[3][0] = g[0][3];
+    inverse_matrix(g, g_inv);
 
-    return L_z;
+	printf("Metric tensor calculated\n");
+	printf("result : \n");
+	for (int i = 0; i < NDIM; i++) {
+		for (int j = 0; j < NDIM; j++) {
+			printf("g[%d][%d] = %f\n", i, j, g[i][j]);
+		}
+	}
+
+	printf("\n");
+
+	printf("Inverse metric tensor calculated\n");
+	printf("result : \n");
+	for (int i = 0; i < NDIM; i++) {
+		for (int j = 0; j < NDIM; j++) {
+			printf("g_inv[%d][%d] = %f\n", i, j, g_inv[i][j]);
+		}
+	}
 }
-
 
 
 inline void gcon(double r, double th, double gcon[][NDIM])
@@ -225,4 +271,61 @@ void verify_metric(double gcov[NDIM][NDIM], double gcon[NDIM][NDIM])
 	print_matrix("identity", identity);
 
 }
+
+void calculate_christoffel(double X[NDIM], double h, double gamma[NDIM][NDIM][NDIM], double g[NDIM][NDIM], double g_inv[NDIM][NDIM]) {
+    double tmp[NDIM][NDIM][NDIM];
+    double Xh[NDIM], Xl[NDIM]; 
+    double gh[NDIM][NDIM], gl[NDIM][NDIM]; 
+
+    memset(gamma, 0, sizeof(double) * NDIM * NDIM * NDIM);
+
+    for (int mu = 0; mu < NDIM; mu++) {
+        for (int kap = 0; kap < NDIM; kap++) {
+            Xh[kap] = X[kap];
+            Xl[kap] = X[kap];
+        }
+
+        Xh[mu] += DELTA;
+        Xl[mu] -= DELTA;
+		calculate_metric(Xh, gh, g_inv);
+		calculate_metric(Xl, gl, g_inv);
+
+        for (int lam = 0; lam < NDIM; lam++) {
+            for (int nu = 0; nu < NDIM; nu++) {
+                gamma[lam][nu][mu] = (gh[lam][nu] - gl[lam][nu]) / (2 * DELTA);
+            }
+        }
+    }
+
+    for (int lam = 0; lam < NDIM; lam++) {
+        for (int nu = 0; nu < NDIM; nu++) {
+            for (int mu = 0; mu < NDIM; mu++) {
+                tmp[lam][nu][mu] = 0.5 * (gamma[nu][lam][mu] + 
+                                          gamma[mu][lam][nu] - 
+                                          gamma[mu][nu][lam]);
+            }
+        }
+    }
+
+    for (int lam = 0; lam < NDIM; lam++) {
+        for (int nu = 0; nu < NDIM; nu++) {
+            for (int mu = 0; mu < NDIM; mu++) {
+                gamma[lam][nu][mu] = 0.0;
+                for (int kap = 0; kap < NDIM; kap++) {
+                    gamma[lam][nu][mu] += g_inv[lam][kap] * tmp[kap][nu][mu];
+                }
+            }
+        }
+    }    
+	printf("Christoffel symbols calculated\n");
+    printf("result : \n");
+    for (int i = 0; i < NDIM; i++) {
+        for (int j = 0; j < NDIM; j++) {
+            for (int k = 0; k < NDIM; k++) {
+                printf("gamma[%d][%d][%d] = %f\n", i, j, k, gamma[i][j][k]);
+            }
+        }
+    }
+}
+
 
