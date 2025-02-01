@@ -192,22 +192,12 @@ void calculate_metric(double x[NDIM], double g[NDIM][NDIM], double g_inv[NDIM][N
     inverse_matrix(g, g_inv);
 
 	printf("Metric tensor calculated\n");
-	printf("result : \n");
-	for (int i = 0; i < NDIM; i++) {
-		for (int j = 0; j < NDIM; j++) {
-			printf("g[%d][%d] = %f\n", i, j, g[i][j]);
-		}
-	}
+	print_matrix("g", g);
 
 	printf("\n");
 
 	printf("Inverse metric tensor calculated\n");
-	printf("result : \n");
-	for (int i = 0; i < NDIM; i++) {
-		for (int j = 0; j < NDIM; j++) {
-			printf("g_inv[%d][%d] = %f\n", i, j, g_inv[i][j]);
-		}
-	}
+	print_matrix("g_inv", g_inv);
 }
 
 
@@ -289,7 +279,8 @@ void calculate_christoffel(double X[NDIM], double h, double gamma[NDIM][NDIM][ND
         Xl[mu] -= DELTA;
 		calculate_metric(Xh, gh, g_inv);
 		calculate_metric(Xl, gl, g_inv);
-
+		verify_metric(gh, g_inv);
+		verify_metric(gl, g_inv);
         for (int lam = 0; lam < NDIM; lam++) {
             for (int nu = 0; nu < NDIM; nu++) {
                 gamma[lam][nu][mu] = (gh[lam][nu] - gl[lam][nu]) / (2 * DELTA);
