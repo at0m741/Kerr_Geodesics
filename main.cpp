@@ -51,7 +51,7 @@ void calculate_ricci(double Riemann[NDIM][NDIM][NDIM][NDIM], double Ricci[NDIM][
 int main(int argc, char **argv)
 {
 	double r0 = 20.0;
-    double X[NDIM] = {0.4, r0, M_PI/4.0, 0.2};
+    double X[NDIM] = {0.0, r0, M_PI/2.0, 0.2};
     
 	if (argc < 2) {
 		printf("Usage: <options>\n");

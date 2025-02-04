@@ -44,12 +44,29 @@ void calculate_riemann(double Gamma[NDIM][NDIM][NDIM],
             }
         }
     }
+	double Kretschmann_scalar = 0.0;
+    for (int rho = 0; rho < NDIM; rho++) {
+        for (int sigma = 0; sigma < NDIM; sigma++) {
+            for (int mu = 0; mu < NDIM; mu++) {
+                for (int nu = 0; nu < NDIM; nu++) {
+                    Kretschmann_scalar += Riemann[rho][sigma][mu][nu] * \
+										  Riemann[rho][sigma][mu][nu];
+                }
+            }
+        }
+    }
+    if (Kretschmann_scalar > 1e10) {
+        printf("Kretschmann Scalar: INF (Singularity detected)\n");
+    } else {
+        printf("Kretschmann Scalar: %12.6f\n", Kretschmann_scalar);
+    }
 }
 
-void contract_riemann(double Riemann[NDIM][NDIM][NDIM][NDIM], double Ricci[NDIM][NDIM], double g_inv[NDIM][NDIM]) {
+void contract_riemann(double Riemann[NDIM][NDIM][NDIM][NDIM],\
+					  double Ricci[NDIM][NDIM], 
+					  double g_inv[NDIM][NDIM]) {
     memset(Ricci, 0, sizeof(double) * NDIM * NDIM);
-
-    for (int mu = 0; mu < NDIM; mu++) {
+	 for (int mu = 0; mu < NDIM; mu++) {
         for (int nu = 0; nu < NDIM; nu++) {
             for (int rho = 0; rho < NDIM; rho++) {
                 for (int sigma = 0; sigma < NDIM; sigma++) {
@@ -58,11 +75,19 @@ void contract_riemann(double Riemann[NDIM][NDIM][NDIM][NDIM], double Ricci[NDIM]
             }
         }
     }
-	printf("\nRicci tensor:\n");
-	for (int mu = 0; mu < NDIM; mu++) {
-		for (int nu = 0; nu < NDIM; nu++) {
-			printf("%12.6f\t", Ricci[mu][nu]);
-		}
-		printf("\n");
-	}
+    printf("\nRicci tensor:\n");
+    for (int mu = 0; mu < NDIM; mu++) {
+        for (int nu = 0; nu < NDIM; nu++) {
+            printf("%12.6f\t", Ricci[mu][nu]);
+        }
+        printf("\n");
+    }
+    
+    double Ricci_scalar = 0.0;
+    for (int mu = 0; mu < NDIM; mu++) {
+        for (int nu = 0; nu < NDIM; nu++) {
+            Ricci_scalar += g_inv[mu][nu] * Ricci[mu][nu];
+        }
+    }
+    printf("Ricci Scalar: %12.6f\n", Ricci_scalar);
 }
