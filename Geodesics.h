@@ -15,7 +15,7 @@
 #define c 299792458.0
 #define G 6.67430e-11
 #define M 1.0
-#define a 0.9
+#define a 0.0
 #define BLOCK_SIZE 1024
 #define BUFFER_SIZE 1024
 #define SMALL 1.e-40
