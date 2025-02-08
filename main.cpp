@@ -4,7 +4,6 @@
 double (*geodesic_points)[5] = NULL;
 int num_points = 0;
 
-		//calculate_christoffel(X, DELTA, christoffel, gcov, gcon, "kerr");
 int main(int argc, char **argv)
 {
 	double r0 = 20.0;
