@@ -98,5 +98,4 @@ void geodesic_AVX(__m256d x[4], __m256d v[4], double lambda_max,
         lambda += _mm256_cvtsd_f64(step_size);
         store_geodesic_point_AVX(x, lambda);
     }
-    printf("Utilisation d'AVX2 avec FMA et parallélisation OpenMP pour l'intégration des géodésiques\n");
 }

@@ -21,15 +21,12 @@
 #define NDIM 4
 #define TT 0
 #define DT 0.0000005
-#define max_dt 100840.0
+#define max_dt 450000.0
 #define ALIGNMENT 32
 #define AVX2 1
 #define ARCH "AVX2"
 #define TOLERANCE 1e-4
 #define DELTA 1e-4
-
-
-
 
 
 #if defined(__INTEL_COMPILER) || defined(__ICC) || \

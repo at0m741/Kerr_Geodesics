@@ -4,6 +4,37 @@ extern double (*geodesic_points)[5];
 extern int num_points;
 extern double a;
 
+double calculate_impact_parameter(double p_t, double p_phi, double g_tt, double g_tphi, double g_phiphi) {
+    return - (g_tphi * p_t + g_phiphi * p_phi) / (g_tt * p_t + g_tphi * p_phi);
+}
+
+double calculate_emission_angle(double p_r, double p_phi, double g_rr, double g_phiphi) {
+    return atan2(sqrt(g_phiphi) * p_phi, sqrt(g_rr) * p_r) * 180.0 / M_PI; 
+}
+
+double b_critique_kerr(double a, int sense) {
+    double r_ph = 2.0 * M;
+    for (int i = 0; i < 10; i++) {  
+        double f = 2 * r_ph - 3 * M + 4 * a * sqrt(M / r_ph) * sense;
+        double df = 2 - 2 * a * sqrt(M / (r_ph * r_ph * r_ph)) * sense;
+        r_ph -= f / df;
+    }
+    return (r_ph * r_ph + a * a) / (a + sense * sqrt(r_ph * r_ph * r_ph / M));
+}
+
+void compute_photon_properties(double g[4][4], double p[4]) {
+    double b = calculate_impact_parameter(p[0], p[3], g[0][0], g[0][3], g[3][3]);
+    double alpha = calculate_emission_angle(p[1], p[3], g[1][1], g[3][3]);
+
+    printf("Impact parameter b = %f\n", b);
+    printf("Emission angle alpha = %f\n", alpha);
+	if (b < b_critique_kerr(a, 1) && b > b_critique_kerr(a, -1)) {
+		printf("Photon is captured by the black hole\n");
+	} else {
+		printf("Photon is not captured by the black hole\n");
+	}
+}
+
 int Riemann_tensor() {
 	double r0 = 20.0;
 	double X[NDIM] = {0.0, r0, M_PI/4.0, 0.0};
@@ -23,11 +54,14 @@ int Riemann_tensor() {
 	}
 
 	for (int d = 0; d < NDIM; d++) {
-		calculate_Gamma_at_offset(X, d, DELTA / 2.0, DELTA, gcov_half, gcon_half, Gamma_plus_half_h[d], "kerr");
-		calculate_Gamma_at_offset(X, d, -DELTA / 2.0, DELTA, gcov_half, gcon_half, Gamma_minus_half_h[d], "kerr");
+		calculate_Gamma_at_offset(X, d, DELTA / 2.0, DELTA, gcov_half, \
+									gcon_half, Gamma_plus_half_h[d], "kerr");
+		calculate_Gamma_at_offset(X, d, -DELTA / 2.0, DELTA, gcov_half, \
+									gcon_half, Gamma_minus_half_h[d], "kerr");
 	}
 
-	calculate_riemann(christoffelR, Gamma_plus_h, Gamma_minus_h, Gamma_plus_half_h, Gamma_minus_half_h, Riemann, DELTA);
+	calculate_riemann(christoffelR, Gamma_plus_h, Gamma_minus_h, \
+					  Gamma_plus_half_h, Gamma_minus_half_h, Riemann, DELTA);
 	printf("Riemann tensor calculation completed\n");
 	print_riemann(Riemann);
 	contract_riemann(Riemann, Ricci, gconR);
@@ -64,7 +98,7 @@ int Geodesics_prob() {
 			}
 		}
 	}
-
+	compute_photon_properties(gcov, v);
 	auto start = std::chrono::high_resolution_clock::now();
 	geodesic_AVX(X_avx, v_avx, max_dt + 4, ( __m256d (*)[NDIM][NDIM] )christoffel_avx, _mm256_set1_pd(dt));
 	auto end = std::chrono::high_resolution_clock::now();
