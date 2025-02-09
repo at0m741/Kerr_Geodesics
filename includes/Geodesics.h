@@ -21,7 +21,7 @@
 #define NDIM 4
 #define TT 0
 #define DT 0.0000005
-#define max_dt 450000.0
+#define max_dt 150000.0
 #define ALIGNMENT 32
 #define AVX2 1
 #define ARCH "AVX2"
