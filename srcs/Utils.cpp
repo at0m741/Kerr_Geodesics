@@ -1,4 +1,4 @@
-#include "Geodesics.h"
+#include <Geodesics.h>
 
 void initialize_riemann_tensor(double R[NDIM][NDIM][NDIM][NDIM]) {
     for (int mu = 0; mu < NDIM; mu++) {

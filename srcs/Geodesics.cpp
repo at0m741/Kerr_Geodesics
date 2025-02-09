@@ -1,15 +1,4 @@
-#include "Geodesics.h"
-
-
-#include "Geodesics.h"
-#include <immintrin.h>
-#include <math.h>
-#include <stdio.h>
-
-#include "Geodesics.h"
-#include <immintrin.h>
-#include <math.h>
-#include <stdio.h>
+#include <Geodesics.h>
 
 void geodesic_AVX(__m256d x[4], __m256d v[4], double lambda_max,
                    __m256d christoffel[4][4][4], __m256d step_size) 

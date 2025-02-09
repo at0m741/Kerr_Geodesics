@@ -1,4 +1,4 @@
-#include "Geodesics.h"
+#include <Geodesics.h>
 
 double determinant3x3(double mat[3][3]) {
     return mat[0][0] * (mat[1][1] * mat[2][2] - mat[1][2] * mat[2][1])

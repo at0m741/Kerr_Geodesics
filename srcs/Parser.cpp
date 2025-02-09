@@ -1,9 +1,9 @@
-#include "Geodesics.h"
+#include <Geodesics.h>
 
 extern double	(*geodesic_points)[5];
 extern int		num_points;
 int				capacity = 0;
-
+extern double	a;
 /* 
 	* Write the geodesic points to a VTK file
 	* The VTK file will contain the geodesic points and the lambda values

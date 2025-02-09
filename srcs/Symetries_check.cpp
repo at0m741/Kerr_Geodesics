@@ -1,4 +1,4 @@
-#include "Geodesics.h"
+#include <Geodesics.h>
 
 void check_riemann_symmetries(double Riemann[NDIM][NDIM][NDIM][NDIM], double tolerance) {
     for (int rho = 0; rho < NDIM; rho++) {

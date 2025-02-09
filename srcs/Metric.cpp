@@ -1,14 +1,8 @@
-/*
-*  Calculate the Christoffel symbols
-*  The Christoffel symbols are calculated using the metric tensor
-*  and the inverse metric tensor
-*  All calculations are done in parallel using OpenMP and AVX2 instructions 
-*/
-#include "Geodesics.h"
+#include <Geodesics.h>
 
 extern double (*geodesic_points)[5];
 extern int num_points;
-int	i, j, k;
+extern double a;
 
 void minkowski_metric(double g[NDIM][NDIM], double g_inv[NDIM][NDIM]) {
 	memset(g, 0, sizeof(double) * NDIM * NDIM);
@@ -46,14 +40,6 @@ void calculate_metric(double x[NDIM], double g[NDIM][NDIM], double g_inv[NDIM][N
     g[0][3] = - (2.0 * M * r * a * sin_theta2) / Sigma;
     g[3][0] = g[0][3];
     inverse_matrix(g, g_inv);
-
-	printf("Metric tensor calculated\n");
-	print_matrix("g", g);
-
-	printf("\n");
-
-	printf("Inverse metric tensor calculated\n");
-	print_matrix("g_inv", g_inv);
 }
 
 

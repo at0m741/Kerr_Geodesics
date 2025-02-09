@@ -8,14 +8,13 @@
 #include <immintrin.h>
 #include <time.h>
 #include <xmmintrin.h>
-// #include <mpi.h>
+#include <chrono>
 #include <sys/time.h>
 
 #define MAX_POINTS 100000
 #define c 299792458.0
 #define G 6.67430e-11
 #define M 1.0
-#define a 0.935
 #define BLOCK_SIZE 1024
 #define BUFFER_SIZE 1024
 #define SMALL 1.e-40
@@ -159,3 +158,9 @@ void calculate_riemann(double Gamma[NDIM][NDIM][NDIM],
 void check_riemann_symmetries(double Riemann[NDIM][NDIM][NDIM][NDIM], double tolerance);
 void contract_riemann(double Riemann[NDIM][NDIM][NDIM][NDIM], double Ricci[NDIM][NDIM], double g_inv[NDIM][NDIM]);
 
+
+/* Problem specific functions */
+
+int Riemann_tensor();
+int Geodesics_prob();
+int Metric_prob();
