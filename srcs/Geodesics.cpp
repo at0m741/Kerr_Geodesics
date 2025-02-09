@@ -8,7 +8,7 @@ void geodesic_AVX(__m256d x[4], __m256d v[4], double lambda_max,
     __attribute__((aligned(32))) __m256d k3_x[4], k3_v[4];
     __attribute__((aligned(32))) __m256d k4_x[4], k4_v[4];
     __attribute__((aligned(32))) __m256d temp_x[4], temp_v[4];
-    double lambda = 0.0;
+    __attribute__((aligned(32)))  double lambda = 0.0;
 
     while (lambda < lambda_max) {
 
