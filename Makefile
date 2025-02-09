@@ -7,7 +7,7 @@ CFLAGS = -g -std=c++17 -O3 \
          -funroll-loops -fvectorize -ffp-contract=fast \
          -freciprocal-math -ffast-math -fstrict-aliasing \
          -fomit-frame-pointer -flto=full -mprefer-vector-width=256 \
-         -I$(INC_DIR)  # Utiliser -I pour <...>
+         -I$(INC_DIR)
 
 
 
