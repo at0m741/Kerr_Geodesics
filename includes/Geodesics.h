@@ -155,6 +155,11 @@ void calculate_riemann(double Gamma[NDIM][NDIM][NDIM],
 void check_riemann_symmetries(double Riemann[NDIM][NDIM][NDIM][NDIM], double tolerance);
 void contract_riemann(double Riemann[NDIM][NDIM][NDIM][NDIM], double Ricci[NDIM][NDIM], double g_inv[NDIM][NDIM]);
 
+double calculate_impact_parameter(double p_t, double p_phi, double g_tt, double g_tphi, double g_phiphi);
+double calculate_emission_angle(double p_r, double p_phi, double g_rr, double g_phiphi);
+double b_critique_kerr(double a, int sense);
+void compute_photon_properties(double g[4][4], double p[4]);
+
 
 /* Problem specific functions */
 
