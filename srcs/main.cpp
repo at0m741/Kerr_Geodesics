@@ -12,9 +12,11 @@ int main(int argc, char **argv)
 	if (argc < 3) {
 		printf("Usage: <options>\n");
 		printf("Options:\n");
-		printf("       -G <Spin value a> - geodesic calculation\n");
+		printf("       -G <Spin value a> - Geodesic calculation\n");
+		printf("       -L <Spin value a> - Light geodesics calculation\n");
 		printf("       -R <Spin value a> - Riemann tensor calculation\n");
 		printf("       -M <Spin value a> - Metric tensor calculation (a = 0 -> Schwarzschild or a > 0 -> Kerr)\n");
+		
 		return 0;
 	}
 
@@ -31,6 +33,12 @@ int main(int argc, char **argv)
 			return 0;
 		} 
 		Geodesics_prob();	
+	}else if (strncmp(argv[1], "-L", 2) == 0) {
+		if (argc < 3) {
+			printf("Usage: -L <Spin value a>\n");
+			return 0;
+		}
+		light_geodesics_prob();
 	} else if (strncmp(argv[1], "-M", 2) == 0) {
 		if (argc < 3) {
 			printf("Usage: -M <Spin value a>\n");

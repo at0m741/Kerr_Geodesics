@@ -163,4 +163,5 @@ void contract_riemann(double Riemann[NDIM][NDIM][NDIM][NDIM], double Ricci[NDIM]
 
 int Riemann_tensor();
 int Geodesics_prob();
+int light_geodesics_prob(); 
 int Metric_prob();
