@@ -10,20 +10,20 @@ CFLAGS = -g -std=c++17 -O3 \
          -I$(INC_DIR)  # Utiliser -I pour <...>
 
 
-# Répertoire des sources et des headers
+
 SRC_DIR = srcs
 INC_DIR = includes
 OBJ_DIR = build
 OUT_VTK_DIR = output
 
-# Recherche des fichiers .cpp dans srcs/
+
 SRC = $(wildcard $(SRC_DIR)/*.cpp)
 TOTAL := $(words $(SRC))
 
-# Création des objets dans build/
+
 OBJ = $(SRC:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
 
-# Couleurs pour l'affichage
+
 GREEN := \033[0;32m
 YELLOW := \033[0;33m
 RED := \033[0;31m
