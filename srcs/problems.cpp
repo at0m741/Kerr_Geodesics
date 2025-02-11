@@ -130,5 +130,8 @@ int Metric_prob() {
 	double X[NDIM] = {0.4, r0, M_PI/4.0, 0.2};
 	double gcov[NDIM][NDIM], gcon[NDIM][NDIM];
 	calculate_metric(X, gcov, gcon);
+
+	double gcov_kds[NDIM][NDIM], gcon_kds[NDIM][NDIM];
+	calculate_metric_kds(X, gcov_kds, gcon_kds);
 	return 0;
 }
