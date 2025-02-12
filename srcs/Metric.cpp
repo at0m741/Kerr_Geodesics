@@ -3,7 +3,7 @@
 extern double (*geodesic_points)[5];
 extern int num_points;
 extern double a;
-double Lambda = 100;
+double Lambda = 1e-4;
 double Q = 0.9;
 
 
@@ -18,19 +18,6 @@ void print_matrix(char *name, double matrix[NDIM][NDIM]) {
 	}
 }
 
-void minkowski_metric(double g[NDIM][NDIM], double g_inv[NDIM][NDIM]) {
-	memset(g, 0, sizeof(double) * NDIM * NDIM);
-	memset(g_inv, 0, sizeof(double) * NDIM * NDIM);
-
-	g[0][0] = -1.0;	
-	g[1][1] = 1.0;
-	g[2][2] = 1.0;
-	g[3][3] = 1.0;
-
-	inverse_matrix(g, g_inv);
-	printf("Minkowski metric calculated\n");
-
-}
 
 void calculate_metric(double x[NDIM], double g[NDIM][NDIM], double g_inv[NDIM][NDIM]) {
     double r = x[1];

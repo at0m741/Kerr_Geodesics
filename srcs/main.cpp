@@ -9,7 +9,7 @@ int main(int argc, char **argv)
 	double r0 = 20.0;
 	double X[NDIM] = {0.0, r0, M_PI/4.0, 0.0};
 
-	if (argc < 3) {
+	if (argc < 4) {
 		printf("Usage: <options>\n");
 		printf("Options:\n");
 		printf("       -G <Spin value a> - Geodesic calculation\n");
@@ -22,11 +22,12 @@ int main(int argc, char **argv)
 
 	a = atof(argv[2]);
 	if (strcmp(argv[1], "-R") == 0) {
-		if (argc < 3) {
-			printf("Usage: -R <Spin value a>\n");
+		if (argc < 4) {
+			printf("Usage: -R <Spin value a> <Metric>\n");
+			printf("Metric: schwarzschild, kerr, kerr-newman, kds\n");
 			return 0;
 		} 
-		Riemann_tensor(); 
+		Riemann_tensor(argv[3]);
 	} else if (strcmp(argv[1], "-G") == 0) {
 		if (argc < 3) {
 			printf("Usage: -G <Spin value a>\n");

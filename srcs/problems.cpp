@@ -4,7 +4,7 @@ extern double (*geodesic_points)[5];
 extern int num_points;
 extern double a;
 
-int Riemann_tensor() {
+int Riemann_tensor(const char *metric) {
 	double r0 = 20.0;
 	double X[NDIM] = {0.0, r0, M_PI/4.0, 0.0};
 	double gcovR[NDIM][NDIM], gconR[NDIM][NDIM];
@@ -14,7 +14,12 @@ int Riemann_tensor() {
 	double Riemann[NDIM][NDIM][NDIM][NDIM];
 	double gcov_half[NDIM][NDIM], gcon_half[NDIM][NDIM];
 	double Ricci[NDIM][NDIM];
-	calculate_metric(X, gcovR, gconR);
+	if (strcmp(metric, "ds") == 0) {
+		printf("KDS metric calculation\n");
+		calculate_metric_kds(X, gcovR, gconR);
+	} else {
+		calculate_metric(X, gcovR, gconR);
+	}
 	calculate_christoffel(X, DELTA, christoffelR, gcovR, gconR, "kerr");
 
 	for (int d = 0; d < NDIM; d++) {

@@ -163,7 +163,7 @@ void calculate_metric_kds(double x[NDIM], double g[NDIM][NDIM], double g_inv[NDI
 void calculate_metric_kerr_newman(double x[NDIM], double g[NDIM][NDIM], double g_inv[NDIM][NDIM]);
 /* Problem specific functions */
 
-int Riemann_tensor();
+int Riemann_tensor(const char *metric);
 int Geodesics_prob();
 int light_geodesics_prob(); 
 int Metric_prob();

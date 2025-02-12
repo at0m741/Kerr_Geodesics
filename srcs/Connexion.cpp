@@ -47,9 +47,10 @@ void calculate_christoffel(double X[NDIM], double h, \
 
         Xh[mu] += DELTA;
         Xl[mu] -= DELTA;
-		if (strcmp(metric, "minkowski") == 0)
-			minkowski_metric(gh, g_inv);
-		else if (strcmp(metric, "schwarzschild") == 0 || strcmp(metric, "kerr") == 0) {
+		if (strcmp(metric, "schwarzschild") == 0 || 
+			strcmp(metric, "kerr") == 0 ||
+			strcmp(metric, "kerr-newman") == 0 ||
+			strcmp(metric, "ds") == 0) {
 			calculate_metric(Xh, gh, g_inv);
 			calculate_metric(Xl, gl, g_inv);
 			verify_metric(gh, g_inv);
