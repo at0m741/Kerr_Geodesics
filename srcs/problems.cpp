@@ -43,8 +43,8 @@ int Riemann_tensor(const char *metric) {
 }
 
 int Geodesics_prob() {
-	double r0 = 90.0;
-	double X[NDIM] = {0.4, r0, M_PI/4.0, 0.2};
+	double r0 = 20.0;
+	double X[NDIM] = {0.4, r0, M_PI/3.8, 0.2};
 	double gcov[NDIM][NDIM], gcon[NDIM][NDIM];
 	calculate_metric(X, gcov, gcon);
 	double g_tt = gcov[0][0];
@@ -151,40 +151,107 @@ int Metric_prob() {
 #define HEIGHT 128
 unsigned char image[HEIGHT][WIDTH];
 
-void initialize_photon_momentum(double alpha, double beta, double X[NDIM], double p[NDIM], double gcov[NDIM][NDIM]) {
-    p[0] = 1.0; 
-    p[1] = sqrt(1.0 - pow(beta, 2) - pow(alpha, 2));  
-    p[2] = beta;  
-    p[3] = alpha; 
+
+
+void init_photon_global(
+    double alpha, 
+    double beta,
+    double e_t[4], 
+    double e_x[4], 
+    double e_y[4], 
+    double e_z[4],
+    double gcov[4][4],
+    double p[4]
+) {
+    double px_loc = -2.0;
+    double py_loc = alpha;
+    double pz_loc = beta;
+    double pt_loc = sqrt(px_loc*px_loc + py_loc*py_loc + pz_loc*pz_loc);
+
+    double p_local[4];
+    p_local[0] = pt_loc;
+    p_local[1] = px_loc;
+    p_local[2] = py_loc;
+    p_local[3] = pz_loc;
+
+    for (int mu = 0; mu < 4; mu++) {
+        p[mu] = p_local[0]*e_t[mu]
+              + p_local[1]*e_x[mu]
+              + p_local[2]*e_y[mu]
+              + p_local[3]*e_z[mu];
+		printf("p[%d] = %f\n", mu, p[mu]);
+    }
+
+    double norm = 0.0;
+    for (int mu = 0; mu < 4; mu++) {
+        for (int nu = 0; nu < 4; nu++) {
+            norm += gcov[mu][nu] * p[mu] * p[nu];
+			printf("gcov[%d][%d] = %f\n", mu, nu, gcov[mu][nu]);
+        }
+    }
+
+    if (fabs(norm) > 1e-12) {
+        double scale = 1.0 / sqrt(fabs(norm));
+        for (int mu = 0; mu < 4; mu++) {
+            p[mu] *= scale;
+			printf("p[%d] = %f\n", mu, p[mu]);
+        }
+    }
 }
 
 
+void build_minkowski_tetrad(double e_t[4], double e_x[4], double e_y[4], double e_z[4]) {
+    e_t[0] = 1.0; e_t[1] = 0.0; e_t[2] = 0.0; e_t[3] = 0.0;
+    e_x[0] = 0.0; e_x[1] = 1.0; e_x[2] = 0.0; e_x[3] = 0.0;
+    e_y[0] = 0.0; e_y[1] = 0.0; e_y[2] = 1.0; e_y[3] = 0.0;
+    e_z[0] = 0.0; e_z[1] = 0.0; e_z[2] = 0.0; e_z[3] = 1.0;
+	for (int i = 0; i < 4; i++) {
+		printf("e_t[%d] = %f\n", i, e_t[i]);
+		printf("e_x[%d] = %f\n", i, e_x[i]);
+		printf("e_y[%d] = %f\n", i, e_y[i]);
+		printf("e_z[%d] = %f\n", i, e_z[i]);
+	}
+}
+
 int solve_geodesic_AVX(double X[NDIM], __m256d p[NDIM]) {
-    double lambda_max = 1000.0; 
-    __m256d step_size = _mm256_set1_pd(0.01);
-	double r0 = 20.0;
+    double lambda_max = 100.0;  
+    __m256d step_size = _mm256_set1_pd(0.00910);
+    double r_horizon = 1.0 + sqrt(1.0 - a * a); 
+
     double christoffel[NDIM][NDIM][NDIM];
     double gcov[NDIM][NDIM], gcon[NDIM][NDIM];
-	double dt = 0.00910;
-	double v[NDIM] = {0.0, 1.0, 0.0, 0.0};
 
-	calculate_metric(X, gcov, gcon);
+    calculate_metric(X, gcov, gcon);
     calculate_christoffel(X, DELTA, christoffel, gcov, gcon, "kerr");
-	__m256d X_avx[NDIM], v_avx[NDIM];
-	for (int i = 0; i < NDIM; i++) {
-		X_avx[i] = _mm256_set1_pd(X[i]);
-		v_avx[i] = _mm256_set1_pd(v[i]);
-	}
 
-    __m256d christoffel_avx[NDIM][NDIM][NDIM];
-    for (int i = 0; i < NDIM; i++)
+    __m256d X_avx[NDIM], p_avx[NDIM], christoffel_avx[NDIM][NDIM][NDIM];
+    
+    for (int i = 0; i < NDIM; i++) {
+        X_avx[i] = _mm256_set1_pd(X[i]);
+        p_avx[i] = p[i];
         for (int j = 0; j < NDIM; j++)
             for (int k = 0; k < NDIM; k++)
                 christoffel_avx[i][j][k] = _mm256_set1_pd(christoffel[i][j][k]);
+    }
 
-	geodesic_AVX(X_avx, v_avx, 100.0, ( __m256d (*)[NDIM][NDIM] )christoffel_avx, _mm256_set1_pd(dt));
+    num_points = 0;  
 
-    return (X[1] < r0) ? 1 : 0;
+    geodesic_AVX(X_avx, p_avx, lambda_max, christoffel_avx, step_size);
+    for (int i = 0; i < num_points; i++) {
+        double x = geodesic_points[i][0];
+		double y = geodesic_points[i][1];
+		double z = geodesic_points[i][2];
+
+		double r = sqrt(x*x + y*y + z*z);
+		/* printf("r = %f\n", r); */
+		if (r < r_horizon) {
+			printf("Photon absorbed at r = %f\n", r);
+			return 1;
+		}    
+	}
+
+	printf("Photon escaped, r = %f\n", sqrt(X[1]*X[1] + X[2]*X[2] + X[3]*X[3]));
+    return 0; 
 }
 
 void save_image(const char *filename, unsigned char image[HEIGHT][WIDTH]) {
@@ -194,38 +261,42 @@ void save_image(const char *filename, unsigned char image[HEIGHT][WIDTH]) {
     fclose(f);
 }
 
-
 void generate_blackhole_shadow() {
-    double r_obs = 100.0;
-    double theta_obs = M_PI / 2; 
-    double X[NDIM] = {0.0, r_obs, theta_obs, 0.0};  
+    double r_obs = 10.0;
+    double theta_obs = M_PI / 2.0;
+    double phi_obs   = 0.0;
 
-    double gcov[NDIM][NDIM], gcon[NDIM][NDIM];
+    double X[4] = {0.0, r_obs, theta_obs, phi_obs};
+
+    double gcov[4][4], gcon[4][4];
     calculate_metric(X, gcov, gcon);
 
-    double g_tt = gcov[0][0];
-    double vt = 1.0 / sqrt(fabs(g_tt));
-    double v_obs[NDIM] = {vt, 0.0, 0.0, 0.0};
+    double e_t[4], e_x[4], e_y[4], e_z[4];
+    build_minkowski_tetrad(e_t, e_x, e_y, e_z);
 
-    for (int i = 0; i < HEIGHT; i++) {
-        for (int j = 0; j < WIDTH; j++) {
-            double alpha = 2.0 * (j / (double)WIDTH) - 1.0;
-            double beta = 2.0 * (i / (double)HEIGHT) - 1.0;
+    double fov = 1.0;
+    for(int i = 0; i < HEIGHT; i++) {
+        for(int j = 0; j < WIDTH; j++) {
+            double alpha = fov * (2.0*(j/(double)WIDTH)  - 1.0);
+            double beta  = fov * (2.0*(i/(double)HEIGHT) - 1.0);
 
-            double p[NDIM];
-            initialize_photon_momentum(alpha, beta, X, p, gcov);
+            double p[4];
+            init_photon_global(alpha, beta, e_t, e_x, e_y, e_z, gcov, p);
 
-            __m256d X_avx[NDIM], p_avx[NDIM];
-            for (int k = 0; k < NDIM; k++) {
-                X_avx[k] = _mm256_set1_pd(X[k]);
-                p_avx[k] = _mm256_set1_pd(p[k]);
+            __m256d p_avx[4], X_avx[4];
+            for(int mu=0; mu<4; mu++) {
+                p_avx[mu] = _mm256_set1_pd(p[mu]);
+                X_avx[mu] = _mm256_set1_pd(X[mu]); 
             }
 
             int hit_horizon = solve_geodesic_AVX(X, p_avx);
-
-            image[i][j] = hit_horizon ? 0 : 255;
+            image[i][j] = (hit_horizon ? 0 : 255);
         }
     }
 
-    save_image("blackhole_shadow.ppm", image);
+    FILE *f = fopen("blackhole_shadow.ppm","wb");
+    fprintf(f,"P5\n%d %d\n255\n", WIDTH, HEIGHT);
+    fwrite(image, 1, WIDTH*HEIGHT, f);
+    fclose(f);
+    printf("Image saved: blackhole_shadow.ppm\n");
 }

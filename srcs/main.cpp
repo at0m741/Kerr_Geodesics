@@ -6,9 +6,6 @@ double a = 0.935;
 
 int main(int argc, char **argv)
 {
-	double r0 = 20.0;
-	double X[NDIM] = {0.0, r0, M_PI/4.0, 0.0};
-
 	if (argc < 4) {
 		printf("Usage: <options>\n");
 		printf("Options:\n");

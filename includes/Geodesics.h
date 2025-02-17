@@ -10,8 +10,8 @@
 #include <sys/time.h>
 
 #define MAX_POINTS 100000
-#define C 299792458.0
-#define G 6.67430e-11
+#define C 1.0
+#define G 1.0 
 #define M 1.0
 #define BLOCK_SIZE 1024
 #define BUFFER_SIZE 1024
@@ -19,7 +19,7 @@
 #define NDIM 4
 #define TT 0
 #define DT 0.0000005
-#define max_dt 250000.0
+#define max_dt 50000.0
 #define ALIGNMENT 32
 #define AVX2 1
 #define ARCH "AVX2"

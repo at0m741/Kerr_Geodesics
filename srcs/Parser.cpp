@@ -50,50 +50,61 @@ void write_vtk_file(const char *filename)
 
 
 void store_geodesic_point_AVX(VEC_TYPE x[4], double lambda) {
-    if (num_points >= capacity) 
-    {
+    // Vérifier la capacité pour 16 points de plus
+    if (num_points + 16 >= capacity) {
         capacity = (capacity == 0) ? 1000 : capacity * 2;
         double (*new_geodesic_points)[5];
-        if (posix_memalign((void **)&new_geodesic_points, ALIGNMENT, capacity * sizeof(*geodesic_points)) != 0) 
+        if (posix_memalign((void **)&new_geodesic_points, ALIGNMENT,
+                           capacity * sizeof(*geodesic_points)) != 0)
         {
             fprintf(stderr, "Error: failed to allocate memory for geodesic_points\n");
             exit(EXIT_FAILURE);
         }
 
-        if (num_points > 0) 
-        {
-            memcpy(new_geodesic_points, geodesic_points, num_points * sizeof(*geodesic_points));
+        if (geodesic_points) {
+            memcpy(new_geodesic_points, geodesic_points,
+                   num_points * sizeof(*geodesic_points));
             free(geodesic_points);
         }
 
         geodesic_points = new_geodesic_points;
     }
 
-    __attribute__((aligned(32))) double r_vals[4], theta_vals[4], phi_vals[4];
-    for (int i = 0; i < 4; ++i) 
-    {
-        VEC_TYPE r = x[1];
-        VEC_TYPE theta = x[2];
-        VEC_TYPE phi = x[3];
+    // Double boucle i=0..3 et j=0..3
+    for (int i = 0; i < 4; i++) {
+        // Récupère r, theta, phi (AVX) à chaque itération
+        __attribute__((aligned(32))) double r_vals[4], th_vals[4], ph_vals[4];
 
-        VEC_STORE_PD(r_vals, r);
-        VEC_STORE_PD(theta_vals, theta);
-        VEC_STORE_PD(phi_vals, phi);
-        
-        double sin_theta_vals[4], cos_theta_vals[4], sin_phi_vals[4], cos_phi_vals[4];
-        for (int j = 0; j < 4; ++j) {
-            sin_theta_vals[j] = sin(theta_vals[j]);
-            cos_theta_vals[j] = cos(theta_vals[j]);
-            sin_phi_vals[j] = sin(phi_vals[j]);
-            cos_phi_vals[j] = cos(phi_vals[j]);
+        VEC_TYPE r     = x[1];
+        VEC_TYPE theta = x[2];
+        VEC_TYPE phi   = x[3];
+
+        _mm256_store_pd(r_vals,   r);
+        _mm256_store_pd(th_vals,  theta);
+        _mm256_store_pd(ph_vals,  phi);
+
+        // Calcul des sin/cos
+        double sin_th[4], cos_th[4], sin_ph[4], cos_ph[4];
+        for (int j = 0; j < 4; j++) {
+            sin_th[j] = sin(th_vals[j]);
+            cos_th[j] = cos(th_vals[j]);
+            sin_ph[j] = sin(ph_vals[j]);
+            cos_ph[j] = cos(ph_vals[j]);
         }
 
-        for (int j = 0; j < 4; ++j) {
-            geodesic_points[num_points][0] = r_vals[j] * sin_theta_vals[j] * cos_phi_vals[j];
-            geodesic_points[num_points][1] = r_vals[j] * sin_theta_vals[j] * sin_phi_vals[j];
-            geodesic_points[num_points][2] = r_vals[j] * cos_theta_vals[j];
+        // On enregistre 4 lanes, en incrémentant num_points à chaque fois
+        for (int j = 0; j < 4; j++) {
+            double rr = r_vals[j];
+            double xx = rr * sin_th[j] * cos_ph[j];
+            double yy = rr * sin_th[j] * sin_ph[j];
+            double zz = rr * cos_th[j];
+
+            geodesic_points[num_points][0] = xx;
+            geodesic_points[num_points][1] = yy;
+            geodesic_points[num_points][2] = zz;
             geodesic_points[num_points][3] = lambda;
+
+            num_points++;
         }
     }
-    num_points++;
 }
