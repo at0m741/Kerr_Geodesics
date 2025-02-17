@@ -167,3 +167,4 @@ int light_geodesics_prob();
 int Metric_prob();
 
 void generate_blackhole_image();
+void generate_blackhole_shadow();

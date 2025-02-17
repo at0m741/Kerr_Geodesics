@@ -123,7 +123,6 @@ int light_geodesics_prob() {
 
 	std::chrono::duration<double> elapsed_seconds = end - start;
 	printf("Elapsed time: %f\n", elapsed_seconds.count());
-	/* write_vtk_file("output/Light_geodesic.vtk"); */
 	generate_blackhole_image();
 	if (geodesic_points != NULL) {
 		free(geodesic_points);
@@ -146,4 +145,87 @@ int Metric_prob() {
 	double gcov_kds[NDIM][NDIM], gcon_kds[NDIM][NDIM];
 	calculate_metric_kds(X, gcov_kds, gcon_kds);
 	return 0;
+}
+
+#define WIDTH 128
+#define HEIGHT 128
+unsigned char image[HEIGHT][WIDTH];
+
+void initialize_photon_momentum(double alpha, double beta, double X[NDIM], double p[NDIM], double gcov[NDIM][NDIM]) {
+    p[0] = 1.0; 
+    p[1] = sqrt(1.0 - pow(beta, 2) - pow(alpha, 2));  
+    p[2] = beta;  
+    p[3] = alpha; 
+}
+
+
+int solve_geodesic_AVX(double X[NDIM], __m256d p[NDIM]) {
+    double lambda_max = 1000.0; 
+    __m256d step_size = _mm256_set1_pd(0.01);
+	double r0 = 20.0;
+    double christoffel[NDIM][NDIM][NDIM];
+    double gcov[NDIM][NDIM], gcon[NDIM][NDIM];
+	double dt = 0.00910;
+	double v[NDIM] = {0.0, 1.0, 0.0, 0.0};
+
+	calculate_metric(X, gcov, gcon);
+    calculate_christoffel(X, DELTA, christoffel, gcov, gcon, "kerr");
+	__m256d X_avx[NDIM], v_avx[NDIM];
+	for (int i = 0; i < NDIM; i++) {
+		X_avx[i] = _mm256_set1_pd(X[i]);
+		v_avx[i] = _mm256_set1_pd(v[i]);
+	}
+
+    __m256d christoffel_avx[NDIM][NDIM][NDIM];
+    for (int i = 0; i < NDIM; i++)
+        for (int j = 0; j < NDIM; j++)
+            for (int k = 0; k < NDIM; k++)
+                christoffel_avx[i][j][k] = _mm256_set1_pd(christoffel[i][j][k]);
+
+	geodesic_AVX(X_avx, v_avx, 100.0, ( __m256d (*)[NDIM][NDIM] )christoffel_avx, _mm256_set1_pd(dt));
+
+    return (X[1] < r0) ? 1 : 0;
+}
+
+void save_image(const char *filename, unsigned char image[HEIGHT][WIDTH]) {
+    FILE *f = fopen(filename, "wb");
+    fprintf(f, "P5\n%d %d\n255\n", WIDTH, HEIGHT);
+    fwrite(image, 1, WIDTH * HEIGHT, f);
+    fclose(f);
+}
+
+
+void generate_blackhole_shadow() {
+    double r_obs = 100.0;
+    double theta_obs = M_PI / 2; 
+    double X[NDIM] = {0.0, r_obs, theta_obs, 0.0};  
+
+    double gcov[NDIM][NDIM], gcon[NDIM][NDIM];
+    calculate_metric(X, gcov, gcon);
+
+    double g_tt = gcov[0][0];
+    double vt = 1.0 / sqrt(fabs(g_tt));
+    double v_obs[NDIM] = {vt, 0.0, 0.0, 0.0};
+
+    for (int i = 0; i < HEIGHT; i++) {
+        for (int j = 0; j < WIDTH; j++) {
+            double alpha = 2.0 * (j / (double)WIDTH) - 1.0;
+            double beta = 2.0 * (i / (double)HEIGHT) - 1.0;
+
+            double p[NDIM];
+            initialize_photon_momentum(alpha, beta, X, p, gcov);
+
+            __m256d X_avx[NDIM], p_avx[NDIM];
+            for (int k = 0; k < NDIM; k++) {
+                X_avx[k] = _mm256_set1_pd(X[k]);
+                p_avx[k] = _mm256_set1_pd(p[k]);
+            }
+
+            int hit_horizon = solve_geodesic_AVX(X, p_avx);
+
+            image[i][j] = hit_horizon ? 0 : 255;
+        }
+    }
+
+    save_image("blackhole_shadow.ppm", image);
 }

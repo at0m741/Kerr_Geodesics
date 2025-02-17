@@ -22,9 +22,6 @@ void draw_blackhole() {
         double y = geodesic_points[i][1];
         double z = geodesic_points[i][2];
 
-        double r = sqrt(x * x + y * y);
-        double r_horizon = 2.0;
-
         float t = (float)i / num_points;  
         glColor3f(1.0f - t, t, 0.5f);  
 
@@ -69,8 +66,8 @@ void generate_blackhole_image() {
         glMatrixMode(GL_MODELVIEW);
         glLoadIdentity();
 
-        gluLookAt(80, 80, 80, 
-                  0, 0, 0,      
+        gluLookAt(100, 100, 100, 
+                  0, 1, 0,      
                   0, 1, 0);    
 
         draw_blackhole();

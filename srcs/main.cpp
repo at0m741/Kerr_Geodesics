@@ -16,7 +16,7 @@ int main(int argc, char **argv)
 		printf("       -L <Spin value a> - Light geodesics calculation\n");
 		printf("       -R <Spin value a> - Riemann tensor calculation\n");
 		printf("       -M <Spin value a> - Metric tensor calculation (a = 0 -> Schwarzschild or a > 0 -> Kerr)\n");
-		
+		printf("       -S <Spin value a> - Black hole shadow generation\n");	
 		return 0;
 	}
 
@@ -46,6 +46,12 @@ int main(int argc, char **argv)
 			return 0;
 		}
 		Metric_prob();
+	} else if (strncmp(argv[1], "-S", 2) == 0) {
+		if (argc < 3) {
+			printf("Usage: -C <Spin value a>\n");
+			return 0;
+		}
+		generate_blackhole_shadow();
 	} else {
 		printf("Invalid option\n");
 		return 0;
