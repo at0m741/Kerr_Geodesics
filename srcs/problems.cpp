@@ -43,7 +43,7 @@ int Riemann_tensor(const char *metric) {
 }
 
 int Geodesics_prob() {
-	double r0 = 20.0;
+	double r0 = 90.0;
 	double X[NDIM] = {0.4, r0, M_PI/4.0, 0.2};
 	double gcov[NDIM][NDIM], gcon[NDIM][NDIM];
 	calculate_metric(X, gcov, gcon);
@@ -88,7 +88,7 @@ int Geodesics_prob() {
 
 int light_geodesics_prob() {
 	double r0 = 20.0;
-	double X[NDIM] = {0.4, r0, M_PI/4.0, 0.2};
+	double X[NDIM] = {0.4, r0, M_PI/3.0, 0.2};
 	double gcov[NDIM][NDIM], gcon[NDIM][NDIM];
 	calculate_metric(X, gcov, gcon);
 	double g_tt = gcov[0][0];
@@ -123,7 +123,8 @@ int light_geodesics_prob() {
 
 	std::chrono::duration<double> elapsed_seconds = end - start;
 	printf("Elapsed time: %f\n", elapsed_seconds.count());
-	write_vtk_file("output/Light_geodesic.vtk");
+	/* write_vtk_file("output/Light_geodesic.vtk"); */
+	generate_blackhole_image();
 	if (geodesic_points != NULL) {
 		free(geodesic_points);
 	}

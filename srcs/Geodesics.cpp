@@ -12,7 +12,6 @@ void geodesic_AVX(__m256d x[4], __m256d v[4], double lambda_max,
 
     while (lambda < lambda_max) {
 
-        #pragma omp parallel for schedule(static)
         for (int mu = 0; mu < 4; mu++) {
             k1_x[mu] = v[mu];
             k1_v[mu] = _mm256_setzero_pd();
@@ -24,14 +23,12 @@ void geodesic_AVX(__m256d x[4], __m256d v[4], double lambda_max,
             }
         }
 
-        #pragma omp parallel for schedule(static)
         for (int mu = 0; mu < 4; mu++) {
             __m256d half_step = _mm256_mul_pd(step_size, _mm256_set1_pd(0.5));
             temp_x[mu] = _mm256_fmadd_pd(half_step, k1_x[mu], x[mu]);
             temp_v[mu] = _mm256_fmadd_pd(half_step, k1_v[mu], v[mu]);
         }
 
-        #pragma omp parallel for schedule(static)
         for (int mu = 0; mu < 4; mu++) {
             k2_x[mu] = temp_v[mu];
             k2_v[mu] = _mm256_setzero_pd();
@@ -43,14 +40,12 @@ void geodesic_AVX(__m256d x[4], __m256d v[4], double lambda_max,
             }
         }
 
-        #pragma omp parallel for schedule(static)
         for (int mu = 0; mu < 4; mu++) {
             __m256d half_step = _mm256_mul_pd(step_size, _mm256_set1_pd(0.5));
             temp_x[mu] = _mm256_fmadd_pd(half_step, k2_x[mu], x[mu]);
             temp_v[mu] = _mm256_fmadd_pd(half_step, k2_v[mu], v[mu]);
         }
 
-        #pragma omp parallel for schedule(static)
         for (int mu = 0; mu < 4; mu++) {
             k3_x[mu] = temp_v[mu];
             k3_v[mu] = _mm256_setzero_pd();
@@ -62,13 +57,11 @@ void geodesic_AVX(__m256d x[4], __m256d v[4], double lambda_max,
             }
         }
 
-        #pragma omp parallel for schedule(static)
         for (int mu = 0; mu < 4; mu++) {
             temp_x[mu] = _mm256_fmadd_pd(step_size, k3_x[mu], x[mu]);
             temp_v[mu] = _mm256_fmadd_pd(step_size, k3_v[mu], v[mu]);
         }
 
-        #pragma omp parallel for schedule(static)
         for (int mu = 0; mu < 4; mu++) {
             k4_x[mu] = temp_v[mu];
             k4_v[mu] = _mm256_setzero_pd();
@@ -80,7 +73,6 @@ void geodesic_AVX(__m256d x[4], __m256d v[4], double lambda_max,
             }
         }
 
-        #pragma omp parallel for schedule(static)
         for (int mu = 0; mu < 4; mu++) {
             __m256d two = _mm256_set1_pd(2.0);
             __m256d six = _mm256_set1_pd(6.0);

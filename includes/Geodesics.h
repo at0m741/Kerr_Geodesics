@@ -3,16 +3,14 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdlib.h>
 #include <string.h>
 #include <immintrin.h>
 #include <time.h>
-#include <xmmintrin.h>
 #include <chrono>
 #include <sys/time.h>
 
 #define MAX_POINTS 100000
-#define c 299792458.0
+#define C 299792458.0
 #define G 6.67430e-11
 #define M 1.0
 #define BLOCK_SIZE 1024
@@ -21,7 +19,7 @@
 #define NDIM 4
 #define TT 0
 #define DT 0.0000005
-#define max_dt 150000.0
+#define max_dt 250000.0
 #define ALIGNMENT 32
 #define AVX2 1
 #define ARCH "AVX2"
@@ -167,3 +165,5 @@ int Riemann_tensor(const char *metric);
 int Geodesics_prob();
 int light_geodesics_prob(); 
 int Metric_prob();
+
+void generate_blackhole_image();

@@ -35,9 +35,11 @@ all: $(NAME)
 	@if [ -f $(OBJ_DIR)/.counter ]; then rm $(OBJ_DIR)/.counter; fi
 	@echo -e "$(GREEN)Build complete!$(NC)"
 
+
 $(NAME): $(OBJ)
 	@echo -e "$(YELLOW)Linking $@...$(NC)"
-	$(CC) $(CFLAGS) -o $@ $^
+	$(CC) $(CFLAGS) -o $@ $^ -lglfw -lGL -lGLU
+
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp | $(OBJ_DIR)
 	@if [ ! -f $(OBJ_DIR)/.counter ]; then echo 0 > $(OBJ_DIR)/.counter; fi; \
@@ -46,7 +48,7 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp | $(OBJ_DIR)
 	echo $$cnt > $(OBJ_DIR)/.counter; \
 	perc=$$((100 * cnt / $(TOTAL))); \
 	echo -e "$(GREEN)Compiling $< [$$cnt/$(TOTAL) ($$perc%%)]$(NC)"; \
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) -c $< -o $@ 
 
 $(OBJ_DIR):
 	mkdir -p $(OBJ_DIR)
