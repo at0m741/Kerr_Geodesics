@@ -147,8 +147,8 @@ int Metric_prob() {
 	return 0;
 }
 
-#define WIDTH 64
-#define HEIGHT 64
+#define WIDTH 256	
+#define HEIGHT 256
 unsigned char image[HEIGHT][WIDTH];
 
 
@@ -214,7 +214,7 @@ void build_minkowski_tetrad(double e_t[4], double e_x[4], double e_y[4], double 
 }
 
 int solve_geodesic_AVX(double X[NDIM], __m256d p[NDIM]) {
-    double lambda_max = 100.0;  
+    double lambda_max = 300.0;  
     __m256d step_size = _mm256_set1_pd(0.00910);
     double r_horizon = 1.0 + sqrt(1.0 - a * a); 
 
@@ -262,8 +262,8 @@ void save_image(const char *filename, unsigned char image[HEIGHT][WIDTH]) {
 }
 
 void generate_blackhole_shadow() {
-    double r_obs = 10.0;
-    double theta_obs = M_PI / 2.0;
+    double r_obs = 5.0;
+    double theta_obs = M_PI / 3.0;
     double phi_obs   = 0.0;
 
     double X[4] = {0.0, r_obs, theta_obs, phi_obs};
@@ -274,11 +274,13 @@ void generate_blackhole_shadow() {
     double e_t[4], e_x[4], e_y[4], e_z[4];
     build_minkowski_tetrad(e_t, e_x, e_y, e_z);
 
-    double fov = 1.0;
+    double fov = 2.0;
     for(int i = 0; i < HEIGHT; i++) {
         for(int j = 0; j < WIDTH; j++) {
-            double alpha = 0.0;
-            double beta  = 0.0; 
+            
+			double alpha = fov * (2.0 * (j / (double)WIDTH)  - 1.0);
+			double beta  = fov * (2.0 * (i / (double)HEIGHT) - 1.0);
+
 
             double p[4];
             init_photon_global(alpha, beta, e_t, e_x, e_y, e_z, gcov, p);
