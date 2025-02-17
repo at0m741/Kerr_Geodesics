@@ -147,8 +147,8 @@ int Metric_prob() {
 	return 0;
 }
 
-#define WIDTH 128
-#define HEIGHT 128
+#define WIDTH 64
+#define HEIGHT 64
 unsigned char image[HEIGHT][WIDTH];
 
 
@@ -163,7 +163,7 @@ void init_photon_global(
     double gcov[4][4],
     double p[4]
 ) {
-    double px_loc = -2.0;
+    double px_loc = -9.0;
     double py_loc = alpha;
     double pz_loc = beta;
     double pt_loc = sqrt(px_loc*px_loc + py_loc*py_loc + pz_loc*pz_loc);
@@ -277,8 +277,8 @@ void generate_blackhole_shadow() {
     double fov = 1.0;
     for(int i = 0; i < HEIGHT; i++) {
         for(int j = 0; j < WIDTH; j++) {
-            double alpha = fov * (2.0*(j/(double)WIDTH)  - 1.0);
-            double beta  = fov * (2.0*(i/(double)HEIGHT) - 1.0);
+            double alpha = 0.0;
+            double beta  = 0.0; 
 
             double p[4];
             init_photon_global(alpha, beta, e_t, e_x, e_y, e_z, gcov, p);
