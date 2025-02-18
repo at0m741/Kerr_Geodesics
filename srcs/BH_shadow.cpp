@@ -1,7 +1,7 @@
 #include <Geodesics.h>
 
-#define WIDTH 128	
-#define HEIGHT 128
+#define WIDTH 32	
+#define HEIGHT 32
 unsigned char image[HEIGHT][WIDTH];
 extern int num_points;
 extern double a;
@@ -49,7 +49,7 @@ void init_photon_global(
     double gcov[4][4],
     double p[4]) {
     double p_local[4];
-    p_local[0] = 1.0; 
+    p_local[0] = -1.0; 
     p_local[1] = 0.0;
     p_local[2] = alpha;
     p_local[3] = beta;
@@ -121,8 +121,8 @@ void build_kerr_tetrad(double X[4], double gcov[4][4],
 }
 
 int solve_geodesic_AVX(double X[NDIM], __m256d p[NDIM]) {
-    double lambda_max = 20.0;  
-    __m256d step_size = _mm256_set1_pd(0.00009);
+    double lambda_max = 60.0;  
+    __m256d step_size = _mm256_set1_pd(0.0019);
     double r_horizon = 1.0 + sqrt(1.0 - a * a); 
 
     double christoffel[NDIM][NDIM][NDIM];
@@ -164,7 +164,7 @@ int solve_geodesic_AVX(double X[NDIM], __m256d p[NDIM]) {
 			printf("Photon absorbed at r = %f, E = %f, Lz = %f, Q = %f, r_horizon = %f, r_ps = %f\n", r, E, Lz, Q, r_horizon, r_ps);
 			return 1;
 		}
-  
+
     }
 
     printf("Photon escaped, r = %f, E = %f, Lz = %f, Q = %f\n", sqrt(X[1]*X[1] + X[2]*X[2] + X[3]*X[3]), E, Lz, Q); 
@@ -174,7 +174,7 @@ int solve_geodesic_AVX(double X[NDIM], __m256d p[NDIM]) {
 
 void generate_blackhole_shadow() {
     double r_obs = 5.0;
-    double theta_obs = M_PI / 2.0;
+    double theta_obs = M_PI / 3.0;
     double phi_obs   = 0.0;
 
     double X[4] = {0.0, r_obs, theta_obs, phi_obs};
@@ -216,7 +216,7 @@ void generate_blackhole_shadow() {
 					total_hit += solve_geodesic_AVX(X, p_avx);
 				}
 			}
-			image[i][j] = (total_hit >= 2) ? 0 : 255;
+			image[i][j] = (total_hit >= 2) ? 255 : 0;
 		}
 	}
 
