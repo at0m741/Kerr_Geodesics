@@ -59,7 +59,8 @@ int init_photon_global(
     p_local[3] = -beta * sqrt(fabs(gcov[3][3])) / fabs(1.0 + fabs(gcov[0][0]) + fabs(gcov[3][3]));  
 
     printf("Debug: p_theta = %f, p_phi = %f\n", p_local[2], p_local[3]);
-
+	printf("Debug: p_t = %f, p_r = %f, p_theta = %f, p_phi = %f\n", p_local[0], p_local[1], p_local[2], p_local[3]);
+	print_matrix("Debug: GCOV", gcov);
     for (int mu = 0; mu < 4; mu++) {
         p[mu] = p_local[0] * e_t[mu]
               + p_local[1] * e_x[mu]
@@ -118,59 +119,50 @@ void build_kerr_tetrad(double X[4], double gcov[4][4],
                        double e_t[4], double e_r[4],
                        double e_theta[4], double e_phi[4]) 
 {
-    double g_tt         = gcov[0][0];
-    double g_tphi       = gcov[0][3];
-    double g_phiphi     = gcov[3][3];
-    double g_rr         = gcov[1][1];
-    double g_thetatheta = gcov[2][2];
+    double r     = X[1];
+    double theta = X[2];
 
-    double N_t     = sqrt(-g_tt + (g_tphi*g_tphi)/g_phiphi);
-    double N_phi   = sqrt(g_phiphi);
-    double N_r     = sqrt(g_rr);
-    double N_theta = sqrt(g_thetatheta);
+    double Delta = r*r - 2*M*r + a*a;
+    double Sigma = r*r + a*a*cos(theta)*cos(theta);
+    double A     = (r*r + a*a)*(r*r + a*a) - a*a * Delta * sin(theta)*sin(theta);
 
-    e_t[0] = 1.0 / N_t;
+    e_t[0] = sqrt(A / (Sigma * Delta));
     e_t[1] = 0.0;
     e_t[2] = 0.0;
-    e_t[3] = g_tphi / (g_phiphi * N_t);
+    e_t[3] = (2 * a * M * r) / sqrt(Sigma * A * Delta);
 
     e_r[0] = 0.0;
-    e_r[1] = 1.0 / N_r;
+    e_r[1] = sqrt(Delta / Sigma);
     e_r[2] = 0.0;
     e_r[3] = 0.0;
 
     e_theta[0] = 0.0;
     e_theta[1] = 0.0;
-    e_theta[2] = 1.0 / N_theta;
+    e_theta[2] = 1.0 / sqrt(Sigma);
     e_theta[3] = 0.0;
 
     e_phi[0] = 0.0;
     e_phi[1] = 0.0;
     e_phi[2] = 0.0;
-    e_phi[3] = 1.0 / N_phi;
-	double dot_et_et = 0;
-	double dot_er_er = 0;
-	double dot_et_er = 0;
-	double dot_er_et = 0;
+    if (fabs(sin(theta)) > 1e-10) {
+        e_phi[3] = sqrt(Sigma / A) / sin(theta);
+    } else {
+        e_phi[3] = 0.0; 
+    }
 
-
-	for (int mu = 0; mu < 4; mu++) {
-		for (int nu = 0; nu < 4; nu++) {
-			dot_et_et += gcov[mu][nu] * e_t[mu] * e_t[nu];
-			dot_er_er += gcov[mu][nu] * e_r[mu] * e_r[nu];
-			dot_et_er += gcov[mu][nu] * e_t[mu] * e_r[nu];
-			dot_er_et += gcov[mu][nu] * e_r[mu] * e_t[nu];
-			dot_et_er += gcov[mu][nu] * e_t[mu] * e_r[nu];
-		}
-	}
-	printf("Test normalisation e_t.e_t = %f (devrait être -1)\n", dot_et_et);
-	printf("Test normalisation e_r.e_r = %f (devrait être 1)\n", dot_er_er);
-	printf("Test normalisation e_t.e_r = %f (devrait être 0)\n", dot_et_er);
-	printf("Test normalisation e_r.e_t = %f (devrait être 0)\n", dot_er_et);
-	printf("Test normalisation e_t.e_r = %f (devrait être 0)\n", dot_et_er);
-	printf("Test normalisation e_r.e_t = %f (devrait être 0)\n", dot_er_et);
-
-
+    double dot_et_et = 0, dot_er_er = 0, dot_et_er = 0, dot_er_et = 0;
+    for (int mu = 0; mu < 4; mu++) {
+        for (int nu = 0; nu < 4; nu++) {
+            dot_et_et += gcov[mu][nu] * e_t[mu] * e_t[nu];
+            dot_er_er += gcov[mu][nu] * e_r[mu] * e_r[nu];
+            dot_et_er += gcov[mu][nu] * e_t[mu] * e_r[nu];
+            dot_er_et += gcov[mu][nu] * e_r[mu] * e_t[nu];
+        }
+    }
+    printf("Test normalisation e_t.e_t = %f (devrait être -1)\n", dot_et_et);
+    printf("Test normalisation e_r.e_r = %f (devrait être 1)\n", dot_er_er);
+    printf("Test normalisation e_t.e_r = %f (devrait être 0)\n", dot_et_er);
+    printf("Test normalisation e_r.e_t = %f (devrait être 0)\n", dot_er_et);
 }
 
 int solve_geodesic_AVX(double X[NDIM], __m256d p[NDIM], double *Q_out) {
@@ -225,11 +217,11 @@ int solve_geodesic_AVX(double X[NDIM], __m256d p[NDIM], double *Q_out) {
 
 
 void generate_blackhole_shadow() {
-    double r_obs = 3 * M;
-    double theta_obs = M_PI / 2.0;
+    double r_obs = 5 * M;
+    double theta_obs = M_PI / 2.0; 
     double phi_obs   = 0.0;
 
-    double X[4] = {0.0, r_obs, theta_obs, phi_obs};
+    double X[4] = {1.0, r_obs, theta_obs, phi_obs};
 
     double gcov[4][4], gcon[4][4];
     calculate_metric(X, gcov, gcon);
@@ -241,20 +233,19 @@ void generate_blackhole_shadow() {
 	double e_t[4], e_x[4], e_y[4], e_z[4];
 	for (int mu = 0; mu < 4; mu++) {
 		e_t[mu] = e_t_loc[mu];
-		e_x[mu] = e_r_loc[mu];
+		e_x[mu] = -e_r_loc[mu];
 		e_y[mu] = e_phi_loc[mu];
 		e_z[mu] = e_theta_loc[mu];
 	}
 
 
-	double fov = 5.0;
+	double fov = 4.4;
 	double aspect_ratio = (double)WIDTH / (double)HEIGHT;
 	for (int i = 0; i < HEIGHT; i++) {
 		for (int j = 0; j < WIDTH; j++) {
 			double x_shift = 0.0;
-			double alpha = -fov * aspect_ratio * (2.0 * ((double)j / (WIDTH - 1) + x_shift) - 1.0);
-			double beta  = fov * (2.0 * ((double)i / (HEIGHT - 1)) - 1.0) / aspect_ratio;
-
+			double alpha = fov * (2.0 * ((double)j / (WIDTH - 1)) - 1.0);
+			double beta  = -fov * (2.0 * ((double)i / (HEIGHT - 1)) - 1.0);
 			printf("alpha = %f, beta = %f\n", alpha, beta);
 
 			double p[4];
@@ -272,12 +263,12 @@ void generate_blackhole_shadow() {
 			double r = sqrt(X[1]*X[1] + X[2]*X[2] + X[3]*X[3]);
 			double intensity = exp(-fabs(Q) / (2 * a * a)) * (1.0 - sqrt(r_horizon / r));
 			if (total_hit >= 1) {
-				image[i][j] = 0; 
-				printf("Intensity = %f\n", intensity);
-			} else {
-
 				printf("r = %f, Q = %f, intensity = %f\n", r, Q, intensity);
 				image[i][j] = (unsigned char)(255.0 * intensity);
+			} else {
+				image[i][j] = 0; 
+				printf("Intensity = %f\n", intensity);
+
 			}
 		}
 	}
