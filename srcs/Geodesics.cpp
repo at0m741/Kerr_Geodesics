@@ -11,7 +11,7 @@ void geodesic_AVX(__m256d x[4], __m256d v[4], double lambda_max,
     __attribute__((aligned(32))) __m256d k4_x[4], k4_v[4];
     __attribute__((aligned(32))) __m256d temp_x[4], temp_v[4];
     __attribute__((aligned(32)))  double lambda = 0.0;
-	double min_r = 1.0 + sqrt(1.0 - a * a);
+	double min_r = 1.0 + sqrt(1.0 - a * a) + 1;
     while (lambda < lambda_max) {
 
         for (int mu = 0; mu < 4; mu++) {
@@ -89,8 +89,7 @@ void geodesic_AVX(__m256d x[4], __m256d v[4], double lambda_max,
             v[mu] = _mm256_fmadd_pd(step_size, _mm256_div_pd(sum_v, six), v[mu]);
         }
 		if (_mm256_cvtsd_f64(x[1]) < min_r) {	
-			/* printf("particle has crossed the horizon at r = %f\n", _mm256_cvtsd_f64(x[1])); */
-			break;
+			printf("particle has crossed the horizon at r = %f\n", _mm256_cvtsd_f64(x[1]));
 		}
         lambda += _mm256_cvtsd_f64(step_size);
         store_geodesic_point_AVX(x, lambda);

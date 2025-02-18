@@ -26,6 +26,10 @@
 #define TOLERANCE 1e-4
 #define DELTA 1e-4
 
+typedef struct {
+    double x, y, z;
+    double lambda;
+} GeodesicPoint;
 
 #if defined(__INTEL_COMPILER) || defined(__ICC) || \
     defined(__INTEL_LLVM_COMPILER)

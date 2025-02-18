@@ -50,7 +50,6 @@ void write_vtk_file(const char *filename)
 
 
 void store_geodesic_point_AVX(VEC_TYPE x[4], double lambda) {
-    // Vérifier la capacité pour 16 points de plus
     if (num_points + 16 >= capacity) {
         capacity = (capacity == 0) ? 1000 : capacity * 2;
         double (*new_geodesic_points)[5];
@@ -69,10 +68,7 @@ void store_geodesic_point_AVX(VEC_TYPE x[4], double lambda) {
 
         geodesic_points = new_geodesic_points;
     }
-
-    // Double boucle i=0..3 et j=0..3
     for (int i = 0; i < 4; i++) {
-        // Récupère r, theta, phi (AVX) à chaque itération
         __attribute__((aligned(32))) double r_vals[4], th_vals[4], ph_vals[4];
 
         VEC_TYPE r     = x[1];
@@ -83,7 +79,6 @@ void store_geodesic_point_AVX(VEC_TYPE x[4], double lambda) {
         _mm256_store_pd(th_vals,  theta);
         _mm256_store_pd(ph_vals,  phi);
 
-        // Calcul des sin/cos
         double sin_th[4], cos_th[4], sin_ph[4], cos_ph[4];
         for (int j = 0; j < 4; j++) {
             sin_th[j] = sin(th_vals[j]);
@@ -92,7 +87,6 @@ void store_geodesic_point_AVX(VEC_TYPE x[4], double lambda) {
             cos_ph[j] = cos(ph_vals[j]);
         }
 
-        // On enregistre 4 lanes, en incrémentant num_points à chaque fois
         for (int j = 0; j < 4; j++) {
             double rr = r_vals[j];
             double xx = rr * sin_th[j] * cos_ph[j];

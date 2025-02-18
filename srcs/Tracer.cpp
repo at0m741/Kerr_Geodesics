@@ -16,7 +16,6 @@ int displayed_points = 0;
 void draw_blackhole() {
     glPointSize(1.0f);
     glBegin(GL_POINTS);
-
     for (int i = 0; i < displayed_points; i++) {
         double x = geodesic_points[i][0];
         double y = geodesic_points[i][1];

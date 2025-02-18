@@ -1,5 +1,9 @@
 #include <Geodesics.h>
 
+/* 
+ * Richardson Extrapolation for the derivative of christoffel symbols
+ * It is used to calculate the gamma derivative in the Riemann tensor
+ */
 
 double richardson_derivative(double (*Gamma_plus_h)[NDIM][NDIM], 
                             double (*Gamma_minus_h)[NDIM][NDIM],
@@ -10,6 +14,13 @@ double richardson_derivative(double (*Gamma_plus_h)[NDIM][NDIM],
     double diff_half_h = (Gamma_plus_half_h[rho][mu][nu] - Gamma_minus_half_h[rho][mu][nu]) / h;
     return (4 * diff_half_h - diff_h) / 3;
 }
+
+/* 
+ * Calculate the Riemann tensor using the Christoffel symbols
+ * The Riemann tensor is calculated using the formula:
+ * R^rho_sigma_mu_nu = dGamma^rho_mu_nu/dx^sigma - dGamma^rho_nu/sigma
+ * + Gamma^rho_mu_lambda * Gamma^lambda_nu_sigma - Gamma^rho_nu_lambda * Gamma^lambda_mu_sigma
+ */
 
 void calculate_riemann(double Gamma[NDIM][NDIM][NDIM], 
                        double Gamma_plus_h[NDIM][NDIM][NDIM][NDIM], 
@@ -61,6 +72,12 @@ void calculate_riemann(double Gamma[NDIM][NDIM][NDIM],
         printf("Kretschmann Scalar: %12.6f\n", Kretschmann_scalar);
     }
 }
+
+/* 
+ * Contract the Riemann tensor to calculate the Ricci tensor
+ * The Ricci tensor is calculated using the formula:
+ * R_mu_nu = g^rho_sigma * R^sigma_rho_mu_nu
+ */
 
 void contract_riemann(double Riemann[NDIM][NDIM][NDIM][NDIM],\
 					  double Ricci[NDIM][NDIM], 

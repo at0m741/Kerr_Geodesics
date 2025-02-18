@@ -48,8 +48,8 @@ void calculate_metric(double x[NDIM], double g[NDIM][NDIM], double g_inv[NDIM][N
 	else {
 		printf("Kerr metric calculated\n");
 	}
-	print_matrix("g", g);
-	print_matrix("g_inv", g_inv);
+	/* print_matrix("g", g); */
+	/* print_matrix("g_inv", g_inv); */
 }
 
 void calculate_metric_kds(double x[NDIM], double g[NDIM][NDIM], double g_inv[NDIM][NDIM]) {
