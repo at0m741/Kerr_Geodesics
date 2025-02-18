@@ -160,7 +160,7 @@ void contract_riemann(double Riemann[NDIM][NDIM][NDIM][NDIM], double Ricci[NDIM]
 double calculate_impact_parameter(double p_t, double p_phi, double g_tt, double g_tphi, double g_phiphi);
 double calculate_emission_angle(double p_r, double p_phi, double g_rr, double g_phiphi);
 double b_critique_kerr(double a, int sense);
-void compute_photon_properties(double g[4][4], double p[4]);
+int  compute_photon_properties(double g[4][4], double p[4]);
 void calculate_metric_kds(double x[NDIM], double g[NDIM][NDIM], double g_inv[NDIM][NDIM]); 
 void calculate_metric_kerr_newman(double x[NDIM], double g[NDIM][NDIM], double g_inv[NDIM][NDIM]);
 /* Problem specific functions */
