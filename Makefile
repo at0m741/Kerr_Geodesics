@@ -38,7 +38,7 @@ all: $(NAME)
 
 $(NAME): $(OBJ)
 	@echo -e "$(YELLOW)Linking $@...$(NC)"
-	$(CC) $(CFLAGS) -o $@ $^ -lglfw -lGL -lGLU
+	$(CC) $(CFLAGS) -o $@ $^ 
 
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp | $(OBJ_DIR)

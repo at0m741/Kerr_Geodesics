@@ -20,13 +20,15 @@ void print_matrix(char *name, double matrix[NDIM][NDIM]) {
 }
 
 void extract_3p1(
-		double g[4][4],     
-		double g_inv[4][4],
-		double *alpha,    
-		double beta_cov[3], 
-		double beta_con[3],
-		double gamma[3][3],
-		double gamma_inv[3][3] ) {
+    double g[4][4],        // métrique covariante 4D
+    double g_inv[4][4],    // métrique contravariante 4D
+    double *alpha,         // sortie: lapse
+    double beta_cov[3],    // sortie: shift covariant \beta_i
+    double beta_con[3],    // sortie: shift contravariant \beta^i
+    double gamma[3][3],    // sortie: gamma_{ij} (métrique 3D)
+    double gamma_inv[3][3] // sortie: gamma^{ij}
+)
+{
     for (int i = 0; i < 3; i++) {
         for (int j = 0; j < 3; j++) {
             gamma[i][j] = g[i+1][j+1];
@@ -43,69 +45,20 @@ void extract_3p1(
         double sum = 0.0;
         for (int j = 0; j < 3; j++) {
             sum += gamma_inv[i][j] * beta_cov[j];
+			printf("gamma_inv[%d][%d] = %e\n", i, j, gamma_inv[i][j]);
         }
         beta_con[i] = sum;
     }
-	print_matrix_3x3("gamma", gamma);
+
     double betabeta = 0.0;
     for (int i = 0; i < 3; i++) {
         betabeta += beta_con[i] * beta_cov[i];
     }
-
-	print_matrix_3x3("gamma_inv", gamma_inv);
-
     *alpha = sqrt( betabeta - g[0][0] );
 	
 	printf("alpha = %e\n", *alpha);
 	printf("beta_i = (%e, %e, %e)\n", beta_cov[0], beta_cov[1], beta_cov[2]);
 }
-
-void compute_extrinsic_curvature_stationary(
-    double alpha,
-    double gamma[3][3],       // gamma_{ij}
-    double gamma_inv[3][3],   // gamma^{ij}
-    double beta_cov[3],       // \beta_i
-    double dgamma[3][3][3],   // dgamma[k][i][j] = \partial_k gamma_{ij}
-    double dbeta[3][3],       // dbeta[k][j]     = \partial_k beta_j
-    double K[3][3]            // sortie: K_{ij}
-) {
-    double Gamma3[3][3][3]; 
-    memset(Gamma3, 0, sizeof(Gamma3));
-    for (int i = 0; i < 3; i++) {
-        for (int j = 0; j < 3; j++) {
-            for (int k = 0; k < 3; k++) {
-                double tmp = 0.0;
-                for (int l = 0; l < 3; l++) {
-                    tmp += gamma_inv[k][l] * (
-                        dgamma[i][l][j] + dgamma[j][l][i] - dgamma[l][i][j]
-                    );
-                }
-                Gamma3[k][i][j] = 0.5 * tmp;
-            }
-        }
-    }
-    double nabla[3][3][3]; 
-    memset(nabla, 0, sizeof(nabla));
-    for (int i = 0; i < 3; i++) {       
-        for (int j = 0; j < 3; j++) {   
-            double partial = dbeta[i][j]; 
-            double chris = 0.0;
-            for (int k = 0; k < 3; k++) {
-                chris += Gamma3[k][i][j] * beta_cov[k];
-				printf("Gamma3[%d][%d][%d] = %e\n", k, i, j, Gamma3[k][i][j]);
-            }
-            nabla[i][j][0] = partial - chris;
-        }
-    }
-    for (int i = 0; i < 3; i++) {
-        for (int j = 0; j < 3; j++) {
-            double val = nabla[i][j][0] + nabla[j][i][0];
-            K[i][j] = val / (2.0 * alpha);
-			printf("K[%d][%d] = %e\n", i, j, K[i][j]);
-        }
-    }
-}
-
 
 void calculate_metric(double x[NDIM], double g[NDIM][NDIM], double g_inv[NDIM][NDIM]) {
     double r = x[1];
@@ -150,11 +103,7 @@ void calculate_metric(double x[NDIM], double g[NDIM][NDIM], double g_inv[NDIM][N
 	for (int i = 0; i < 3; i++) {
 		printf("beta_con[%d] = %e\n", i, beta_con[i]);
 	}
-	
-	double dgamma[3][3][3] = {0};
-	double dbeta[3][3] = {0};
-	double K[3][3] = {0};
-	compute_extrinsic_curvature_stationary(alpha, gamma, gamma_inv, beta_cov, dgamma, dbeta, K);
+
 }
 
 void calculate_metric_kds(double x[NDIM], double g[NDIM][NDIM], double g_inv[NDIM][NDIM]) {

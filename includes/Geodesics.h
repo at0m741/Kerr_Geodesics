@@ -172,3 +172,7 @@ int Metric_prob();
 
 void generate_blackhole_image();
 void generate_blackhole_shadow();
+
+int inverse_3x3(double mat[3][3], double inv[3][3]);
+void check_inverse_3x3(double mat[3][3], double inv[3][3]);
+void print_matrix_3x3(const char* name, double mat[3][3]);

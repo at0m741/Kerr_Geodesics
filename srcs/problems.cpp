@@ -123,7 +123,7 @@ int light_geodesics_prob() {
 
 	std::chrono::duration<double> elapsed_seconds = end - start;
 	printf("Elapsed time: %f\n", elapsed_seconds.count());
-	generate_blackhole_image();
+	write_vtk_file("output/light_geodesic.vtk");
 	if (geodesic_points != NULL) {
 		free(geodesic_points);
 	}
