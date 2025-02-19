@@ -26,6 +26,7 @@
 #define TOLERANCE 1e-4
 #define DELTA 1e-4
 #define NDIM3 3
+#define DELTA3 1e-6
 typedef struct {
     double x, y, z;
     double lambda;
@@ -181,3 +182,27 @@ void calc_gamma_ij(const double X3D[3],
 int inverse_3x3(double mat[3][3], double inv[3][3]);
 void check_inverse_3x3(double mat[3][3], double inv[3][3]);
 void print_matrix_3x3(const char* name, double mat[3][3]);
+void compute_extrinsic_curvature_stationary_3D(
+    double X[3],       
+    double alpha,
+    double beta_cov[3],
+    double Gamma3[3][3][3],
+    double dbeta[3][3],
+    double K[3][3]
+);
+void extract_3p1(
+		double g[4][4],     
+		double g_inv[4][4],
+		double *alpha,    
+		double beta_cov[3], 
+		double beta_con[3],
+		double gamma[3][3],
+		double gamma_inv[3][3] );
+void calculeBeta(double X[3], double beta_cov[3]);
+void calculate_dbeta(double X[3], double dbeta[3][3]);
+void compute_ricci_3d(
+    const double X[3],     
+    double Gamma3[3][3][3], 
+    double R3[3][3]         
+);
+void print_ricci_tensor(double R3[3][3]);

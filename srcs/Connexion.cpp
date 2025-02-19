@@ -93,12 +93,6 @@ void calculate_christoffel(double X[NDIM], double h, \
 }
 
 
-#include <stdio.h>
-#include <math.h>
-#include <string.h>
-
-#define NDIM3 3
-#define DELTA3 1e-6
 
 static double dgamma[NDIM3][NDIM3][NDIM3];
 

@@ -149,41 +149,51 @@ int Metric_prob() {
 
 
 int grid_setup() {
-double r = 5.0;       
-    double theta = M_PI/2.0; 
+    double r = 5.0;
+    double theta = M_PI/2.0;
     double phi = 0.0;
 
-    double X3D[NDIM3] = {r, theta, phi};
+    double X3D[3] = {r, theta, phi};
+    double X4D[4] = {0.0, r, theta, phi};
 
-    double gamma_ij[NDIM3][NDIM3], gamma_inv[NDIM3][NDIM3];
-    calc_gamma_ij(X3D, gamma_ij, gamma_inv);
+    double gcov[4][4], gcon[4][4];
+    calculate_metric(X4D, gcov, gcon);
 
-    printf("=== gamma_{ij} ===\n");
-    for (int i = 0; i < NDIM3; i++) {
-        for (int j = 0; j < NDIM3; j++) {
-            printf("%10.6f ", gamma_ij[i][j]);
-        }
-        printf("\n");
-    }
-    printf("\n=== gamma^{ij} ===\n");
-    for (int i = 0; i < NDIM3; i++) {
-        for (int j = 0; j < NDIM3; j++) {
-            printf("%10.6f ", gamma_inv[i][j]);
-        }
-        printf("\n");
-    }
+    double alpha;
+    double beta_cov[3], beta_con[3];
+    double gamma3[3][3], gamma3_inv[3][3];
+    extract_3p1(gcov, gcon, &alpha, beta_cov, beta_con, gamma3, gamma3_inv);
 
-    double Gamma3[NDIM3][NDIM3][NDIM3];
+    double Gamma3[3][3][3];
     calculate_christoffel_3D(X3D, Gamma3);
+	for (int i = 0; i < 3; i++) {
+		for (int j = 0; j < 3; j++) {
+			for (int k = 0; k < 3; k++) {
+				printf("Gamma3[%d][%d][%d] = %e\n", i, j, k, Gamma3[i][j][k]);
+			}
+		}
+	}
+    double dbeta[3][3];
+    calculate_dbeta(X3D, dbeta); 
 
-    printf("\n=== Christoffel 3D: Gamma^k_{ij} ===\n");
-    for (int k = 0; k < NDIM3; k++) {
-        for (int i = 0; i < NDIM3; i++) {
-            for (int j = 0; j < NDIM3; j++) {
-                printf("Gamma3[%d][%d][%d] = %g\n", k, i, j, Gamma3[k][i][j]);
-            }
-        }
+    double K[3][3];
+    compute_extrinsic_curvature_stationary_3D(
+        X3D, alpha, beta_cov,
+        Gamma3, dbeta, K
+    );
+
+    printf("alpha = %f\n", alpha);
+    for(int i=0;i<3;i++){
+        printf("beta_cov[%d]= %e\n", i, beta_cov[i]);
     }
+    for(int i=0;i<3;i++){
+      for(int j=0;j<3;j++){
+        printf("K[%d][%d]= %e\n", i, j, K[i][j]);
+      }
+    }
+
+	double Rij[3][3];
+	compute_ricci_3d(X3D, Gamma3 ,Rij);
 
     return 0;
 }

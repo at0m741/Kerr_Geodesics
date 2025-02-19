@@ -108,3 +108,88 @@ void contract_riemann(double Riemann[NDIM][NDIM][NDIM][NDIM],\
     }
     printf("Ricci Scalar: %12.6f\n", Ricci_scalar);
 }
+
+void compute_partial_christoffel_3D(
+    const double X[3],
+    int m, 
+    double dGamma[3][3][3], 
+    double delta
+)
+{
+    double Xp[3], Xm[3];
+    memcpy(Xp, X, sizeof(Xp));
+    memcpy(Xm, X, sizeof(Xm));
+
+    Xp[m] += delta;
+    Xm[m] -= delta;
+
+    double Gamma_p[3][3][3], Gamma_m[3][3][3];
+    memset(Gamma_p,0,sizeof(Gamma_p));
+    memset(Gamma_m,0,sizeof(Gamma_m));
+
+    calculate_christoffel_3D(Xp, Gamma_p);
+    calculate_christoffel_3D(Xm, Gamma_m);
+
+    for(int k=0;k<3;k++){
+        for(int i=0;i<3;i++){
+            for(int j=0;j<3;j++){
+                dGamma[k][i][j] = (Gamma_p[k][i][j] - Gamma_m[k][i][j])/(2.0*delta);
+				printf("%12.6f\t", dGamma[k][i][j]);
+            }
+        }
+    }
+}
+
+void compute_ricci_3d(
+    const double X[3],     
+    double Gamma3[3][3][3], 
+    double R3[3][3]         
+)
+{
+    memset(R3,0,sizeof(double)*3*3);
+
+    static double partialGamma[3][3][3][3];
+    memset(partialGamma,0,sizeof(partialGamma));
+
+    double delta = 1e-5;
+    for(int m=0; m<3; m++){
+        double dG[3][3][3];
+        memset(dG,0,sizeof(dG));
+        compute_partial_christoffel_3D(X,m,dG,delta);
+        for(int k=0;k<3;k++)
+            for(int i=0;i<3;i++)
+                for(int j=0;j<3;j++)
+                    partialGamma[m][k][i][j] = dG[k][i][j];
+    }
+
+    for(int i=0;i<3;i++){
+        for(int j=0;j<3;j++){
+            double term1=0, term2=0, term3=0, term4=0;
+            for(int k=0;k<3;k++)
+                term1 += partialGamma[k][k][i][j];
+            for(int k=0;k<3;k++){
+                term2 += partialGamma[j][k][i][k];
+            for(int k=0;k<3;k++)
+                for(int m=0;m<3;m++)
+                    term3 += Gamma3[k][i][j]*Gamma3[m][k][m];
+            for(int m=0;m<3;m++)
+                for(int k=0;k<3;k++)
+                    term4 += Gamma3[m][i][k]*Gamma3[k][j][m];
+            }
+            R3[i][j] = term1 - term2 + term3 - term4;
+        }
+    }
+
+	print_ricci_tensor(R3);
+}
+
+void print_ricci_tensor(double R3[3][3]) {
+	printf("\nRicci tensor:\n");
+	for (int i = 0; i < 3; i++) {
+		for (int j = 0; j < 3; j++) {
+			printf("%12.6f\t", R3[i][j]);
+		}
+		printf("\n");
+	}
+}
+

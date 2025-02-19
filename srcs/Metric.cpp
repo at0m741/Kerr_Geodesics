@@ -59,48 +59,69 @@ void extract_3p1(
 	printf("beta_i = (%e, %e, %e)\n", beta_cov[0], beta_cov[1], beta_cov[2]);
 }
 
-void compute_extrinsic_curvature_stationary(
-    double alpha,
-    double gamma[3][3],       // gamma_{ij}
-    double gamma_inv[3][3],   // gamma^{ij}
-    double beta_cov[3],       // \beta_i
-    double dgamma[3][3][3],   // dgamma[k][i][j] = \partial_k gamma_{ij}
-    double dbeta[3][3],       // dbeta[k][j]     = \partial_k beta_j
-    double K[3][3]            // sortie: K_{ij}
-) {
-    double Gamma3[3][3][3]; 
-    memset(Gamma3, 0, sizeof(Gamma3));
-    for (int i = 0; i < 3; i++) {
-        for (int j = 0; j < 3; j++) {
-            for (int k = 0; k < 3; k++) {
-                double tmp = 0.0;
-                for (int l = 0; l < 3; l++) {
-                    tmp += gamma_inv[k][l] * (
-                        dgamma[i][l][j] + dgamma[j][l][i] - dgamma[l][i][j]
-                    );
-                }
-                Gamma3[k][i][j] = 0.5 * tmp;
-            }
+
+
+void calculate_dbeta(double X[3], double dbeta[3][3]) {
+    memset(dbeta, 0, sizeof(double)*3*3);
+
+    for(int m=0; m<3; m++){
+        double Xp[3], Xm[3];
+        memcpy(Xp, X, sizeof(Xp));
+        memcpy(Xm, X, sizeof(Xm));
+
+        Xp[m] += DELTA3;
+        Xm[m] -= DELTA3;
+
+        double beta_p[3], beta_m[3];
+        calculeBeta(Xp, beta_p); 
+        calculeBeta(Xm, beta_m); 
+
+        for(int j=0; j<3; j++){
+            dbeta[m][j] = (beta_p[j] - beta_m[j]) / (2.0*DELTA3);
+            printf("dbeta[%d][%d] = %e\n", m, j, dbeta[m][j]);
         }
     }
-    double nabla[3][3][3]; 
+}
+
+
+void calculeBeta(double X[3], double beta_cov[3]) {
+    double X4D[4] = {0.0, X[0], X[1], X[2]};
+    double gcov[4][4], gcon[4][4];
+    calculate_metric(X4D, gcov, gcon);
+
+    for(int i=0; i<3; i++){
+        beta_cov[i] = gcov[0][i+1];
+		printf("beta_cov[%d] = %e\n", i, beta_cov[i]);
+    }
+}
+
+void compute_extrinsic_curvature_stationary_3D(
+    double X[3],       
+    double alpha,
+    double beta_cov[3],
+    double Gamma3[3][3][3],
+    double dbeta[3][3],
+    double K[3][3]
+){
+
+    double nabla[3][3]; 
     memset(nabla, 0, sizeof(nabla));
-    for (int i = 0; i < 3; i++) {       
-        for (int j = 0; j < 3; j++) {   
-            double partial = dbeta[i][j]; 
+
+    for(int i=0; i<3; i++){
+        for(int j=0; j<3; j++){
+            double partial = dbeta[i][j];
             double chris = 0.0;
-            for (int k = 0; k < 3; k++) {
+            for(int k=0; k<3; k++){
                 chris += Gamma3[k][i][j] * beta_cov[k];
             }
-            nabla[i][j][0] = partial - chris;
-			printf("nabla[%d][%d][0] = %e\n", i, j, nabla[i][j][0]);
+            nabla[i][j] = partial - chris;
         }
     }
-    for (int i = 0; i < 3; i++) {
-        for (int j = 0; j < 3; j++) {
-            double val = nabla[i][j][0] + nabla[j][i][0];
+
+    for(int i=0; i<3; i++){
+        for(int j=0; j<3; j++){
+            double val = nabla[i][j] + nabla[j][i];
             K[i][j] = val / (2.0 * alpha);
-			printf("K[%d][%d] = %e\n", i, j, K[i][j]);
         }
     }
 }
@@ -136,22 +157,6 @@ void calculate_metric(double x[NDIM], double g[NDIM][NDIM], double g_inv[NDIM][N
 		printf("Kerr metric calculated\n");
 	}
 
-	double alpha;
-	double beta_cov[3];
-	double beta_con[3];
-	double gamma[3][3];
-	double gamma_inv[3][3];
-	extract_3p1(g, g_inv, &alpha, beta_cov, beta_con, gamma, gamma_inv);
-	printf("alpha = %e\n", alpha);
-	printf("beta_i = (%e, %e, %e)\n", beta_cov[0], beta_cov[1], beta_cov[2]);
-	for (int i = 0; i < 3; i++) {
-		printf("beta_con[%d] = %e\n", i, beta_con[i]);
-	}
-	
-	double dgamma[3][3][3] = {0};
-	double dbeta[3][3] = {0};
-	double K[3][3] = {0};
-	compute_extrinsic_curvature_stationary(alpha, gamma, gamma_inv, beta_cov, dgamma, dbeta, K);
 }
 
 void calculate_metric_kds(double x[NDIM], double g[NDIM][NDIM], double g_inv[NDIM][NDIM]) {
@@ -258,10 +263,6 @@ void verify_metric(double gcov[NDIM][NDIM], double gcon[NDIM][NDIM])
 	printf("\n");
 	check_inverse(gcov, gcon);
 	printf("\n");
-	print_matrix("gcov", gcov);
-	print_matrix("gcon", gcon);
-	printf("\n");
-	printf("Identity matrix:\n");
 	print_matrix("identity", identity);
 
 }
