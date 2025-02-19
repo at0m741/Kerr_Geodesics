@@ -22,7 +22,7 @@ double richardson_derivative(double (*Gamma_plus_h)[NDIM][NDIM],
  * + Gamma^rho_mu_lambda * Gamma^lambda_nu_sigma - Gamma^rho_nu_lambda * Gamma^lambda_mu_sigma
  */
 
-void calculate_riemann(double Gamma[NDIM][NDIM][NDIM], 
+void Tensor::calculate_riemann(double Gamma[NDIM][NDIM][NDIM], 
                        double Gamma_plus_h[NDIM][NDIM][NDIM][NDIM], 
                        double Gamma_minus_h[NDIM][NDIM][NDIM][NDIM], 
                        double Gamma_plus_half_h[NDIM][NDIM][NDIM][NDIM], 
@@ -79,7 +79,7 @@ void calculate_riemann(double Gamma[NDIM][NDIM][NDIM],
  * R_mu_nu = g^rho_sigma * R^sigma_rho_mu_nu
  */
 
-void contract_riemann(double Riemann[NDIM][NDIM][NDIM][NDIM],\
+void Tensor::contract_riemann(double Riemann[NDIM][NDIM][NDIM][NDIM],\
 					  double Ricci[NDIM][NDIM], 
 					  double g_inv[NDIM][NDIM]) {
     memset(Ricci, 0, sizeof(double) * NDIM * NDIM);
@@ -136,7 +136,6 @@ void compute_partial_christoffel_3D(
             }
         }
     }
-
 }
 
 void compute_ricci_3d(

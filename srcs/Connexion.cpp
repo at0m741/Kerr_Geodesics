@@ -2,23 +2,25 @@
 
 
 
-void calculate_Gamma_at_offset(double X[NDIM], int direction, 
+void Tensor::calculate_Gamma_at_offset(double X[NDIM], int direction, 
 						double offset, double delta,
 						double gcov[NDIM][NDIM], 
 						double gcon[NDIM][NDIM], 
 						double Gamma_slice[NDIM][NDIM][NDIM], 
 						const char *metric_type) {
     double X_offset[NDIM];
+	Connexion connexion;
+	Metric metric;
     memcpy(X_offset, X, sizeof(double) * NDIM);
     X_offset[direction] += offset;
-    
+	printf("Gamma avant : %f\n", Gamma_slice[0][0][0]); 
     double tempGamma[NDIM][NDIM][NDIM];
 	if (strcmp(metric_type, "minkowski") == 0) {
-		calculate_christoffel(X_offset, delta, tempGamma, gcov, gcon, "minkowski");
+		connexion.calculate_christoffel(X_offset, delta, tempGamma, gcov, gcon, "minkowski");
 	} else if (strcmp(metric_type, "kerr") == 0 || strcmp(metric_type, "schwarzschild") == 0) {
-		calculate_metric(X_offset, gcov, gcon);
+		metric.calculate_metric(X_offset, gcov, gcon);
 	}
-    calculate_christoffel(X_offset, delta, tempGamma, gcov, gcon, metric_type);
+    connexion.calculate_christoffel(X_offset, delta, tempGamma, gcov, gcon, metric_type);
     
     for (int mu = 0; mu < NDIM; mu++) {
         for (int nu = 0; nu < NDIM; nu++) {
@@ -27,16 +29,17 @@ void calculate_Gamma_at_offset(double X[NDIM], int direction,
             }
         }
     }
+	printf("Gamma après : %f\n", Gamma_slice[0][0][0]);
 }
 
-void calculate_christoffel(double X[NDIM], double h, \
+void Connexion::calculate_christoffel(double X[NDIM], double h, \
 							double gamma[NDIM][NDIM][NDIM],
 							double g[NDIM][NDIM],
 							double g_inv[NDIM][NDIM], const char *metric) {
     double tmp[NDIM][NDIM][NDIM];
     double Xh[NDIM], Xl[NDIM]; 
     double gh[NDIM][NDIM], gl[NDIM][NDIM]; 
-
+	Metric metric_obj;
     memset(gamma, 0, sizeof(double) * NDIM * NDIM * NDIM);
 
     for (int mu = 0; mu < NDIM; mu++) {
@@ -51,14 +54,10 @@ void calculate_christoffel(double X[NDIM], double h, \
 			strcmp(metric, "kerr") == 0 ||
 			strcmp(metric, "kerr-newman") == 0 ||
 			strcmp(metric, "ds") == 0) {
-			calculate_metric(Xh, gh, g_inv);
-			calculate_metric(Xl, gl, g_inv);
-			verify_metric(gh, g_inv);
-			verify_metric(gl, g_inv);
-		}
-		else {
-			printf("Invalid metric type\n");
-			return;
+			metric_obj.calculate_metric(Xh, gh, g_inv);
+			metric_obj.calculate_metric(Xl, gl, g_inv);
+			metric_obj.verify_metric(gh, g_inv);
+			metric_obj.verify_metric(gl, g_inv);
 		}
         for (int lam = 0; lam < NDIM; lam++) {
             for (int nu = 0; nu < NDIM; nu++) {
@@ -101,12 +100,13 @@ void calc_gamma_ij(const double X3D[3],
                    double gamma3_inv[3][3])  
 {
     double X4D[4] = {0.0, X3D[0], X3D[1], X3D[2]};
-
     double g[4][4], g_inv[4][4];
-    memset(g, 0, sizeof(g));
+	Metric metric;
+	Matrix matrix_obj;
+	memset(g, 0, sizeof(g));
     memset(g_inv, 0, sizeof(g_inv));
 
-    calculate_metric(X4D, g, g_inv);
+    metric.calculate_metric(X4D, g, g_inv);
 
     for (int i = 0; i < 3; i++) {
         for (int j = 0; j < 3; j++) {
@@ -114,8 +114,7 @@ void calc_gamma_ij(const double X3D[3],
         }
     }
 
-    int status = inverse_3x3(gamma3, gamma3_inv);
-    if (!status) {
+    if (!matrix_obj.inverse_3x3(gamma3, gamma3_inv)) {
         printf("Erreur: gamma_{ij} est singulière ou mal définie\n");
     }
 }

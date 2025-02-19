@@ -1,6 +1,6 @@
 #include <Geodesics.h>
 
-void check_riemann_symmetries(double Riemann[NDIM][NDIM][NDIM][NDIM], double tolerance) {
+void Tensor::check_riemann_symmetries(double Riemann[NDIM][NDIM][NDIM][NDIM], double tolerance) {
     for (int rho = 0; rho < NDIM; rho++) {
         for (int sigma = 0; sigma < NDIM; sigma++) {
             for (int mu = 0; mu < NDIM; mu++) {
@@ -19,7 +19,7 @@ void check_riemann_symmetries(double Riemann[NDIM][NDIM][NDIM][NDIM], double tol
         }
     }
 }
-void check_symmetry_christoffel(double gamma[NDIM][NDIM][NDIM]) {
+void Connexion::check_symmetry_christoffel(double gamma[NDIM][NDIM][NDIM]) {
     printf("\nChristoffel symbols verif with delta = %e:\n", TOLERANCE);
     for (int lambda = 0; lambda < NDIM; lambda++) {
         for (int mu = 0; mu < NDIM; mu++) {

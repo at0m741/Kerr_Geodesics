@@ -1,3 +1,4 @@
+#include "Connexion.h"
 #include <Geodesics.h>
 
 void initialize_riemann_tensor(double R[NDIM][NDIM][NDIM][NDIM]) {
@@ -13,7 +14,7 @@ void initialize_riemann_tensor(double R[NDIM][NDIM][NDIM][NDIM]) {
 }
 
 
-void print_riemann(double Riemann[NDIM][NDIM][NDIM][NDIM]) {
+void Tensor::print_riemann(double Riemann[NDIM][NDIM][NDIM][NDIM]) {
     const double threshold = 1e-10; 
     printf("\nRiemann Tensor (Non-zero components):\n"); 
     for (int rho = 0; rho < NDIM; rho++) {
@@ -30,7 +31,7 @@ void print_riemann(double Riemann[NDIM][NDIM][NDIM][NDIM]) {
     }
 }
 
-void print_christoffel_matrix(double gamma[NDIM][NDIM][NDIM]) {
+void Connexion::print_christoffel_matrix(double gamma[NDIM][NDIM][NDIM]) {
     printf("\nChristoffel Symbols:\n");
     for (int lambda = 0; lambda < NDIM; lambda++) {
         printf("\nGamma^%d:\n", lambda);

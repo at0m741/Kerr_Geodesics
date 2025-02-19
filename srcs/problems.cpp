@@ -5,6 +5,9 @@ extern int num_points;
 extern double a;
 
 int Riemann_tensor(const char *metric) {
+	Tensor tensor;
+	Connexion connexion;
+	Metric metric_obj;
 	double r0 = 20.0;
 	double X[NDIM] = {0.0, r0, M_PI/4.0, 0.0};
 	double gcovR[NDIM][NDIM], gconR[NDIM][NDIM];
@@ -16,37 +19,40 @@ int Riemann_tensor(const char *metric) {
 	double Ricci[NDIM][NDIM];
 	if (strcmp(metric, "ds") == 0) {
 		printf("KDS metric calculation\n");
-		calculate_metric_kds(X, gcovR, gconR);
+		metric_obj.calculate_metric_kds(X, gcovR, gconR);
 	} else {
-		calculate_metric(X, gcovR, gconR);
+		metric_obj.calculate_metric(X, gcovR, gconR);
 	}
-	calculate_christoffel(X, DELTA, christoffelR, gcovR, gconR, "kerr");
+	connexion.calculate_christoffel(X, DELTA, christoffelR, gcovR, gconR, "kerr");
+
 
 	for (int d = 0; d < NDIM; d++) {
-		calculate_Gamma_at_offset(X, d, DELTA, DELTA, gcovR, gconR, Gamma_plus_h[d], "kerr");
-		calculate_Gamma_at_offset(X, d, -DELTA, DELTA, gcovR, gconR, Gamma_minus_h[d], "kerr");
+		tensor.calculate_Gamma_at_offset(X, d, DELTA, DELTA, gcovR, gconR, Gamma_plus_h[d], "kerr");
+		tensor.calculate_Gamma_at_offset(X, d, -DELTA, DELTA, gcovR, gconR, Gamma_minus_h[d], "kerr");
 	}
 
 	for (int d = 0; d < NDIM; d++) {
-		calculate_Gamma_at_offset(X, d, DELTA / 2.0, DELTA, gcov_half, \
+		tensor.calculate_Gamma_at_offset(X, d, DELTA / 2.0, DELTA, gcov_half, \
 									gcon_half, Gamma_plus_half_h[d], "kerr");
-		calculate_Gamma_at_offset(X, d, -DELTA / 2.0, DELTA, gcov_half, \
+		tensor.calculate_Gamma_at_offset(X, d, -DELTA / 2.0, DELTA, gcov_half, \
 									gcon_half, Gamma_minus_half_h[d], "kerr");
 	}
 
-	calculate_riemann(christoffelR, Gamma_plus_h, Gamma_minus_h, \
+	tensor.calculate_riemann(christoffelR, Gamma_plus_h, Gamma_minus_h, \
 					  Gamma_plus_half_h, Gamma_minus_half_h, Riemann, DELTA);
 	printf("Riemann tensor calculation completed\n");
-	print_riemann(Riemann);
-	contract_riemann(Riemann, Ricci, gconR);
+	tensor.print_riemann(Riemann);
+	tensor.contract_riemann(Riemann, Ricci, gconR);
 	return 0;
 }
 
 int Geodesics_prob() {
+	Connexion connexion;
+	Metric metric_obj;
 	double r0 = 20.0;
-	double X[NDIM] = {0.4, r0, M_PI/3.8, 0.2};
+	double X[NDIM] = {0.4, r0, M_PI/3.8, 0.0};
 	double gcov[NDIM][NDIM], gcon[NDIM][NDIM];
-	calculate_metric(X, gcov, gcon);
+	metric_obj.calculate_metric(X, gcov, gcon);
 	double g_tt = gcov[0][0];
 	double g_tphi = gcov[0][3];
 	double g_phiphi = gcov[3][3];
@@ -56,9 +62,9 @@ int Geodesics_prob() {
 	double v[NDIM] = {vt, 0.0, 0.0, Omega * vt};
 	double norm = g_tt * v[0] * v[0] + 2.0 * g_tphi * v[0] * v[3] + g_phiphi * v[3] * v[3];
 	printf("Norme quadrivecteur = %e (doit être proche de 0)\n", norm);
-	double dt = 0.00910;
+	double dt = 0.0910;
 	double christoffel[NDIM][NDIM][NDIM];
-	calculate_christoffel(X, DELTA, christoffel, gcov, gcon, "kerr");
+	connexion.calculate_christoffel(X, DELTA, christoffel, gcov, gcon, "kerr");
 	__m256d X_avx[NDIM], v_avx[NDIM];
 	for (int i = 0; i < NDIM; i++) {
 		X_avx[i] = _mm256_set1_pd(X[i]);
@@ -87,10 +93,12 @@ int Geodesics_prob() {
 }
 
 int light_geodesics_prob() {
+	Connexion connexion;
+	Metric metric_obj;
 	double r0 = 20.0;
-	double X[NDIM] = {0.4, r0, M_PI/3.0, 0.2};
+	double X[NDIM] = {0.4, r0, M_PI/3.0, 0.0};
 	double gcov[NDIM][NDIM], gcon[NDIM][NDIM];
-	calculate_metric(X, gcov, gcon);
+	metric_obj.calculate_metric(X, gcov, gcon);
 	double g_tt = gcov[0][0];
 	double g_tphi = gcov[0][3];
 	double g_phiphi = gcov[3][3];
@@ -99,10 +107,9 @@ int light_geodesics_prob() {
 	double vt = 1.0 / sqrt(fabs(denom));
 	double v[NDIM] = {vt, 0.0, 0.0, 3.5 * Omega * vt};
 	double norm = g_tt * v[0] * v[0] + 2.0 * g_tphi * v[0] * v[3] + g_phiphi * v[3] * v[3];
-	printf("Norme quadrivecteur = %e (doit être proche de 0)\n", norm);
-	double dt = 0.00910;
+	double dt = 0.0910;
 	double christoffel[NDIM][NDIM][NDIM];
-	calculate_christoffel(X, DELTA, christoffel, gcov, gcon, "kerr");
+	connexion.calculate_christoffel(X, DELTA, christoffel, gcov, gcon, "kerr");
 	__m256d X_avx[NDIM], v_avx[NDIM];
 	for (int i = 0; i < NDIM; i++) {
 		X_avx[i] = _mm256_set1_pd(X[i]);
@@ -131,19 +138,20 @@ int light_geodesics_prob() {
 }
 
 int Metric_prob() {
+	Metric metric_obj;
 	double r0 = 20.0;
 	double X[NDIM] = {0.4, r0, M_PI/4.0, 0.2};
 	double gcov[NDIM][NDIM], gcon[NDIM][NDIM];
 	printf("=====================================================\n");
-	calculate_metric(X, gcov, gcon);
+	metric_obj.calculate_metric(X, gcov, gcon);
 
 	printf("=====================================================\n");
 	double gcov_KN[NDIM][NDIM], gcon_KN[NDIM][NDIM];
-	calculate_metric_kerr_newman(X, gcov_KN, gcon_KN);
+	metric_obj.calculate_metric_kerr_newman(X, gcov_KN, gcon_KN);
 
 	printf("=====================================================\n");
 	double gcov_kds[NDIM][NDIM], gcon_kds[NDIM][NDIM];
-	calculate_metric_kds(X, gcov_kds, gcon_kds);
+	metric_obj.calculate_metric_kds(X, gcov_kds, gcon_kds);
 	return 0;
 }
 
@@ -152,12 +160,12 @@ int grid_setup() {
     double r = 2.0;
     double theta = M_PI/2.0;
     double phi = 0.0;
-
+	Metric metric_obj;
     double X3D[3] = {r, theta, phi};
     double X4D[4] = {0.0, r, theta, phi};
 
     double gcov[4][4], gcon[4][4];
-    calculate_metric(X4D, gcov, gcon);
+    metric_obj.calculate_metric(X4D, gcov, gcon);
 
     double alpha;
     double beta_cov[3], beta_con[3];
@@ -174,14 +182,7 @@ int grid_setup() {
 		}
 	}
 
-	compute_partial_christoffel_3D(X3D, 0, Gamma3, DELTA);
-	for (int i = 0; i < 3; i++) {
-		for (int j = 0; j < 3; j++) {
-			for (int k = 0; k < 3; k++) {
-				printf("dGamma[%d][%d][%d] = %e\n", i, j, k, Gamma3[i][j][k]);
-			}
-		}
-	}
+	
 
     double dbeta[3][3];
     calculate_dbeta(X3D, dbeta); 

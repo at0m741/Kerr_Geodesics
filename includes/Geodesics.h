@@ -9,6 +9,7 @@
 #include <chrono>
 #include <sys/time.h>
 
+
 #define MAX_POINTS 100000
 #define C 1.0
 #define G 1.0 
@@ -19,7 +20,7 @@
 #define NDIM 4
 #define TT 0
 #define DT 0.0000005
-#define max_dt 50000.0
+#define max_dt 70000.0
 #define ALIGNMENT 32
 #define AVX2 1
 #define ARCH "AVX2"
@@ -27,6 +28,11 @@
 #define DELTA 1e-4
 #define NDIM3 3
 #define DELTA3 1e-9
+
+#include <Tensor.h>
+#include <matrix.h>
+#include <Metric.h>
+#include <Connexion.h>
 typedef struct {
     double x, y, z;
     double lambda;
@@ -68,7 +74,6 @@ typedef double __attribute__((aligned(ALIGNMENT))) ldouble_a;
 	#define Plateform "Darwin (macOS)"
 #endif
 
-#define DLOOP  for(j=0;j<NDIM;j++) for(k=0;k<NDIM;k++)
 
 
 #ifdef  AVX2
@@ -111,59 +116,18 @@ typedef double __attribute__((aligned(ALIGNMENT))) ldouble_a;
     #error "AVX2 or AVX512F support required"
 #endif
 
-void calculate_christoffel(double X[NDIM], double h, \
-							double gamma[NDIM][NDIM][NDIM],
-							double g[NDIM][NDIM],
-							double g_inv[NDIM][NDIM], const char *metric); 
-void riemann(double g[4][4], double christoffel[4][4][4], double riemann[4][4][4][4]);
+
 void write_vtk_file(const char *filename);
 void store_geodesic_point(double x[4], double lambda);
-void calculate_metric(double x[4], double g[4][4], double g_inv[4][4]);
-void verify_metric(double g[4][4], double g_inv[4][4]);
-void minkowski_metric(double g[NDIM][NDIM], double g_inv[NDIM][NDIM]); 
 void geodesic_AVX(__m256d x[4], __m256d v[4], double lambda_max,\
 				  __m256d christoffel[4][4][4], __m256d step_size);
 void store_geodesic_point_AVX(__m256d x[4], double lambda);
-
-void check_symmetry_christoffel(double gamma[NDIM][NDIM][NDIM]); 
-double determinant3x3(double mat[3][3]);
-double determinant4x4(double mat[4][4]);
-void cofactor(double mat[NDIM][NDIM], double cofactorMat[NDIM][NDIM]);
-void transpose(double mat[NDIM][NDIM], double transposed[NDIM][NDIM]);
-int inverse_matrix(double mat[NDIM][NDIM], double inverse[NDIM][NDIM]);
-void check_inverse(double gcov[NDIM][NDIM], double gcon[NDIM][NDIM]);
-void print_matrix(const char* name, double mat[NDIM][NDIM]);
-
-void check_symmetry_christoffel(double gamma[NDIM][NDIM][NDIM]); 
-void initialize_riemann_tensor(double R[NDIM][NDIM][NDIM][NDIM]);
-void print_riemann(double Riemann[NDIM][NDIM][NDIM][NDIM]);
-void print_christoffel(double Gamma[NDIM][NDIM][NDIM]);
-void print_christoffel_matrix(double gamma[NDIM][NDIM][NDIM]);
-
-
-void calculate_Gamma_at_offset(double X[NDIM], int direction, 
-						double offset, double delta,
-						double gcov[NDIM][NDIM], 
-						double gcon[NDIM][NDIM], 
-						double Gamma_slice[NDIM][NDIM][NDIM], 
-						const char *metric_type);
-void calculate_riemann(double Gamma[NDIM][NDIM][NDIM], 
-                       double Gamma_plus_h[NDIM][NDIM][NDIM][NDIM], 
-                       double Gamma_minus_h[NDIM][NDIM][NDIM][NDIM], 
-                       double Gamma_plus_half_h[NDIM][NDIM][NDIM][NDIM], 
-                       double Gamma_minus_half_h[NDIM][NDIM][NDIM][NDIM],
-                       double Riemann[NDIM][NDIM][NDIM][NDIM], 
-                       double h);
- 
-void check_riemann_symmetries(double Riemann[NDIM][NDIM][NDIM][NDIM], double tolerance);
-void contract_riemann(double Riemann[NDIM][NDIM][NDIM][NDIM], double Ricci[NDIM][NDIM], double g_inv[NDIM][NDIM]);
 
 double calculate_impact_parameter(double p_t, double p_phi, double g_tt, double g_tphi, double g_phiphi);
 double calculate_emission_angle(double p_r, double p_phi, double g_rr, double g_phiphi);
 double b_critique_kerr(double a, int sense);
 int  compute_photon_properties(double g[4][4], double p[4]);
-void calculate_metric_kds(double x[NDIM], double g[NDIM][NDIM], double g_inv[NDIM][NDIM]); 
-void calculate_metric_kerr_newman(double x[NDIM], double g[NDIM][NDIM], double g_inv[NDIM][NDIM]);
+
 /* Problem specific functions */
 
 int Riemann_tensor(const char *metric);
@@ -179,9 +143,7 @@ void calculate_christoffel_3D(
 void calc_gamma_ij(const double X3D[3],
                    double gamma3[3][3],       
                    double gamma3_inv[3][3]);
-int inverse_3x3(double mat[3][3], double inv[3][3]);
-void check_inverse_3x3(double mat[3][3], double inv[3][3]);
-void print_matrix_3x3(const char* name, double mat[3][3]);
+
 void compute_extrinsic_curvature_stationary_3D(
     double X[3],       
     double alpha,

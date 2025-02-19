@@ -1,16 +1,16 @@
 #include <Geodesics.h>
 
-double determinant2x2(double mat[2][2]) {
+double Matrix::determinant2x2(double mat[2][2]) {
     return mat[0][0] * mat[1][1] - mat[0][1] * mat[1][0];
 }
 
-double determinant3x3(double mat[3][3]) {
+double Matrix::determinant3x3(double mat[3][3]) {
     return mat[0][0] * (mat[1][1] * mat[2][2] - mat[1][2] * mat[2][1])
          - mat[0][1] * (mat[1][0] * mat[2][2] - mat[1][2] * mat[2][0])
          + mat[0][2] * (mat[1][0] * mat[2][1] - mat[1][1] * mat[2][0]);
 }
 
-double determinant4x4(double mat[NDIM][NDIM]) {
+double Matrix::determinant4x4(double mat[NDIM][NDIM]) {
     double minor[3][3];
     double det = 0.0;
     for (int i = 0; i < NDIM; i++) {
@@ -30,7 +30,7 @@ double determinant4x4(double mat[NDIM][NDIM]) {
     return det;
 }
 
-void cofactor(double mat[NDIM][NDIM], double cofactorMat[NDIM][NDIM]) {
+void Matrix::cofactor(double mat[NDIM][NDIM], double cofactorMat[NDIM][NDIM]) {
     double minor[3][3];
     for (int i = 0; i < NDIM; i++) {
         for (int j = 0; j < NDIM; j++) {
@@ -50,7 +50,7 @@ void cofactor(double mat[NDIM][NDIM], double cofactorMat[NDIM][NDIM]) {
     }
 }
 
-void cofactor3x3(double mat[3][3], double cofactorMat[3][3]) {
+void Matrix::cofactor3x3(double mat[3][3], double cofactorMat[3][3]) {
     double minor[2][2];
     for (int i = 0; i < 3; i++) {
         for (int j = 0; j < 3; j++) {
@@ -71,7 +71,7 @@ void cofactor3x3(double mat[3][3], double cofactorMat[3][3]) {
 }
 
 
-void transpose(double mat[NDIM][NDIM], double transposed[NDIM][NDIM]) {
+void Matrix::transpose(double mat[NDIM][NDIM], double transposed[NDIM][NDIM]) {
     for (int i = 0; i < NDIM; i++) {
         for (int j = 0; j < NDIM; j++) {
             transposed[j][i] = mat[i][j];
@@ -79,7 +79,7 @@ void transpose(double mat[NDIM][NDIM], double transposed[NDIM][NDIM]) {
     }
 }
 
-void transpose3x3(double mat[3][3], double transposed[3][3]) {
+void Matrix::transpose3x3(double mat[3][3], double transposed[3][3]) {
     for (int i = 0; i < 3; i++) {
         for (int j = 0; j < 3; j++) {
             transposed[j][i] = mat[i][j];
@@ -87,7 +87,7 @@ void transpose3x3(double mat[3][3], double transposed[3][3]) {
     }
 }
 
-int inverse_matrix(double mat[NDIM][NDIM], double inverse[NDIM][NDIM]) {
+int Matrix::inverse_matrix(double mat[NDIM][NDIM], double inverse[NDIM][NDIM]) {
     double det = determinant4x4(mat);
     double cofactorMat[NDIM][NDIM];
     cofactor(mat, cofactorMat);
@@ -103,16 +103,17 @@ int inverse_matrix(double mat[NDIM][NDIM], double inverse[NDIM][NDIM]) {
     return 1;
 }
 
-int inverse_3x3(double mat[3][3], double inv[3][3]) {
-    double det = determinant3x3(mat);
+int Matrix::inverse_3x3(double mat[3][3], double inv[3][3]) {
+	Matrix matrix_obj;
+    double det = matrix_obj.determinant3x3(mat);
     if (fabs(det) < 1e-14) {
         printf("Matrix is singular or nearly singular!\n");
         return 0; 
     }
 
     double cofactorMat[3][3], adjugate[3][3];
-    cofactor3x3(mat, cofactorMat);
-    transpose3x3(cofactorMat, adjugate);
+    matrix_obj.cofactor3x3(mat, cofactorMat);
+    matrix_obj.transpose3x3(cofactorMat, adjugate);
 
     for (int i = 0; i < 3; i++) {
         for (int j = 0; j < 3; j++) {
@@ -122,7 +123,7 @@ int inverse_3x3(double mat[3][3], double inv[3][3]) {
     return 1;
 }
 
-void check_inverse_3x3(double mat[3][3], double inv[3][3]) {
+void Matrix::check_inverse_3x3(double mat[3][3], double inv[3][3]) {
     double product[3][3] = {{0.0}};
     double identity[3][3] = {{1.0, 0.0, 0.0},
                              {0.0, 1.0, 0.0},
@@ -149,7 +150,7 @@ void check_inverse_3x3(double mat[3][3], double inv[3][3]) {
 }
 
 
-void check_inverse(double gcov[NDIM][NDIM], double gcon[NDIM][NDIM]) {
+void Matrix::check_inverse(double gcov[NDIM][NDIM], double gcon[NDIM][NDIM]) {
     double identity[NDIM][NDIM] = {0};
     for (int i = 0; i < NDIM; i++) {
         identity[i][i] = 1.0;
@@ -174,7 +175,7 @@ void check_inverse(double gcov[NDIM][NDIM], double gcon[NDIM][NDIM]) {
     }
 }
 
-void print_matrix(const char* name, double mat[NDIM][NDIM]) {
+void Matrix::print_matrix(const char* name, double mat[NDIM][NDIM]) {
     printf("%s =\n", name);
     for (int i = 0; i < NDIM; i++) {
         for (int j = 0; j < NDIM; j++) {
@@ -184,7 +185,7 @@ void print_matrix(const char* name, double mat[NDIM][NDIM]) {
     }
 }
 
-void print_matrix_3x3(const char* name, double mat[3][3]) {
+void Matrix::print_matrix_3x3(const char* name, double mat[3][3]) {
 	printf("%s =\n", name);
 	for (int i = 0; i < 3; i++) {
 		for (int j = 0; j < 3; j++) {

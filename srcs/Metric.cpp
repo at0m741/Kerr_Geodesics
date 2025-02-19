@@ -1,4 +1,5 @@
 
+#include "matrix.h"
 #include <Geodesics.h>
 
 extern double (*geodesic_points)[5];
@@ -8,16 +9,6 @@ double Lambda = 1e-4;
 double Q = 0.9;
 
 
-void print_matrix(char *name, double matrix[NDIM][NDIM]) {
-	int i, j;
-	printf("%s = \n", name);
-	for (i = 0; i < NDIM; i++) {
-		for (j = 0; j < NDIM; j++) {
-			printf("%e ", matrix[i][j]);
-		}
-		printf("\n");
-	}
-}
 
 void extract_3p1(
 		double g[4][4],     
@@ -27,13 +18,15 @@ void extract_3p1(
 		double beta_con[3],
 		double gamma[3][3],
 		double gamma_inv[3][3] ) {
+
+	Matrix matrix_obj;
     for (int i = 0; i < 3; i++) {
         for (int j = 0; j < 3; j++) {
             gamma[i][j] = g[i+1][j+1];
         }
     }
 
-    inverse_3x3(gamma, gamma_inv);
+    matrix_obj.inverse_3x3(gamma, gamma_inv);
 
     for (int i = 0; i < 3; i++) {
         beta_cov[i] = g[0][i+1];
@@ -54,9 +47,8 @@ void extract_3p1(
 
     *alpha = sqrt( betabeta - g[0][0] );
 	
-	print_matrix_3x3("gamma", gamma);
-	print_matrix_3x3("gamma_inv", gamma_inv);
-
+	matrix_obj.print_matrix_3x3("gamma", gamma);
+	matrix_obj.print_matrix_3x3("gamma_inv", gamma_inv);
 	verify3x3(gamma, gamma_inv);
 	printf("beta_i = (%e, %e, %e)\n", beta_cov[0], beta_cov[1], beta_cov[2]);
 
@@ -89,9 +81,10 @@ void calculate_dbeta(double X[3], double dbeta[3][3]) {
 
 
 void calculeBeta(double X[3], double beta_cov[3]) {
+	Metric metric_obj;
     double X4D[4] = {0.0, X[0], X[1], X[2]};
     double gcov[4][4], gcon[4][4];
-    calculate_metric(X4D, gcov, gcon);
+    metric_obj.calculate_metric(X4D, gcov, gcon);
 
     for(int i=0; i<3; i++){
         beta_cov[i] = gcov[0][i+1];
@@ -170,7 +163,9 @@ void compute_extrinsic_curvature_stationary_3D(
 }
 
 
-void calculate_metric(double x[NDIM], double g[NDIM][NDIM], double g_inv[NDIM][NDIM]) {
+void Metric::calculate_metric(double x[NDIM], double g[NDIM][NDIM], double g_inv[NDIM][NDIM]) {
+	Matrix matrix_obj;
+	Metric metric_obj;
     double r = x[1];
     double theta = x[2];
     
@@ -191,11 +186,13 @@ void calculate_metric(double x[NDIM], double g[NDIM][NDIM], double g_inv[NDIM][N
     g[3][3] = sin_theta2 * (r * r + a * a + (2.0 * M * r * a * a * sin_theta2) / Sigma);
     g[0][3] = - (2.0 * M * r * a * sin_theta2) / Sigma;
     g[3][0] = g[0][3];
-    inverse_matrix(g, g_inv);
-	verify_metric(g, g_inv);	
+    matrix_obj.inverse_matrix(g, g_inv);
+	metric_obj.verify_metric(g, g_inv);	
 }
 
-void calculate_metric_kds(double x[NDIM], double g[NDIM][NDIM], double g_inv[NDIM][NDIM]) {
+void Metric::calculate_metric_kds(double x[NDIM], double g[NDIM][NDIM], double g_inv[NDIM][NDIM]) {
+	Matrix matrix_obj;
+	Metric metric_obj;
     double r = x[1];
     double theta = x[2];
     double sin_theta = sin(theta);
@@ -216,8 +213,8 @@ void calculate_metric_kds(double x[NDIM], double g[NDIM][NDIM], double g_inv[NDI
     g[0][3] = - (2.0 * M * r * a * sin_theta * sin_theta) / (Sigma * Xi * Xi);
     g[3][0] = g[0][3];
 
-    inverse_matrix(g, g_inv);
-	verify_metric(g, g_inv);
+    matrix_obj.inverse_matrix(g, g_inv);
+	metric_obj.verify_metric(g, g_inv);
 	if (a == 0.0 && Lambda == 0.0){
 		printf("Schwarzschild metric calculated\n");
 	}
@@ -227,13 +224,14 @@ void calculate_metric_kds(double x[NDIM], double g[NDIM][NDIM], double g_inv[NDI
 	else {
 		printf("Kerr-de Sitter metric calculated\n");
 	}
-	print_matrix("g", g);
+	matrix_obj.print_matrix("g", g);
 }
 
-void calculate_metric_kerr_newman(double x[NDIM], double g[NDIM][NDIM], double g_inv[NDIM][NDIM]) {
-    double r = x[1];
+void Metric::calculate_metric_kerr_newman(double x[NDIM], double g[NDIM][NDIM], double g_inv[NDIM][NDIM]) {
+	Matrix matrix_obj;
+	Metric metric_obj;
+	double r = x[1];
     double theta = x[2];
-
     double sin_theta = sin(theta);
     double cos_theta = cos(theta);
     double sin_theta2 = sin_theta * sin_theta;
@@ -252,8 +250,8 @@ void calculate_metric_kerr_newman(double x[NDIM], double g[NDIM][NDIM], double g
     g[0][3] = -((2.0 * M * r - Q * Q) * a * sin_theta2) / Sigma;
     g[3][0] = g[0][3];
 
-    inverse_matrix(g, g_inv);
-	check_inverse(g, g_inv);
+    matrix_obj.inverse_matrix(g, g_inv);
+	matrix_obj.check_inverse(g, g_inv);
 
     if (a == 0.0 && Q == 0.0) {
         printf("Schwarzschild metric calculated\n");
@@ -263,12 +261,13 @@ void calculate_metric_kerr_newman(double x[NDIM], double g[NDIM][NDIM], double g
         printf("Kerr-Newman metric calculated\n");
     }
 
-    print_matrix("g", g);
-    print_matrix("g_inv", g_inv);
+    matrix_obj.print_matrix("g", g);
+    matrix_obj.print_matrix("g_inv", g_inv);
 }
 
-void verify_metric(double gcov[NDIM][NDIM], double gcon[NDIM][NDIM])
+void Metric::verify_metric(double gcov[NDIM][NDIM], double gcon[NDIM][NDIM])
 {
+	Matrix matrix_obj;
     int i, j, k;
     double identity[NDIM][NDIM] = {0};
     double delta; 
@@ -296,10 +295,11 @@ void verify_metric(double gcov[NDIM][NDIM], double gcon[NDIM][NDIM])
             }
         }
     }
-	check_inverse(gcov, gcon);
+	matrix_obj.check_inverse(gcov, gcon);
 }
 
 void verify3x3(double matrix[3][3], double inv_matrix[3][3]) {
+	Matrix matrix_obj;
 	double identity[3][3] = {0};
 	double delta;
 	int i, j, k;
@@ -327,5 +327,5 @@ void verify3x3(double matrix[3][3], double inv_matrix[3][3]) {
 			}
 		}
 	}
-	print_matrix_3x3("identity", identity);
+	matrix_obj.print_matrix_3x3("identity", identity);
 }

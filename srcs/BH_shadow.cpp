@@ -60,7 +60,6 @@ int init_photon_global(
 
     printf("Debug: p_theta = %f, p_phi = %f\n", p_local[2], p_local[3]);
 	printf("Debug: p_t = %f, p_r = %f, p_theta = %f, p_phi = %f\n", p_local[0], p_local[1], p_local[2], p_local[3]);
-	print_matrix("Debug: GCOV", gcov);
     for (int mu = 0; mu < 4; mu++) {
         p[mu] = p_local[0] * e_t[mu]
               + p_local[1] * e_x[mu]
@@ -166,14 +165,16 @@ void build_kerr_tetrad(double X[4], double gcov[4][4],
 }
 
 int solve_geodesic_AVX(double X[NDIM], __m256d p[NDIM], double *Q_out) {
+	Connexion connexion;
+	Metric metric_obj;
     double lambda_max = 6.0;  
     __m256d step_size = _mm256_set1_pd(0.00019);
     double r_horizon = 1.0 + sqrt(1.0 - a * a); 
     double christoffel[NDIM][NDIM][NDIM];
     double gcov[NDIM][NDIM], gcon[NDIM][NDIM];
 
-    calculate_metric(X, gcov, gcon);
-    calculate_christoffel(X, DELTA, christoffel, gcov, gcon, "kerr");
+    metric_obj.calculate_metric(X, gcov, gcon);
+    connexion.calculate_christoffel(X, DELTA, christoffel, gcov, gcon, "kerr");
 
     __m256d X_avx[NDIM], p_avx[NDIM], christoffel_avx[NDIM][NDIM][NDIM];
     
@@ -217,6 +218,7 @@ int solve_geodesic_AVX(double X[NDIM], __m256d p[NDIM], double *Q_out) {
 
 
 void generate_blackhole_shadow() {
+	Metric metric_obj;
     double r_obs = 5 * M;
     double theta_obs = M_PI / 2.0; 
     double phi_obs   = 0.0;
@@ -224,7 +226,7 @@ void generate_blackhole_shadow() {
     double X[4] = {1.0, r_obs, theta_obs, phi_obs};
 
     double gcov[4][4], gcon[4][4];
-    calculate_metric(X, gcov, gcon);
+    metric_obj.calculate_metric(X, gcov, gcon);
 
     
 	double e_t_loc[4], e_r_loc[4], e_theta_loc[4], e_phi_loc[4];
