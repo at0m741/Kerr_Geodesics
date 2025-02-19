@@ -129,15 +129,14 @@ void compute_partial_christoffel_3D(
 
     calculate_christoffel_3D(Xp, Gamma_p);
     calculate_christoffel_3D(Xm, Gamma_m);
-
-    for(int k=0;k<3;k++){
-        for(int i=0;i<3;i++){
-            for(int j=0;j<3;j++){
-                dGamma[k][i][j] = (Gamma_p[k][i][j] - Gamma_m[k][i][j])/(2.0*delta);
-				printf("%12.6f\t", dGamma[k][i][j]);
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+            for (int k = 0; k < 3; k++) {
+                dGamma[i][j][k] = (Gamma_p[i][j][k] - Gamma_m[i][j][k]) / (2.0 * delta);
             }
         }
     }
+
 }
 
 void compute_ricci_3d(

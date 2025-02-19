@@ -149,7 +149,7 @@ int Metric_prob() {
 
 
 int grid_setup() {
-    double r = 5.0;
+    double r = 2.0;
     double theta = M_PI/2.0;
     double phi = 0.0;
 
@@ -173,6 +173,16 @@ int grid_setup() {
 			}
 		}
 	}
+
+	compute_partial_christoffel_3D(X3D, 0, Gamma3, DELTA);
+	for (int i = 0; i < 3; i++) {
+		for (int j = 0; j < 3; j++) {
+			for (int k = 0; k < 3; k++) {
+				printf("dGamma[%d][%d][%d] = %e\n", i, j, k, Gamma3[i][j][k]);
+			}
+		}
+	}
+
     double dbeta[3][3];
     calculate_dbeta(X3D, dbeta); 
 
@@ -181,6 +191,13 @@ int grid_setup() {
         X3D, alpha, beta_cov,
         Gamma3, dbeta, K
     );
+	
+	double K_trace = compute_K(gamma3_inv, K);
+	double KijKij = compute_Kij_Kij(gamma3_inv, K);
+	printf("Trace K = %e\n", K_trace);
+	printf("Kij K^ij = %e\n", KijKij);
+
+
 
     printf("alpha = %f\n", alpha);
     for(int i=0;i<3;i++){
@@ -194,6 +211,7 @@ int grid_setup() {
 
 	double Rij[3][3];
 	compute_ricci_3d(X3D, Gamma3 ,Rij);
-
+	double Hamiltonian = compute_hamiltonian_constraint(gamma3_inv, K, Rij);
+	printf("Hamiltonian constraint = %e\n", Hamiltonian);
     return 0;
 }

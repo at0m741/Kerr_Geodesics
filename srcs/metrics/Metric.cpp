@@ -83,12 +83,6 @@ void calculate_metric(double x[NDIM], double g[NDIM][NDIM], double g_inv[NDIM][N
     g[3][0] = g[0][3];
     inverse_matrix(g, g_inv);
 	verify_metric(g, g_inv);	
-	if (a == 0.0){
-		printf("Schwarzschild metric calculated\n");
-	}
-	else {
-		printf("Kerr metric calculated\n");
-	}
 	/* print_matrix("g", g); */
 	/* print_matrix("g_inv", g_inv); */
 

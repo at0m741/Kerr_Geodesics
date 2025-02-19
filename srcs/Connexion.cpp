@@ -118,23 +118,6 @@ void calc_gamma_ij(const double X3D[3],
     if (!status) {
         printf("Erreur: gamma_{ij} est singulière ou mal définie\n");
     }
-
-    printf("calc_gamma_ij -> gamma_{ij} extraite de la métrique 4D:\n");
-    for (int i = 0; i < 3; i++) {
-        printf("  ");
-        for (int j = 0; j < 3; j++) {
-            printf("%+10.6e ", gamma3[i][j]);
-        }
-        printf("\n");
-    }
-    printf("calc_gamma_ij -> gamma^{ij} (inverse 3x3):\n");
-    for (int i = 0; i < 3; i++) {
-        printf("  ");
-        for (int j = 0; j < 3; j++) {
-            printf("%+10.6e ", gamma3_inv[i][j]);
-        }
-        printf("\n");
-    }
 }
 
 
@@ -178,8 +161,5 @@ void calculate_christoffel_3D(
             }
         }
     }
-
-    printf("3D Christoffel symbols computed at (r,theta,phi) = (%f,%f,%f)\n",
-           X[0], X[1], X[2]);
 }
 

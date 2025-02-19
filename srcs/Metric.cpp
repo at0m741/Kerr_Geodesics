@@ -56,7 +56,11 @@ void extract_3p1(
 	
 	print_matrix_3x3("gamma", gamma);
 	print_matrix_3x3("gamma_inv", gamma_inv);
+
+	verify3x3(gamma, gamma_inv);
 	printf("beta_i = (%e, %e, %e)\n", beta_cov[0], beta_cov[1], beta_cov[2]);
+
+
 }
 
 
@@ -93,6 +97,45 @@ void calculeBeta(double X[3], double beta_cov[3]) {
         beta_cov[i] = gcov[0][i+1];
 		printf("beta_cov[%d] = %e\n", i, beta_cov[i]);
     }
+}
+
+double compute_K(double gamma_inv[3][3], double K[3][3]) {
+    double K_trace = 0.0;
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+            K_trace += gamma_inv[i][j] * K[i][j];
+        }
+    }
+    return K_trace;
+}
+
+double compute_Kij_Kij(double gamma_inv[3][3], double K[3][3]) {
+    double K_sq = 0.0;
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+            for (int k = 0; k < 3; k++) {
+                for (int l = 0; l < 3; l++) {
+                    K_sq += gamma_inv[i][k] * gamma_inv[j][l] * K[i][j] * K[k][l];
+                }
+            }
+        }
+    }
+    return K_sq;
+}
+
+
+double compute_hamiltonian_constraint(double gamma_inv[3][3], double K[3][3], double Ricci[3][3]) {
+    double R = 0.0;
+    double K_trace = compute_K(gamma_inv, K);
+    double K_sq = compute_Kij_Kij(gamma_inv, K);
+
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+            R += gamma_inv[i][j] * Ricci[i][j];
+        }
+    }
+
+    return R + K_trace * K_trace - K_sq;
 }
 
 void compute_extrinsic_curvature_stationary_3D(
@@ -150,13 +193,6 @@ void calculate_metric(double x[NDIM], double g[NDIM][NDIM], double g_inv[NDIM][N
     g[3][0] = g[0][3];
     inverse_matrix(g, g_inv);
 	verify_metric(g, g_inv);	
-	if (a == 0.0){
-		printf("Schwarzschild metric calculated\n");
-	}
-	else {
-		printf("Kerr metric calculated\n");
-	}
-
 }
 
 void calculate_metric_kds(double x[NDIM], double g[NDIM][NDIM], double g_inv[NDIM][NDIM]) {
@@ -260,11 +296,36 @@ void verify_metric(double gcov[NDIM][NDIM], double gcon[NDIM][NDIM])
             }
         }
     }
-	printf("\n");
 	check_inverse(gcov, gcon);
-	printf("\n");
-	print_matrix("identity", identity);
-
 }
 
+void verify3x3(double matrix[3][3], double inv_matrix[3][3]) {
+	double identity[3][3] = {0};
+	double delta;
+	int i, j, k;
 
+	for (i = 0; i < 3; i++) {
+		for (j = 0; j < 3; j++) {
+			identity[i][j] = 0.0;
+			for (k = 0; k < 3; k++) {
+				identity[i][j] += inv_matrix[i][k] * matrix[k][j];
+			}
+		}
+	}
+
+	for (i = 0; i < 3; i++) {
+		for (j = 0; j < 3; j++) {
+			if (i == j) {
+				delta = 1.0;
+			}
+			else {
+				delta = 0.0;
+			}
+
+			if (fabs(identity[i][j] - delta) > TOLERANCE) {
+				printf("Erreur: identity[%d][%d] = %e with %e\n", i, j, identity[i][j], delta);
+			}
+		}
+	}
+	print_matrix_3x3("identity", identity);
+}

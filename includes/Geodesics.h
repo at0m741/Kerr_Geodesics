@@ -26,7 +26,7 @@
 #define TOLERANCE 1e-4
 #define DELTA 1e-4
 #define NDIM3 3
-#define DELTA3 1e-6
+#define DELTA3 1e-9
 typedef struct {
     double x, y, z;
     double lambda;
@@ -206,3 +206,12 @@ void compute_ricci_3d(
     double R3[3][3]         
 );
 void print_ricci_tensor(double R3[3][3]);
+double compute_K(double gamma_inv[3][3], double K[3][3]);
+double compute_Kij_Kij(double gamma_inv[3][3], double K[3][3]);
+double compute_hamiltonian_constraint(double gamma_inv[3][3], double K[3][3], double Ricci[3][3]);
+void verify3x3(double matrix[3][3], double inv_matrix[3][3]);
+void compute_partial_christoffel_3D(
+    const double X[3],
+    int m, 
+    double dGamma[3][3][3], 
+    double delta);
