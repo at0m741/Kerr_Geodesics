@@ -46,17 +46,16 @@ void extract_3p1(
         }
         beta_con[i] = sum;
     }
-	print_matrix_3x3("gamma", gamma);
     double betabeta = 0.0;
     for (int i = 0; i < 3; i++) {
         betabeta += beta_con[i] * beta_cov[i];
     }
 
-	print_matrix_3x3("gamma_inv", gamma_inv);
 
     *alpha = sqrt( betabeta - g[0][0] );
 	
-	printf("alpha = %e\n", *alpha);
+	print_matrix_3x3("gamma", gamma);
+	print_matrix_3x3("gamma_inv", gamma_inv);
 	printf("beta_i = (%e, %e, %e)\n", beta_cov[0], beta_cov[1], beta_cov[2]);
 }
 
@@ -92,9 +91,9 @@ void compute_extrinsic_curvature_stationary(
             double chris = 0.0;
             for (int k = 0; k < 3; k++) {
                 chris += Gamma3[k][i][j] * beta_cov[k];
-				printf("Gamma3[%d][%d][%d] = %e\n", k, i, j, Gamma3[k][i][j]);
             }
             nabla[i][j][0] = partial - chris;
+			printf("nabla[%d][%d][0] = %e\n", i, j, nabla[i][j][0]);
         }
     }
     for (int i = 0; i < 3; i++) {
@@ -136,8 +135,6 @@ void calculate_metric(double x[NDIM], double g[NDIM][NDIM], double g_inv[NDIM][N
 	else {
 		printf("Kerr metric calculated\n");
 	}
-	/* print_matrix("g", g); */
-	/* print_matrix("g_inv", g_inv); */
 
 	double alpha;
 	double beta_cov[3];

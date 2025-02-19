@@ -147,3 +147,43 @@ int Metric_prob() {
 	return 0;
 }
 
+
+int grid_setup() {
+double r = 5.0;       
+    double theta = M_PI/2.0; 
+    double phi = 0.0;
+
+    double X3D[NDIM3] = {r, theta, phi};
+
+    double gamma_ij[NDIM3][NDIM3], gamma_inv[NDIM3][NDIM3];
+    calc_gamma_ij(X3D, gamma_ij, gamma_inv);
+
+    printf("=== gamma_{ij} ===\n");
+    for (int i = 0; i < NDIM3; i++) {
+        for (int j = 0; j < NDIM3; j++) {
+            printf("%10.6f ", gamma_ij[i][j]);
+        }
+        printf("\n");
+    }
+    printf("\n=== gamma^{ij} ===\n");
+    for (int i = 0; i < NDIM3; i++) {
+        for (int j = 0; j < NDIM3; j++) {
+            printf("%10.6f ", gamma_inv[i][j]);
+        }
+        printf("\n");
+    }
+
+    double Gamma3[NDIM3][NDIM3][NDIM3];
+    calculate_christoffel_3D(X3D, Gamma3);
+
+    printf("\n=== Christoffel 3D: Gamma^k_{ij} ===\n");
+    for (int k = 0; k < NDIM3; k++) {
+        for (int i = 0; i < NDIM3; i++) {
+            for (int j = 0; j < NDIM3; j++) {
+                printf("Gamma3[%d][%d][%d] = %g\n", k, i, j, Gamma3[k][i][j]);
+            }
+        }
+    }
+
+    return 0;
+}

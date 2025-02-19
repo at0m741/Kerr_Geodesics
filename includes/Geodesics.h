@@ -25,7 +25,7 @@
 #define ARCH "AVX2"
 #define TOLERANCE 1e-4
 #define DELTA 1e-4
-
+#define NDIM3 3
 typedef struct {
     double x, y, z;
     double lambda;
@@ -169,10 +169,15 @@ int Riemann_tensor(const char *metric);
 int Geodesics_prob();
 int light_geodesics_prob(); 
 int Metric_prob();
-
+int grid_setup(); 
 void generate_blackhole_image();
 void generate_blackhole_shadow();
-
+void calculate_christoffel_3D(
+    double X[NDIM3],         
+    double Gamma3[NDIM3][NDIM3][NDIM3]);
+void calc_gamma_ij(const double X3D[3],
+                   double gamma3[3][3],       
+                   double gamma3_inv[3][3]);
 int inverse_3x3(double mat[3][3], double inv[3][3]);
 void check_inverse_3x3(double mat[3][3], double inv[3][3]);
 void print_matrix_3x3(const char* name, double mat[3][3]);

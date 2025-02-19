@@ -93,3 +93,99 @@ void calculate_christoffel(double X[NDIM], double h, \
 }
 
 
+#include <stdio.h>
+#include <math.h>
+#include <string.h>
+
+#define NDIM3 3
+#define DELTA3 1e-6
+
+static double dgamma[NDIM3][NDIM3][NDIM3];
+
+void calc_gamma_ij(const double X3D[3],
+                   double gamma3[3][3],       
+                   double gamma3_inv[3][3])  
+{
+    double X4D[4] = {0.0, X3D[0], X3D[1], X3D[2]};
+
+    double g[4][4], g_inv[4][4];
+    memset(g, 0, sizeof(g));
+    memset(g_inv, 0, sizeof(g_inv));
+
+    calculate_metric(X4D, g, g_inv);
+
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+            gamma3[i][j] = g[i+1][j+1];
+        }
+    }
+
+    int status = inverse_3x3(gamma3, gamma3_inv);
+    if (!status) {
+        printf("Erreur: gamma_{ij} est singulière ou mal définie\n");
+    }
+
+    printf("calc_gamma_ij -> gamma_{ij} extraite de la métrique 4D:\n");
+    for (int i = 0; i < 3; i++) {
+        printf("  ");
+        for (int j = 0; j < 3; j++) {
+            printf("%+10.6e ", gamma3[i][j]);
+        }
+        printf("\n");
+    }
+    printf("calc_gamma_ij -> gamma^{ij} (inverse 3x3):\n");
+    for (int i = 0; i < 3; i++) {
+        printf("  ");
+        for (int j = 0; j < 3; j++) {
+            printf("%+10.6e ", gamma3_inv[i][j]);
+        }
+        printf("\n");
+    }
+}
+
+
+void calculate_christoffel_3D(
+    double X[NDIM3],         
+    double Gamma3[NDIM3][NDIM3][NDIM3] 
+) {
+    double gamma_ij[NDIM3][NDIM3], gamma_inv[NDIM3][NDIM3];
+    calc_gamma_ij(X, gamma_ij, gamma_inv);
+
+    for (int m = 0; m < NDIM3; m++) {
+        double Xp[NDIM3], Xm[NDIM3];
+        memcpy(Xp, X, sizeof(Xp));
+        memcpy(Xm, X, sizeof(Xm));
+
+        Xp[m] += DELTA3;
+        Xm[m] -= DELTA3;
+
+        double gamma_p[NDIM3][NDIM3], gamma_m[NDIM3][NDIM3];
+        double gamma_p_inv[NDIM3][NDIM3], gamma_m_inv[NDIM3][NDIM3];
+        calc_gamma_ij(Xp, gamma_p, gamma_p_inv);
+        calc_gamma_ij(Xm, gamma_m, gamma_m_inv);
+
+        for (int i = 0; i < NDIM3; i++) {
+            for (int j = 0; j < NDIM3; j++) {
+                dgamma[m][i][j] = (gamma_p[i][j] - gamma_m[i][j]) / (2.0 * DELTA3);
+            }
+        }
+    }
+
+    for (int k = 0; k < NDIM3; k++) {
+        for (int i = 0; i < NDIM3; i++) {
+            for (int j = 0; j < NDIM3; j++) {
+                double sum = 0.0;
+                for (int l = 0; l < NDIM3; l++) {
+                    sum += gamma_inv[k][l] * (
+                        dgamma[i][l][j] + dgamma[j][l][i] - dgamma[l][i][j]
+                    );
+                }
+                Gamma3[k][i][j] = 0.5 * sum;
+            }
+        }
+    }
+
+    printf("3D Christoffel symbols computed at (r,theta,phi) = (%f,%f,%f)\n",
+           X[0], X[1], X[2]);
+}
+
