@@ -1,64 +1,56 @@
 #include <Geodesics.h>
 
 
-
-void Tensor::calculate_Gamma_at_offset(double X[NDIM], int direction, 
-						double offset, double delta,
-						double gcov[NDIM][NDIM], 
-						double gcon[NDIM][NDIM], 
-						double Gamma_slice[NDIM][NDIM][NDIM], 
-						const char *metric_type) {
-    double X_offset[NDIM];
-	Connexion connexion;
-	Metric metric;
-    memcpy(X_offset, X, sizeof(double) * NDIM);
+void Tensor::calculate_Gamma_at_offset(const std::array<double, NDIM>& X, int direction, 
+                                         double offset, double delta,
+                                         Tensor::MatrixNDIM& gcov, 
+                                         Tensor::MatrixNDIM& gcon, 
+                                         Tensor::Christoffel3D& Gamma_slice, 
+                                         const char* metric_type) {
+    std::array<double, NDIM> X_offset = X;
     X_offset[direction] += offset;
-	printf("Gamma avant : %f\n", Gamma_slice[0][0][0]); 
-    double tempGamma[NDIM][NDIM][NDIM];
-	if (strcmp(metric_type, "minkowski") == 0) {
-		connexion.calculate_christoffel(X_offset, delta, tempGamma, gcov, gcon, "minkowski");
-	} else if (strcmp(metric_type, "kerr") == 0 || strcmp(metric_type, "schwarzschild") == 0) {
-		metric.calculate_metric(X_offset, gcov, gcon);
-	}
+    Tensor::Christoffel3D tempGamma{};
+    Connexion connexion;
+    Metric metric;
+    
+    if (strcmp(metric_type, "minkowski") == 0) {
+        connexion.calculate_christoffel(X_offset, delta, tempGamma, gcov, gcon, "minkowski");
+    } else if (strcmp(metric_type, "kerr") == 0 || strcmp(metric_type, "schwarzschild") == 0) {
+        metric.calculate_metric(X_offset, gcov, gcon);
+    }
     connexion.calculate_christoffel(X_offset, delta, tempGamma, gcov, gcon, metric_type);
     
-    for (int mu = 0; mu < NDIM; mu++) {
-        for (int nu = 0; nu < NDIM; nu++) {
-            for (int rho = 0; rho < NDIM; rho++) {
-                Gamma_slice[rho][mu][nu] = tempGamma[rho][mu][nu];
-            }
-        }
-    }
-	printf("Gamma après : %f\n", Gamma_slice[0][0][0]);
+    Gamma_slice = tempGamma;
 }
 
-void Connexion::calculate_christoffel(double X[NDIM], double h, \
-							double gamma[NDIM][NDIM][NDIM],
-							double g[NDIM][NDIM],
-							double g_inv[NDIM][NDIM], const char *metric) {
-    double tmp[NDIM][NDIM][NDIM];
-    double Xh[NDIM], Xl[NDIM]; 
-    double gh[NDIM][NDIM], gl[NDIM][NDIM]; 
-	Metric metric_obj;
-    memset(gamma, 0, sizeof(double) * NDIM * NDIM * NDIM);
+
+void Connexion::calculate_christoffel(const VectorNDIM& X, double h,
+                                      Christoffel3D& gamma,
+                                      std::array<std::array<double, NDIM>, NDIM>& g,
+                                      std::array<std::array<double, NDIM>, NDIM>& g_inv, 
+                                      const char* metric) {
+    Christoffel3D tmp{};
+    VectorNDIM Xh = X, Xl = X;
+    MatrixNDIM gh{}, gl{};
+    Metric metric_obj;
+
+    gamma.fill({}); 
 
     for (int mu = 0; mu < NDIM; mu++) {
-        for (int kap = 0; kap < NDIM; kap++) {
-            Xh[kap] = X[kap];
-            Xl[kap] = X[kap];
-        }
-
+        Xh = X;
+        Xl = X;
         Xh[mu] += DELTA;
         Xl[mu] -= DELTA;
-		if (strcmp(metric, "schwarzschild") == 0 || 
-			strcmp(metric, "kerr") == 0 ||
-			strcmp(metric, "kerr-newman") == 0 ||
-			strcmp(metric, "ds") == 0) {
-			metric_obj.calculate_metric(Xh, gh, g_inv);
-			metric_obj.calculate_metric(Xl, gl, g_inv);
-			metric_obj.verify_metric(gh, g_inv);
-			metric_obj.verify_metric(gl, g_inv);
-		}
+
+        if (strcmp(metric, "schwarzschild") == 0 || 
+            strcmp(metric, "kerr") == 0 ||
+            strcmp(metric, "kerr-newman") == 0 ||
+            strcmp(metric, "ds") == 0) {
+            
+			metric_obj.calculate_metric(Xh, gh, g_inv); 
+            metric_obj.calculate_metric(Xl, gl, g_inv);
+        }
+
         for (int lam = 0; lam < NDIM; lam++) {
             for (int nu = 0; nu < NDIM; nu++) {
                 gamma[lam][nu][mu] = (gh[lam][nu] - gl[lam][nu]) / (2 * DELTA);
@@ -86,38 +78,51 @@ void Connexion::calculate_christoffel(double X[NDIM], double h, \
             }
         }
     }    
-	printf("Christoffel symbols calculated\n");
-	print_christoffel_matrix(gamma); 
-	check_symmetry_christoffel(gamma);
+
+    std::cout << "Christoffel symbols calculated\n";
+    print_christoffel_matrix(gamma); 
+    check_symmetry_christoffel(gamma);
 }
 
 
 
 static double dgamma[NDIM3][NDIM3][NDIM3];
 
+
 void calc_gamma_ij(const double X3D[3],
                    double gamma3[3][3],       
                    double gamma3_inv[3][3])  
 {
-    double X4D[4] = {0.0, X3D[0], X3D[1], X3D[2]};
-    double g[4][4], g_inv[4][4];
-	Metric metric;
-	Matrix matrix_obj;
-	memset(g, 0, sizeof(g));
-    memset(g_inv, 0, sizeof(g_inv));
+    std::array<double, 4> X4D = {0.0, X3D[0], X3D[1], X3D[2]}; 
+    std::array<std::array<double, 4>, 4> g{}; 
+    std::array<std::array<double, 4>, 4> g_inv{}; 
+
+    Metric metric;
+    Matrix matrix_obj;
 
     metric.calculate_metric(X4D, g, g_inv);
 
+    std::array<std::array<double, 3>, 3> gamma3_arr{};
+    std::array<std::array<double, 3>, 3> gamma3_inv_arr{};
+
     for (int i = 0; i < 3; i++) {
         for (int j = 0; j < 3; j++) {
-            gamma3[i][j] = g[i+1][j+1];
+            gamma3_arr[i][j] = g[i+1][j+1];
         }
     }
 
-    if (!matrix_obj.inverse_3x3(gamma3, gamma3_inv)) {
+    if (!matrix_obj.inverse_3x3(gamma3_arr, gamma3_inv_arr)) {
         printf("Erreur: gamma_{ij} est singulière ou mal définie\n");
     }
+
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+            gamma3[i][j] = gamma3_arr[i][j];
+            gamma3_inv[i][j] = gamma3_inv_arr[i][j];
+        }
+    }
 }
+
 
 
 void calculate_christoffel_3D(

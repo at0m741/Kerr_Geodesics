@@ -4,11 +4,25 @@
 
 class Connexion {
 	public:
-		void calculate_christoffel(double X[NDIM], double h, \
-							double gamma[NDIM][NDIM][NDIM],
-							double g[NDIM][NDIM],
-							double g_inv[NDIM][NDIM], const char *metric); 
-		void check_symmetry_christoffel(double gamma[NDIM][NDIM][NDIM]); 
-		void print_christoffel(double Gamma[NDIM][NDIM][NDIM]);
-		void print_christoffel_matrix(double gamma[NDIM][NDIM][NDIM]);
+		using Christoffel3D = std::array<std::array<std::array<double, NDIM>, NDIM>, NDIM>;
+		using Christoffel4D = std::array<std::array<std::array<std::array<double, NDIM>, NDIM>, NDIM>, NDIM>;
+		using MatrixNDIM = std::array<std::array<double, NDIM>, NDIM>;
+		using VectorNDIM = std::array<double, NDIM>;
+
+		Christoffel3D Gamma{};
+		Christoffel4D Gamma_plus_h{};
+		Christoffel4D Gamma_minus_h{};
+		Christoffel4D Gamma_plus_half_h{};
+		Christoffel4D Gamma_minus_half_h{};
+
+		void calculate_christoffel(const VectorNDIM& X, double h,
+				Christoffel3D& gamma,
+				std::array<std::array<double, NDIM>, NDIM>& g,
+				std::array<std::array<double, NDIM>, NDIM>& g_inv, 
+				const char* metric); 
+
+		void check_symmetry_christoffel(const Christoffel3D& gamma);
+		void print_christoffel(const Christoffel3D& Gamma);
+		void print_christoffel_matrix(const Christoffel3D& gamma);
 };
+

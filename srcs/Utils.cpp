@@ -14,7 +14,7 @@ void initialize_riemann_tensor(double R[NDIM][NDIM][NDIM][NDIM]) {
 }
 
 
-void Tensor::print_riemann(double Riemann[NDIM][NDIM][NDIM][NDIM]) {
+void Tensor::print_riemann(const Riemann4D& Riemann) {
     const double threshold = 1e-10; 
     printf("\nRiemann Tensor (Non-zero components):\n"); 
     for (int rho = 0; rho < NDIM; rho++) {
@@ -31,7 +31,7 @@ void Tensor::print_riemann(double Riemann[NDIM][NDIM][NDIM][NDIM]) {
     }
 }
 
-void Connexion::print_christoffel_matrix(double gamma[NDIM][NDIM][NDIM]) {
+void Connexion::print_christoffel_matrix(const Christoffel3D& gamma) {
     printf("\nChristoffel Symbols:\n");
     for (int lambda = 0; lambda < NDIM; lambda++) {
         printf("\nGamma^%d:\n", lambda);

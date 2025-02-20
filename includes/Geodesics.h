@@ -8,9 +8,12 @@
 #include <time.h>
 #include <chrono>
 #include <sys/time.h>
+#include <iostream>
+#include <array>
+#include <cmath>
+#include <iomanip>
 
 
-#define MAX_POINTS 100000
 #define C 1.0
 #define G 1.0 
 #define M 1.0
@@ -18,7 +21,6 @@
 #define BUFFER_SIZE 1024
 #define SMALL 1.e-40
 #define NDIM 4
-#define TT 0
 #define DT 0.0000005
 #define max_dt 70000.0
 #define ALIGNMENT 32
@@ -29,52 +31,23 @@
 #define NDIM3 3
 #define DELTA3 1e-9
 
+
+using Matrix2x2 = std::array<std::array<double, 2>, 2>;
+using Matrix3x3 = std::array<std::array<double, 3>, 3>;
+using Matrix4x4 = std::array<std::array<double, 4>, 4>;
+using MatrixNDIM = std::array<std::array<double, NDIM>, NDIM>;
+
+
 #include <Tensor.h>
 #include <matrix.h>
 #include <Metric.h>
 #include <Connexion.h>
+#include <Grid.h>
+
 typedef struct {
     double x, y, z;
     double lambda;
 } GeodesicPoint;
-
-#if defined(__INTEL_COMPILER) || defined(__ICC) || \
-    defined(__INTEL_LLVM_COMPILER)
-    #define ALIGNMENT 64
-    #define ARCH "KNL"
-    #define NUM_THREADS 256
-    #include <omp.h>
-    #include <mkl.h>
-    #include <mpi.h>
-    #include "MPI_init.h"
-
-#elif defined(__MIPC) && defined(USE_MPI)
-    #define ALIGNMENT 64
-    #define ARCH "KNL"
-    #define NUM_THREADS 256
-    #include <omp.h>
-    #include <mkl.h>
-    #include <mpi.h>
-    #include "MPI_init.h"
-
-
-#elif defined(__clang__) || defined(__GNUC__)
-    #define NUM_THREADS 16
-
-#else
-    #error "Unsupported compiler or configuration"
-#endif
-
-typedef double __attribute__((aligned(ALIGNMENT))) ldouble_a;
-
-#if defined(__LINUX__) || defined(__linux__)
-
-	#define Plateform "Linux"
-#elif defined(__APPLE__) || defined(__MACH__)
-	#define Plateform "Darwin (macOS)"
-#endif
-
-
 
 #ifdef  AVX2
     #define VEC_TYPE __m256d
@@ -152,14 +125,6 @@ void compute_extrinsic_curvature_stationary_3D(
     double dbeta[3][3],
     double K[3][3]
 );
-void extract_3p1(
-		double g[4][4],     
-		double g_inv[4][4],
-		double *alpha,    
-		double beta_cov[3], 
-		double beta_con[3],
-		double gamma[3][3],
-		double gamma_inv[3][3] );
 void calculeBeta(double X[3], double beta_cov[3]);
 void calculate_dbeta(double X[3], double dbeta[3][3]);
 void compute_ricci_3d(

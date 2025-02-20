@@ -1,17 +1,17 @@
 #include <Geodesics.h>
 
-double Matrix::determinant2x2(double mat[2][2]) {
+double Matrix::determinant2x2(const std::array<std::array<double, 2>, 2>& mat) {
     return mat[0][0] * mat[1][1] - mat[0][1] * mat[1][0];
 }
 
-double Matrix::determinant3x3(double mat[3][3]) {
+double Matrix::determinant3x3(const Matrix3x3& mat) {
     return mat[0][0] * (mat[1][1] * mat[2][2] - mat[1][2] * mat[2][1])
          - mat[0][1] * (mat[1][0] * mat[2][2] - mat[1][2] * mat[2][0])
          + mat[0][2] * (mat[1][0] * mat[2][1] - mat[1][1] * mat[2][0]);
 }
 
-double Matrix::determinant4x4(double mat[NDIM][NDIM]) {
-    double minor[3][3];
+double Matrix::determinant4x4(const Matrix4x4& mat) {
+	Matrix3x3 minor{};
     double det = 0.0;
     for (int i = 0; i < NDIM; i++) {
         int subi = 0; 
@@ -30,30 +30,30 @@ double Matrix::determinant4x4(double mat[NDIM][NDIM]) {
     return det;
 }
 
-void Matrix::cofactor(double mat[NDIM][NDIM], double cofactorMat[NDIM][NDIM]) {
-    double minor[3][3];
-    for (int i = 0; i < NDIM; i++) {
-        for (int j = 0; j < NDIM; j++) {
+void Matrix::cofactor(const Matrix4x4& mat, Matrix4x4& cofactorMat) {
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 4; j++) {
+            Matrix3x3 minor{};
             int subi = 0;
-            for (int x = 0; x < NDIM; x++) {
+            for (int x = 0; x < 4; x++) {
                 if (x == i) continue;
                 int subj = 0;
-                for (int y = 0; y < NDIM; y++) {
+                for (int y = 0; y < 4; y++) {
                     if (y == j) continue;
                     minor[subi][subj] = mat[x][y];
                     subj++;
                 }
                 subi++;
             }
-            cofactorMat[i][j] = pow(-1, i + j) * determinant3x3(minor);
+            cofactorMat[i][j] = (i + j) % 2 == 0 ? determinant3x3(minor) : -determinant3x3(minor);
         }
     }
 }
 
-void Matrix::cofactor3x3(double mat[3][3], double cofactorMat[3][3]) {
-    double minor[2][2];
+void Matrix::cofactor3x3(const Matrix3x3& mat, Matrix3x3& cofactorMat) {
     for (int i = 0; i < 3; i++) {
         for (int j = 0; j < 3; j++) {
+            Matrix2x2 minor{};
             int subi = 0;
             for (int x = 0; x < 3; x++) {
                 if (x == i) continue; 
@@ -65,13 +65,12 @@ void Matrix::cofactor3x3(double mat[3][3], double cofactorMat[3][3]) {
                 }
                 subi++;
             }
-            cofactorMat[i][j] = pow(-1, i + j) * determinant2x2(minor);
+            cofactorMat[i][j] = ((i + j) % 2 == 0 ? 1 : -1) * determinant2x2(minor);
         }
     }
 }
 
-
-void Matrix::transpose(double mat[NDIM][NDIM], double transposed[NDIM][NDIM]) {
+void Matrix::transpose(const MatrixNDIM& mat, MatrixNDIM& transposed) {
     for (int i = 0; i < NDIM; i++) {
         for (int j = 0; j < NDIM; j++) {
             transposed[j][i] = mat[i][j];
@@ -79,7 +78,7 @@ void Matrix::transpose(double mat[NDIM][NDIM], double transposed[NDIM][NDIM]) {
     }
 }
 
-void Matrix::transpose3x3(double mat[3][3], double transposed[3][3]) {
+void Matrix::transpose3x3(const Matrix3x3& mat, Matrix3x3& transposed) {
     for (int i = 0; i < 3; i++) {
         for (int j = 0; j < 3; j++) {
             transposed[j][i] = mat[i][j];
@@ -87,11 +86,15 @@ void Matrix::transpose3x3(double mat[3][3], double transposed[3][3]) {
     }
 }
 
-int Matrix::inverse_matrix(double mat[NDIM][NDIM], double inverse[NDIM][NDIM]) {
+int Matrix::inverse_matrix(const MatrixNDIM& mat, MatrixNDIM& inverse) {
     double det = determinant4x4(mat);
-    double cofactorMat[NDIM][NDIM];
+    if (fabs(det) < 1e-14) {
+        std::cerr << "Matrix is singular or nearly singular!" << std::endl;
+        return 0; 
+    }
+
+    MatrixNDIM cofactorMat{}, adjugate{};
     cofactor(mat, cofactorMat);
-    double adjugate[NDIM][NDIM];
     transpose(cofactorMat, adjugate);
 
     for (int i = 0; i < NDIM; i++) {
@@ -99,21 +102,19 @@ int Matrix::inverse_matrix(double mat[NDIM][NDIM], double inverse[NDIM][NDIM]) {
             inverse[i][j] = adjugate[i][j] / det;
         }
     }
-
     return 1;
 }
 
-int Matrix::inverse_3x3(double mat[3][3], double inv[3][3]) {
-	Matrix matrix_obj;
-    double det = matrix_obj.determinant3x3(mat);
+int Matrix::inverse_3x3(const Matrix3x3& mat, Matrix3x3& inv) {
+    double det = determinant3x3(mat);
     if (fabs(det) < 1e-14) {
-        printf("Matrix is singular or nearly singular!\n");
+        std::cerr << "Matrix is singular or nearly singular!" << std::endl;
         return 0; 
     }
 
-    double cofactorMat[3][3], adjugate[3][3];
-    matrix_obj.cofactor3x3(mat, cofactorMat);
-    matrix_obj.transpose3x3(cofactorMat, adjugate);
+    Matrix3x3 cofactorMat{}, adjugate{};
+    cofactor3x3(mat, cofactorMat);
+    transpose3x3(cofactorMat, adjugate);
 
     for (int i = 0; i < 3; i++) {
         for (int j = 0; j < 3; j++) {
@@ -123,11 +124,9 @@ int Matrix::inverse_3x3(double mat[3][3], double inv[3][3]) {
     return 1;
 }
 
-void Matrix::check_inverse_3x3(double mat[3][3], double inv[3][3]) {
-    double product[3][3] = {{0.0}};
-    double identity[3][3] = {{1.0, 0.0, 0.0},
-                             {0.0, 1.0, 0.0},
-                             {0.0, 0.0, 1.0}};
+void Matrix::check_inverse_3x3(const Matrix3x3& mat, const Matrix3x3& inv) {
+    Matrix3x3 product{};
+    constexpr Matrix3x3 identity = {};
 
     for (int i = 0; i < 3; i++) {
         for (int j = 0; j < 3; j++) {
@@ -138,59 +137,62 @@ void Matrix::check_inverse_3x3(double mat[3][3], double inv[3][3]) {
         }
     }
 
-    double TOL = 1e-10;  
+    constexpr double TOL = 1e-10;
     for (int i = 0; i < 3; i++) {
         for (int j = 0; j < 3; j++) {
             if (fabs(product[i][j] - identity[i][j]) > TOL) {
-                printf("Inversion 3x3 check failed at (%d, %d): %f != %f\n",
-                       i, j, product[i][j], identity[i][j]);
+                std::cerr << "Inversion 3x3 check failed at (" << i << ", " << j << "): "
+                          << product[i][j] << " != " << identity[i][j] << std::endl;
             }
         }
     }
 }
 
 
-void Matrix::check_inverse(double gcov[NDIM][NDIM], double gcon[NDIM][NDIM]) {
-    double identity[NDIM][NDIM] = {0};
+
+void Matrix::check_inverse(const MatrixNDIM& gcov, const MatrixNDIM& g_inv) {
+    MatrixNDIM identity{};
     for (int i = 0; i < NDIM; i++) {
         identity[i][i] = 1.0;
     }
 
-    double product[NDIM][NDIM] = {0};
-
+    MatrixNDIM product{};
     for (int i = 0; i < NDIM; i++) {
         for (int j = 0; j < NDIM; j++) {
             for (int k = 0; k < NDIM; k++) {
-                product[i][j] += gcov[i][k] * gcon[k][j];
+                product[i][j] += gcov[i][k] * g_inv[k][j];
             }
         }
     }
 
     for (int i = 0; i < NDIM; i++) {
         for (int j = 0; j < NDIM; j++) {
-            if (fabs(product[i][j] - identity[i][j]) > TOLERANCE) {
-                printf("Matrix inversion check failed at element (%d, %d): %f\n", i, j, product[i][j]);
+            if (std::fabs(product[i][j] - identity[i][j]) > TOLERANCE) {
+                std::cerr << "Matrix inversion check failed at element (" << i << ", " << j << "): " 
+                          << product[i][j] << std::endl;
             }
         }
     }
+	print_matrix("identity", identity);
 }
 
-void Matrix::print_matrix(const char* name, double mat[NDIM][NDIM]) {
-    printf("%s =\n", name);
-    for (int i = 0; i < NDIM; i++) {
-        for (int j = 0; j < NDIM; j++) {
-            printf("%.12f ", mat[i][j]);
+
+void Matrix::print_matrix(const char* name, const MatrixNDIM& mat) {
+    std::cout << name << " =\n";
+    for (const auto& row : mat) {
+        for (const auto& elem : row) {
+            std::cout << std::fixed << std::setprecision(12) << elem << " ";
         }
-        printf("\n");
+        std::cout << std::endl;
     }
 }
 
-void Matrix::print_matrix_3x3(const char* name, double mat[3][3]) {
-	printf("%s =\n", name);
-	for (int i = 0; i < 3; i++) {
-		for (int j = 0; j < 3; j++) {
-			printf("%.12f ", mat[i][j]);
-		}
-		printf("\n");
-	}
+void Matrix::print_matrix_3x3(const char* name, const Matrix3x3& mat) {
+    std::cout << name << " =\n";
+    for (const auto& row : mat) {
+        for (const auto& elem : row) {
+            std::cout << std::fixed << std::setprecision(12) << elem << " ";
+        }
+        std::cout << std::endl;
+    }
 }

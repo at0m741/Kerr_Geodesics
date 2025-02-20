@@ -5,11 +5,13 @@
  * It is used to calculate the gamma derivative in the Riemann tensor
  */
 
-double richardson_derivative(double (*Gamma_plus_h)[NDIM][NDIM], 
-                            double (*Gamma_minus_h)[NDIM][NDIM],
-                            double (*Gamma_plus_half_h)[NDIM][NDIM],
-                            double (*Gamma_minus_half_h)[NDIM][NDIM],
-                            int rho, int mu, int nu, double h) {
+double Tensor::richardson_derivative(
+    const Tensor3D& Gamma_plus_h, 
+    const Tensor3D& Gamma_minus_h,
+    const Tensor3D& Gamma_plus_half_h,
+    const Tensor3D& Gamma_minus_half_h,
+    int rho, int mu, int nu, double h) 
+{
     double diff_h = (Gamma_plus_h[rho][mu][nu] - Gamma_minus_h[rho][mu][nu]) / (2 * h);
     double diff_half_h = (Gamma_plus_half_h[rho][mu][nu] - Gamma_minus_half_h[rho][mu][nu]) / h;
     return (4 * diff_half_h - diff_h) / 3;
@@ -22,14 +24,13 @@ double richardson_derivative(double (*Gamma_plus_h)[NDIM][NDIM],
  * + Gamma^rho_mu_lambda * Gamma^lambda_nu_sigma - Gamma^rho_nu_lambda * Gamma^lambda_mu_sigma
  */
 
-void Tensor::calculate_riemann(double Gamma[NDIM][NDIM][NDIM], 
-                       double Gamma_plus_h[NDIM][NDIM][NDIM][NDIM], 
-                       double Gamma_minus_h[NDIM][NDIM][NDIM][NDIM], 
-                       double Gamma_plus_half_h[NDIM][NDIM][NDIM][NDIM], 
-                       double Gamma_minus_half_h[NDIM][NDIM][NDIM][NDIM],
-                       double Riemann[NDIM][NDIM][NDIM][NDIM], 
-                       double h) {
-    memset(Riemann, 0, sizeof(double) * NDIM * NDIM * NDIM * NDIM);
+void Tensor::calculate_riemann(const Christoffel3D& Gamma, 
+				const Christoffel4D& Gamma_plus_h, 
+				const Christoffel4D& Gamma_minus_h, 
+				const Christoffel4D& Gamma_plus_half_h, 
+				const Christoffel4D& Gamma_minus_half_h,
+				Riemann4D& Riemann, 
+				double h) {
     for (int rho = 0; rho < NDIM; rho++) {
         for (int sigma = 0; sigma < NDIM; sigma++) {
             for (int mu = 0; mu < NDIM; mu++) {
@@ -79,11 +80,12 @@ void Tensor::calculate_riemann(double Gamma[NDIM][NDIM][NDIM],
  * R_mu_nu = g^rho_sigma * R^sigma_rho_mu_nu
  */
 
-void Tensor::contract_riemann(double Riemann[NDIM][NDIM][NDIM][NDIM],\
-					  double Ricci[NDIM][NDIM], 
-					  double g_inv[NDIM][NDIM]) {
-    memset(Ricci, 0, sizeof(double) * NDIM * NDIM);
-	 for (int mu = 0; mu < NDIM; mu++) {
+void Tensor::contract_riemann(const Riemann4D& Riemann, MatrixNDIM& Ricci, const MatrixNDIM& g_inv) {
+    for (auto &row : Ricci) {
+        row.fill(0.0);
+    }
+    
+    for (int mu = 0; mu < NDIM; mu++) {
         for (int nu = 0; nu < NDIM; nu++) {
             for (int rho = 0; rho < NDIM; rho++) {
                 for (int sigma = 0; sigma < NDIM; sigma++) {
@@ -92,6 +94,7 @@ void Tensor::contract_riemann(double Riemann[NDIM][NDIM][NDIM][NDIM],\
             }
         }
     }
+    
     printf("\nRicci tensor:\n");
     for (int mu = 0; mu < NDIM; mu++) {
         for (int nu = 0; nu < NDIM; nu++) {
