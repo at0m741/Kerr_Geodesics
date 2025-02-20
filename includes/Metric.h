@@ -15,7 +15,7 @@ class Metric {
 
 		Metric() = default;
 
-		~Metric() {}
+		~Metric() = default;
 
 
 		

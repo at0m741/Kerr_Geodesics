@@ -119,7 +119,10 @@ double Grid::compute_hamiltonian_constraint(const Matrix3x3& gamma_inv, const Ma
             R += gamma_inv[i][j] * Ricci[i][j];
         }
     }
-    
+	printf("Ricci = %e\n", R); 
+	printf("K_trace = %e\n", K_trace);
+	printf("K_sq = %e\n", K_sq);
+	printf("R + K_trace * K_trace - K_sq = %e\n", R + K_trace * K_trace - K_sq);
     return R + K_trace * K_trace - K_sq;
 }
 
@@ -132,7 +135,6 @@ void Grid::compute_extrinsic_curvature_stationary_3D(
     Matrix3x3& K)
 {
     Matrix3x3 nabla{};
-    // Initialiser nabla à zéro
     for (auto& row : nabla) {
         row.fill(0.0);
     }

@@ -29,7 +29,7 @@ def compute_riemann_tensor(r, theta, G=1, c=1, m=1):
     return riemann
 
 r = 20
-theta = np.pi / 3.8
+theta = np.pi / 4.0
 riemann_tensor = compute_riemann_tensor(r, theta)
 
 for key, value in riemann_tensor.items():

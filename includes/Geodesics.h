@@ -29,7 +29,7 @@
 #define TOLERANCE 1e-4
 #define DELTA 1e-4
 #define NDIM3 3
-#define DELTA3 1e-9
+#define DELTA3 1e-4
 
 
 using Matrix2x2 = std::array<std::array<double, 2>, 2>;
@@ -110,24 +110,4 @@ int Metric_prob();
 int grid_setup(); 
 void generate_blackhole_image();
 void generate_blackhole_shadow();
-void calculate_christoffel_3D(
-    double X[NDIM3],         
-    double Gamma3[NDIM3][NDIM3][NDIM3]);
-void calc_gamma_ij(const double X3D[3],
-                   double gamma3[3][3],       
-                   double gamma3_inv[3][3]);
 
-void compute_extrinsic_curvature_stationary_3D(
-    double X[3],       
-    double alpha,
-    double beta_cov[3],
-    double Gamma3[3][3][3],
-    double dbeta[3][3],
-    double K[3][3]
-);
-void verify3x3(double matrix[3][3], double inv_matrix[3][3]);
-void compute_partial_christoffel_3D(
-    const double X[3],
-    int m, 
-    double dGamma[3][3][3], 
-    double delta);

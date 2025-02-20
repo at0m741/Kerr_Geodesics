@@ -162,7 +162,7 @@ int Metric_prob() {
 
 
 int grid_setup() {
-    double r = 20.0;
+    double r = 2.0;
     double theta = M_PI / 2.0;
     double phi = 0.0;
     
