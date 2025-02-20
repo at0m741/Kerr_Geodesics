@@ -125,17 +125,6 @@ void compute_extrinsic_curvature_stationary_3D(
     double dbeta[3][3],
     double K[3][3]
 );
-void calculeBeta(double X[3], double beta_cov[3]);
-void calculate_dbeta(double X[3], double dbeta[3][3]);
-void compute_ricci_3d(
-    const double X[3],     
-    double Gamma3[3][3][3], 
-    double R3[3][3]         
-);
-void print_ricci_tensor(double R3[3][3]);
-double compute_K(double gamma_inv[3][3], double K[3][3]);
-double compute_Kij_Kij(double gamma_inv[3][3], double K[3][3]);
-double compute_hamiltonian_constraint(double gamma_inv[3][3], double K[3][3], double Ricci[3][3]);
 void verify3x3(double matrix[3][3], double inv_matrix[3][3]);
 void compute_partial_christoffel_3D(
     const double X[3],

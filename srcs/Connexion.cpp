@@ -89,24 +89,23 @@ void Connexion::calculate_christoffel(const VectorNDIM& X, double h,
 static double dgamma[NDIM3][NDIM3][NDIM3];
 
 
-void calc_gamma_ij(const double X3D[3],
-                   double gamma3[3][3],       
-                   double gamma3_inv[3][3])  
-{
-    std::array<double, 4> X4D = {0.0, X3D[0], X3D[1], X3D[2]}; 
-    std::array<std::array<double, 4>, 4> g{}; 
-    std::array<std::array<double, 4>, 4> g_inv{}; 
+
+void calc_gamma_ij(const Vector3& X3D, Matrix3x3& gamma3, Matrix3x3& gamma3_inv) {
+    // Convertir le vecteur 3D en vecteur 4D : X4D = {0, X3D[0], X3D[1], X3D[2]}
+    Vector4 X4D = {0.0, X3D[0], X3D[1], X3D[2]};
+    
+    Matrix4x4 g{};    
+    Matrix4x4 g_inv{}; 
 
     Metric metric;
     Matrix matrix_obj;
 
     metric.calculate_metric(X4D, g, g_inv);
 
-    std::array<std::array<double, 3>, 3> gamma3_arr{};
-    std::array<std::array<double, 3>, 3> gamma3_inv_arr{};
-
-    for (int i = 0; i < 3; i++) {
-        for (int j = 0; j < 3; j++) {
+    Matrix3x3 gamma3_arr{};
+    Matrix3x3 gamma3_inv_arr{};
+    for (int i = 0; i < NDIM3; i++) {
+        for (int j = 0; j < NDIM3; j++) {
             gamma3_arr[i][j] = g[i+1][j+1];
         }
     }
@@ -115,51 +114,38 @@ void calc_gamma_ij(const double X3D[3],
         printf("Erreur: gamma_{ij} est singulière ou mal définie\n");
     }
 
-    for (int i = 0; i < 3; i++) {
-        for (int j = 0; j < 3; j++) {
-            gamma3[i][j] = gamma3_arr[i][j];
-            gamma3_inv[i][j] = gamma3_inv_arr[i][j];
-        }
-    }
+    gamma3 = gamma3_arr;
+    gamma3_inv = gamma3_inv_arr;
 }
 
 
-
-void calculate_christoffel_3D(
-    double X[NDIM3],         
-    double Gamma3[NDIM3][NDIM3][NDIM3] 
-) {
-    double gamma_ij[NDIM3][NDIM3], gamma_inv[NDIM3][NDIM3];
+void Grid::calculate_christoffel_3D(const Vector3& X, Tensor3D& Gamma3) {
+    Matrix3x3 gamma_ij{}, gamma_inv{};
     calc_gamma_ij(X, gamma_ij, gamma_inv);
-
+    
     for (int m = 0; m < NDIM3; m++) {
-        double Xp[NDIM3], Xm[NDIM3];
-        memcpy(Xp, X, sizeof(Xp));
-        memcpy(Xm, X, sizeof(Xm));
-
+        Vector3 Xp = X;
+        Vector3 Xm = X;
         Xp[m] += DELTA3;
         Xm[m] -= DELTA3;
-
-        double gamma_p[NDIM3][NDIM3], gamma_m[NDIM3][NDIM3];
-        double gamma_p_inv[NDIM3][NDIM3], gamma_m_inv[NDIM3][NDIM3];
-        calc_gamma_ij(Xp, gamma_p, gamma_p_inv);
-        calc_gamma_ij(Xm, gamma_m, gamma_m_inv);
-
+        
+        Matrix3x3 gamma_p{}, gamma_m{}, dummy_inv;
+        calc_gamma_ij(Xp, gamma_p, dummy_inv);
+        calc_gamma_ij(Xm, gamma_m, dummy_inv);
+        
         for (int i = 0; i < NDIM3; i++) {
             for (int j = 0; j < NDIM3; j++) {
                 dgamma[m][i][j] = (gamma_p[i][j] - gamma_m[i][j]) / (2.0 * DELTA3);
             }
         }
     }
-
+    
     for (int k = 0; k < NDIM3; k++) {
         for (int i = 0; i < NDIM3; i++) {
             for (int j = 0; j < NDIM3; j++) {
                 double sum = 0.0;
                 for (int l = 0; l < NDIM3; l++) {
-                    sum += gamma_inv[k][l] * (
-                        dgamma[i][l][j] + dgamma[j][l][i] - dgamma[l][i][j]
-                    );
+                    sum += gamma_inv[k][l] * ( dgamma[i][l][j] + dgamma[j][l][i] - dgamma[l][i][j] );
                 }
                 Gamma3[k][i][j] = 0.5 * sum;
             }

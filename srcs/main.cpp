@@ -43,12 +43,12 @@ int main(int argc, char **argv)
 			return 0;
 		}
 		Metric_prob();
-	/* } else if (strncmp(argv[1], "-C", 2) == 0) { */
-	/* 	if (argc < 3) { */
-	/* 		printf("Usage: -C <Spin value a>\n"); */
-	/* 		return 0; */
-	/* 	} */
-	/* 	grid_setup(); */
+	} else if (strncmp(argv[1], "-C", 2) == 0) {
+		if (argc < 3) {
+			printf("Usage: -C <Spin value a>\n");
+			return 0;
+		}
+		grid_setup();
 	}else {
 		printf("Invalid option\n");
 		return 0;

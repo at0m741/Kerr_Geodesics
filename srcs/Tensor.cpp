@@ -112,26 +112,25 @@ void Tensor::contract_riemann(const Riemann4D& Riemann, MatrixNDIM& Ricci, const
     printf("Ricci Scalar: %12.6f\n", Ricci_scalar);
 }
 
-void compute_partial_christoffel_3D(
-    const double X[3],
-    int m, 
-    double dGamma[3][3][3], 
-    double delta
-)
-{
-    double Xp[3], Xm[3];
-    memcpy(Xp, X, sizeof(Xp));
-    memcpy(Xm, X, sizeof(Xm));
 
+void compute_partial_christoffel_3D(
+    const Vector3& X,   
+    int m, 
+    Tensor3D& dGamma,   
+    double delta
+) {
+    Vector3 Xp = X;
+    Vector3 Xm = X;
+	Grid grid_obj; 
     Xp[m] += delta;
     Xm[m] -= delta;
-
-    double Gamma_p[3][3][3], Gamma_m[3][3][3];
-    memset(Gamma_p,0,sizeof(Gamma_p));
-    memset(Gamma_m,0,sizeof(Gamma_m));
-
-    calculate_christoffel_3D(Xp, Gamma_p);
-    calculate_christoffel_3D(Xm, Gamma_m);
+    
+    Tensor3D Gamma_p{}; 
+    Tensor3D Gamma_m{};
+    
+    grid_obj.calculate_christoffel_3D(Xp, Gamma_p);
+    grid_obj.calculate_christoffel_3D(Xm, Gamma_m);
+    
     for (int i = 0; i < 3; i++) {
         for (int j = 0; j < 3; j++) {
             for (int k = 0; k < 3; k++) {
@@ -141,56 +140,65 @@ void compute_partial_christoffel_3D(
     }
 }
 
-void compute_ricci_3d(
-    const double X[3],     
-    double Gamma3[3][3][3], 
-    double R3[3][3]         
-)
-{
-    memset(R3,0,sizeof(double)*3*3);
 
-    static double partialGamma[3][3][3][3];
-    memset(partialGamma,0,sizeof(partialGamma));
-
-    double delta = 1e-5;
-    for(int m=0; m<3; m++){
-        double dG[3][3][3];
-        memset(dG,0,sizeof(dG));
-        compute_partial_christoffel_3D(X,m,dG,delta);
-        for(int k=0;k<3;k++)
-            for(int i=0;i<3;i++)
-                for(int j=0;j<3;j++)
-                    partialGamma[m][k][i][j] = dG[k][i][j];
+void Grid::compute_ricci_3d(
+    const Vector3& X,        
+    const Tensor3D& Gamma3,   
+    Matrix3x3& R3            
+) {
+    for (auto &row : R3) {
+        row.fill(0.0);
     }
 
-    for(int i=0;i<3;i++){
-        for(int j=0;j<3;j++){
-            double term1=0, term2=0, term3=0, term4=0;
-            for(int k=0;k<3;k++)
+    static Tensor4D partialGamma{};
+
+    double delta = 1e-5;
+
+    for (int m = 0; m < DIM3; m++) {
+        std::array<std::array<std::array<double, DIM3>, DIM3>, DIM3> dG{};
+        compute_partial_christoffel_3D(X, m, dG, delta);
+        
+        for (int k = 0; k < DIM3; k++) {
+            for (int i = 0; i < DIM3; i++) {
+                for (int j = 0; j < DIM3; j++) {
+                    partialGamma[m][k][i][j] = dG[k][i][j];
+                }
+            }
+        }
+    }
+
+    for (int i = 0; i < DIM3; i++) {
+        for (int j = 0; j < DIM3; j++) {
+            double term1 = 0.0, term2 = 0.0, term3 = 0.0, term4 = 0.0;
+            for (int k = 0; k < DIM3; k++) {
                 term1 += partialGamma[k][k][i][j];
-            for(int k=0;k<3;k++){
+            }
+            for (int k = 0; k < DIM3; k++) {
                 term2 += partialGamma[j][k][i][k];
-            for(int k=0;k<3;k++)
-                for(int m=0;m<3;m++)
-                    term3 += Gamma3[k][i][j]*Gamma3[m][k][m];
-            for(int m=0;m<3;m++)
-                for(int k=0;k<3;k++)
-                    term4 += Gamma3[m][i][k]*Gamma3[k][j][m];
+            }
+            for (int k = 0; k < DIM3; k++) {
+                for (int m = 0; m < DIM3; m++) {
+                    term3 += Gamma3[k][i][j] * Gamma3[m][k][m];
+                }
+            }
+            for (int m = 0; m < DIM3; m++) {
+                for (int k = 0; k < DIM3; k++) {
+                    term4 += Gamma3[m][i][k] * Gamma3[k][j][m];
+                }
             }
             R3[i][j] = term1 - term2 + term3 - term4;
         }
     }
 
-	print_ricci_tensor(R3);
+    print_ricci_tensor(R3);
 }
 
-void print_ricci_tensor(double R3[3][3]) {
-	printf("\nRicci tensor:\n");
-	for (int i = 0; i < 3; i++) {
-		for (int j = 0; j < 3; j++) {
-			printf("%12.6f\t", R3[i][j]);
-		}
-		printf("\n");
-	}
+void Grid::print_ricci_tensor(const Matrix3x3& R3) {
+    printf("\nRicci tensor:\n");
+    for (int i = 0; i < DIM3; i++) {
+        for (int j = 0; j < DIM3; j++) {
+            printf("%12.6f\t", R3[i][j]);
+        }
+        printf("\n");
+    }
 }
-

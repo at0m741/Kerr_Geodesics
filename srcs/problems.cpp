@@ -160,65 +160,64 @@ int Metric_prob() {
 	return 0;
 }
 
-/*  */
-/* int grid_setup() { */
-/*     double r = 2.0; */
-/*     double theta = M_PI/2.0; */
-/*     double phi = 0.0; */
-/* 	Metric metric_obj; */
-/* 	Grid grid_obj; */
-/*     double X3D[3] = {r, theta, phi}; */
-/* 	std::array<double, NDIM> X4D = {0.0, r, theta, phi};  */
-/*  */
-/*     metric_obj.calculate_metric(X4D, metric_obj.gcov, metric_obj.gcon); */
-/*  */
-/*     double alpha; */
-/* 	std::array<double, NDIM> beta_cov; */
-/* 	std::array<double, NDIM> beta_con; */
-/*     double gamma3[3][3], gamma3_inv[3][3]; */
-/*     grid_obj.extract_3p1(metric_obj.gcov, metric_obj.gcon, &alpha, beta_cov, beta_con, gamma3, gamma3_inv); */
-/*  */
-/*     double Gamma3[3][3][3]; */
-/*     calculate_christoffel_3D(X3D, Gamma3); */
-/* 	for (int i = 0; i < 3; i++) { */
-/* 		for (int j = 0; j < 3; j++) { */
-/* 			for (int k = 0; k < 3; k++) { */
-/* 				printf("Gamma3[%d][%d][%d] = %e\n", i, j, k, Gamma3[i][j][k]); */
-/* 			} */
-/* 		} */
-/* 	} */
-/*  */
-/* 	 */
-/*  */
-/*     double dbeta[3][3]; */
-/*     calculate_dbeta(X3D, dbeta);  */
-/*  */
-/*     double K[3][3]; */
-/*     grid_obj.compute_extrinsic_curvature_stationary_3D( */
-/*         X3D, alpha, beta_cov, */
-/*         Gamma3, dbeta, K */
-/*     ); */
-/* 	 */
-/* 	double K_trace = compute_K(gamma3_inv, K); */
-/* 	double KijKij = compute_Kij_Kij(gamma3_inv, K); */
-/* 	printf("Trace K = %e\n", K_trace); */
-/* 	printf("Kij K^ij = %e\n", KijKij); */
-/*  */
-/*  */
-/*  */
-/*     printf("alpha = %f\n", alpha); */
-/*     for(int i=0;i<3;i++){ */
-/*         printf("beta_cov[%d]= %e\n", i, beta_cov[i]); */
-/*     } */
-/*     for(int i=0;i<3;i++){ */
-/*       for(int j=0;j<3;j++){ */
-/*         printf("K[%d][%d]= %e\n", i, j, K[i][j]); */
-/*       } */
-/*     } */
-/*  */
-/* 	double Rij[3][3]; */
-/* 	compute_ricci_3d(X3D, Gamma3 ,Rij); */
-/* 	double Hamiltonian = compute_hamiltonian_constraint(gamma3_inv, K, Rij); */
-/* 	printf("Hamiltonian constraint = %e\n", Hamiltonian); */
-/*     return 0; */
-/* } */
+
+int grid_setup() {
+    double r = 20.0;
+    double theta = M_PI / 2.0;
+    double phi = 0.0;
+    
+    Metric metric_obj;
+    Grid grid_obj;
+	Matrix matrix_obj; 
+    Vector3 X3D = { r, theta, phi };
+    std::array<double, NDIM> X4D = { 0.0, r, theta, phi };
+
+    metric_obj.calculate_metric(X4D, metric_obj.gcov, metric_obj.gcon);
+	matrix_obj.print_matrix("g", metric_obj.gcov);
+	matrix_obj.print_matrix("g_inv", metric_obj.gcon);
+    double alpha;
+    Vector3 beta_cov, beta_con;
+    Matrix3x3 gamma3, gamma3_inv;
+    grid_obj.extract_3p1(metric_obj.gcov, metric_obj.gcon, &alpha, beta_cov, beta_con, gamma3, gamma3_inv);
+
+    Tensor3D Gamma3;
+    grid_obj.calculate_christoffel_3D(X3D, Gamma3); 
+    for (int i = 0; i < DIM3; i++) {
+        for (int j = 0; j < DIM3; j++) {
+            for (int k = 0; k < DIM3; k++) {
+                printf("Gamma3[%d][%d][%d] = %e\n", i, j, k, Gamma3[i][j][k]);
+            }
+        }
+    }
+
+    Matrix3x3 dbeta;
+    grid_obj.calculate_dbeta(X3D, dbeta); 
+
+    Matrix3x3 K;
+    grid_obj.compute_extrinsic_curvature_stationary_3D(
+        X3D, alpha, beta_cov,
+        Gamma3, dbeta, K
+    );
+
+    double K_trace = grid_obj.compute_K(gamma3_inv, K);
+    double KijKij = grid_obj.compute_Kij_Kij(gamma3_inv, K);
+    printf("Trace K = %e\n", K_trace);
+    printf("Kij K^ij = %e\n", KijKij);
+
+    printf("alpha = %f\n", alpha);
+    for (int i = 0; i < DIM3; i++) {
+        printf("beta_cov[%d] = %e\n", i, beta_cov[i]);
+    }
+    for (int i = 0; i < DIM3; i++) {
+        for (int j = 0; j < DIM3; j++) {
+            printf("K[%d][%d] = %e\n", i, j, K[i][j]);
+        }
+    }
+
+    Matrix3x3 Rij;
+    grid_obj.compute_ricci_3d(X3D, Gamma3, Rij);
+    double Hamiltonian = grid_obj.compute_hamiltonian_constraint(gamma3_inv, K, Rij);
+    printf("Hamiltonian constraint = %e\n", Hamiltonian);
+
+    return 0;
+}
