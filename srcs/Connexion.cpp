@@ -91,7 +91,6 @@ static double dgamma[NDIM3][NDIM3][NDIM3];
 
 
 void calc_gamma_ij(const Vector3& X3D, Matrix3x3& gamma3, Matrix3x3& gamma3_inv) {
-    // Convertir le vecteur 3D en vecteur 4D : X4D = {0, X3D[0], X3D[1], X3D[2]}
     Vector4 X4D = {0.0, X3D[0], X3D[1], X3D[2]};
     
     Matrix4x4 g{};    
@@ -122,7 +121,7 @@ void calc_gamma_ij(const Vector3& X3D, Matrix3x3& gamma3, Matrix3x3& gamma3_inv)
 void Grid::calculate_christoffel_3D(const Vector3& X, Tensor3D& Gamma3) {
     Matrix3x3 gamma_ij{}, gamma_inv{};
     calc_gamma_ij(X, gamma_ij, gamma_inv);
-    
+	 
     for (int m = 0; m < NDIM3; m++) {
         Vector3 Xp = X;
         Vector3 Xm = X;
@@ -149,6 +148,59 @@ void Grid::calculate_christoffel_3D(const Vector3& X, Tensor3D& Gamma3) {
                 }
                 Gamma3[k][i][j] = 0.5 * sum;
             }
+        }
+    }
+}
+
+
+void Grid::calculate_christoffel_3D_grid(
+    std::vector<std::vector<Cell2D>>& grid,
+    int Nx, int Ny,
+    double dx, double dy
+){
+    for(int i=1; i<Nx-1; i++){
+        for(int j=1; j<Ny-1; j++){
+            const auto& gamma_ij = grid[i][j].gamma;
+            const auto& gamma_inv = grid[i][j].gamma_inv;
+
+            double dgamma[3][3][3] = {{{0.0}}};
+
+            for(int a=0; a<3; a++){
+                for(int b=0; b<3; b++){
+                    double g_p = grid[i+1][j].gamma[a][b];
+                    double g_m = grid[i-1][j].gamma[a][b];
+                    dgamma[0][a][b] = (g_p - g_m)/(2.0 * dx);
+                }
+            }
+
+            for(int a=0; a<3; a++){
+                for(int b=0; b<3; b++){
+                    double g_p = grid[i][j+1].gamma[a][b];
+                    double g_m = grid[i][j-1].gamma[a][b];
+                    dgamma[1][a][b] = (g_p - g_m)/(2.0 * dy);
+                }
+            }
+
+			Tensor3D localGamma3 = {{{{0.0}}}};
+
+            for(int k=0; k<3; k++){
+                for(int iidx=0; iidx<3; iidx++){
+                    for(int jidx=0; jidx<3; jidx++){
+                        double sum = 0.0;
+                        for(int l=0; l<3; l++){
+                            double val_d1 = dgamma[iidx][l][jidx]; // ∂i gamma_{l j}
+                            double val_d2 = dgamma[jidx][l][iidx]; // ∂j gamma_{l i}
+                            double val_d3 = dgamma[l][iidx][jidx]; // ∂l gamma_{i j}
+                            sum += gamma_inv[k][l] * (val_d1 + val_d2 - val_d3);
+                        }
+                        localGamma3[k][iidx][jidx] = 0.5 * sum;
+						if (localGamma3[k][iidx][jidx] != 0.0) 
+							printf("localGamma3[%d][%d][%d] = %e\n", k, iidx, jidx, localGamma3[k][iidx][jidx]);
+                    }
+                }
+            }
+
+            grid[i][j].Gamma3 = localGamma3;
         }
     }
 }

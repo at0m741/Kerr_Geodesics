@@ -161,79 +161,150 @@ int Metric_prob() {
 }
 
 
+#include <fstream>
+
+void save_grid_to_csv(const std::vector<std::vector<Grid::Cell2D>>& grid, 
+                      int Nr, int Ntheta, double r_min, double dr, 
+                      double theta_min, double dtheta, const std::string& filename) {
+    std::ofstream file(filename);
+    if (!file.is_open()) {
+        std::cerr << "Erreur : Impossible d'ouvrir le fichier " << filename << std::endl;
+        return;
+    }
+
+    file << "r,theta,gamma11,gamma12,gamma13,gamma22,gamma23,gamma33,K11,K12,K13,K22,K23,K33\n";
+
+    for (int i = 0; i < Nr; i++) {
+        double r_i = r_min + i * dr;
+        for (int j = 0; j < Ntheta; j++) {
+            double th_j = theta_min + j * dtheta;
+
+            const Matrix3x3& gamma = grid[i][j].gamma;
+            const Matrix3x3& K = grid[i][j].K;
+
+            file << r_i << "," << th_j;
+            for (int a = 0; a < 3; a++) {
+                for (int b = a; b < 3; b++) {  
+                    file << "," << gamma[a][b];
+                }
+            }
+            for (int a = 0; a < 3; a++) {
+                for (int b = a; b < 3; b++) {
+                    file << "," << K[a][b];
+                }
+            }
+            file << "\n";
+        }
+    }
+
+    file.close();
+    std::cout << "Données sauvegardées dans " << filename << std::endl;
+}
+
+
 int grid_setup() {
-	double r = 6.0;
-	double theta = M_PI / 2.0;
-	double phi = 0.0;
-	
-	Metric metric_obj;
-	Grid grid_obj;
-	Matrix matrix_obj; 
-	Vector3 X3D = { r, theta, phi };
-	std::array<double, NDIM> X4D = { 0.0, r, theta, phi };
+    double r = 10.0;
+    double theta = M_PI / 2.0;
+    double phi = 0.0;
 
-	metric_obj.calculate_metric(X4D, metric_obj.gcov, metric_obj.gcon);
-	matrix_obj.print_matrix("g", metric_obj.gcov);
-	matrix_obj.print_matrix("g_inv", metric_obj.gcon);
-	
-	double alpha;
-	Vector3 beta_cov, beta_con;
-	Matrix3x3 gamma3, gamma3_inv;
-	grid_obj.extract_3p1(metric_obj.gcov, metric_obj.gcon, &alpha, beta_cov, beta_con, gamma3, gamma3_inv);
+    Metric metric_obj;
+    Grid grid_obj;
+    Matrix matrix_obj; 
+    Vector3 X3D = { r, theta, phi };  
+    std::array<double, NDIM> X4D = { 0.0, r, theta, phi };
 
-	Tensor3D Gamma3;
-	grid_obj.calculate_christoffel_3D(X3D, Gamma3);
-	for (int i = 0; i < DIM3; i++) {
-		for (int j = 0; j < DIM3; j++) {
-			for (int k = 0; k < DIM3; k++) {
-				printf("Gamma3[%d][%d][%d] = %e\n", i, j, k, Gamma3[i][j][k]);
-			}
-		}
-	}
+    metric_obj.calculate_metric(X4D, metric_obj.gcov, metric_obj.gcon);
+    matrix_obj.print_matrix("g", metric_obj.gcov);
+    matrix_obj.print_matrix("g_inv", metric_obj.gcon);
+    
+    double alpha;
+    Vector3 beta_cov, beta_con;
+    Matrix3x3 gamma3, gamma3_inv;
+    grid_obj.extract_3p1(metric_obj.gcov, metric_obj.gcon, &alpha, beta_cov, beta_con, gamma3, gamma3_inv);
 
-	Matrix3x3 dbeta;
-	grid_obj.calculate_dbeta(X3D, dbeta);
+    Tensor3D Gamma3;
+    grid_obj.calculate_christoffel_3D(X3D, Gamma3);
+    
+    for (int i = 0; i < DIM3; i++) {
+        for (int j = 0; j < DIM3; j++) {
+            for (int k = 0; k < DIM3; k++) {
+                printf("Gamma3[%d][%d][%d] = %e\n", i, j, k, Gamma3[i][j][k]);
+            }
+        }
+    }
 
-	Matrix3x3 K;
-	grid_obj.compute_extrinsic_curvature_stationary_3D(X3D, alpha, beta_cov, Gamma3, dbeta, K);
+    Matrix3x3 dbeta;
+    grid_obj.calculate_dbeta(X3D, dbeta);
 
-	double K_trace = grid_obj.compute_K(gamma3_inv, K);
-	double KijKij = grid_obj.compute_Kij_Kij(gamma3_inv, K);
-	printf("Trace K = %e\n", K_trace);
-	printf("Kij K^ij = %e\n", KijKij);
-	printf("alpha = %f\n", alpha);
-	for (int i = 0; i < DIM3; i++) {
-		printf("beta_cov[%d] = %e\n", i, beta_cov[i]);
-	}
-	for (int i = 0; i < DIM3; i++) {
-		for (int j = 0; j < DIM3; j++) {
-			printf("K[%d][%d] = %e\n", i, j, K[i][j]);
-		}
-	}
+    Matrix3x3 K;
+    grid_obj.compute_extrinsic_curvature_stationary_3D(X3D, alpha, beta_cov, Gamma3, dbeta, K);
 
-	Matrix3x3 Rij;
-	grid_obj.compute_ricci_3d(X3D, Gamma3, Rij);
+    double K_trace = grid_obj.compute_K(gamma3_inv, K);
+    double KijKij = grid_obj.compute_Kij_Kij(gamma3_inv, K);
+    printf("Trace K = %e\n", K_trace);
+    printf("Kij K^ij = %e\n", KijKij);
+    printf("alpha = %f\n", alpha);
 
-	
-	Matrix3x3 gamma_current = gamma3;
-	Matrix3x3 K_current = K;
-	double t = 0.0;
-	double dt = 0.0001;
-	int nSteps = 1000;
-	std::ofstream outfile("simulation_data.csv");
-	outfile << "time,K_trace,Hamiltonian_constraint\n";
-	for (int step = 0; step < nSteps; step++) {
-		Matrix3x3 gamma_new, K_new;
-		evolveADM(gamma_current, K_current, alpha, X3D, dt, gamma_new, K_new);
-		gamma_current = gamma_new;
-		K_current = K_new;
-		t += dt;
-		double K_trace_current = grid_obj.compute_K(gamma3_inv, K_current);
-		printf("Step %d, t = %f, Trace K = %e\n", step, t, K_trace_current);
-		double Hamiltonian = grid_obj.compute_hamiltonian_constraint(gamma3_inv, K_current, Rij);
-		printf("Hamiltonian constraint = %e\n", Hamiltonian);
-		outfile << t << "," << K_trace_current << "," << Hamiltonian << "\n";
-	}
-	outfile.close();	
-	return 0;
+    for (int i = 0; i < DIM3; i++) {
+        printf("beta_cov[%d] = %e\n", i, beta_cov[i]);
+    }
+    for (int i = 0; i < DIM3; i++) {
+        for (int j = 0; j < DIM3; j++) {
+            printf("K[%d][%d] = %e\n", i, j, K[i][j]);
+        }
+    }
+
+    Matrix3x3 Rij;
+    grid_obj.compute_ricci_3d(X3D, Gamma3, Rij);
+
+    int Nr = 101, Ntheta = 101;
+    double r_min = 2.0, r_max = 10.0;
+    double dr = (r_max - r_min) / (Nr - 1);
+    double theta_min = 0.0, theta_max = M_PI;
+    double dtheta = (theta_max - theta_min) / (Ntheta - 1);
+
+    std::vector<std::vector<Grid::Cell2D>> grid(Nr, std::vector<Grid::Cell2D>(Ntheta));
+
+    for (int i = 0; i < Nr; i++) {
+        for (int j = 0; j < Ntheta; j++) {
+            double r_i = r_min + i * dr;
+            double th_j = theta_min + j * dtheta;
+            std::array<double, 4> X4D = { 0.0, r_i, th_j, 0.0 };
+            Vector3 X3D_local = { r_i, th_j, 0.0 }; 
+
+            Matrix4x4 gcov, gcon;
+            metric_obj.calculate_metric(X4D, gcov, gcon);
+
+            Matrix3x3 gamma3, gamma_inv3;
+            for (int a = 0; a < 3; a++) {
+                for (int b = 0; b < 3; b++) {
+                    gamma3[a][b] = gcov[a + 1][b + 1];
+                }
+            }
+
+            grid[i][j].gamma = gamma3;
+            grid[i][j].gamma_inv = gamma_inv3;
+            grid_obj.calculate_christoffel_3D(X3D_local, grid[i][j].Gamma3);
+        }
+    }
+
+	save_grid_to_csv(grid, Nr, Ntheta, r_min, dr, theta_min, dtheta, "grid_data.csv");
+    grid_obj.calculate_christoffel_3D_grid(grid, Nr, Ntheta, dr, dtheta);
+
+    double dt = 1e-4;
+    int nSteps = 10;
+
+    for (int step = 0; step < nSteps; step++) {
+        for (int i = 0; i < Nr; i++) {
+            for (int j = 0; j < Ntheta; j++) {
+                Matrix3x3 gamma_new, K_new;
+                evolveADM(grid[i][j].gamma, grid[i][j].K, grid[i][j].alpha, 
+                          X3D, dt, gamma_new, K_new);
+                grid[i][j].gamma = gamma_new;
+                grid[i][j].K = K_new;
+            }
+        }
+    }
+
+    return 0;
 }

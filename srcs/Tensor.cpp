@@ -190,7 +190,7 @@ void Grid::compute_ricci_3d(
         }
     }
 
-    print_ricci_tensor(R3);
+    /* print_ricci_tensor(R3); */
 }
 
 void Grid::print_ricci_tensor(const Matrix3x3& R3) {

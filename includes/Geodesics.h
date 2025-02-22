@@ -12,7 +12,8 @@
 #include <array>
 #include <cmath>
 #include <iomanip>
-
+#include <vector>
+#include <fstream>
 
 #define C 1.0
 #define G 1.0 
