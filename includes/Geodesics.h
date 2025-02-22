@@ -110,4 +110,5 @@ int Metric_prob();
 int grid_setup(); 
 void generate_blackhole_image();
 void generate_blackhole_shadow();
-
+void evolveADM(const Matrix3x3& gamma, const Matrix3x3& K,\
+		double alpha, const Vector3& X, double dt, Matrix3x3& gamma_new, Matrix3x3& K_new);

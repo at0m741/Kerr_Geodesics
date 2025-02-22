@@ -1,5 +1,6 @@
 #include <Geodesics.h>
-
+#include <chrono>
+#include <fstream>
 extern double (*geodesic_points)[5];
 extern int num_points;
 extern double a;
@@ -7,7 +8,6 @@ extern double a;
 
 
 int Riemann_tensor(const char *metric) {
-    // Création des objets
     Tensor tensor;
     Matrix matrix_obj;
     Connexion connexion;
@@ -162,62 +162,78 @@ int Metric_prob() {
 
 
 int grid_setup() {
-    double r = 2.0;
-    double theta = M_PI / 2.0;
-    double phi = 0.0;
-    
-    Metric metric_obj;
-    Grid grid_obj;
+	double r = 6.0;
+	double theta = M_PI / 2.0;
+	double phi = 0.0;
+	
+	Metric metric_obj;
+	Grid grid_obj;
 	Matrix matrix_obj; 
-    Vector3 X3D = { r, theta, phi };
-    std::array<double, NDIM> X4D = { 0.0, r, theta, phi };
+	Vector3 X3D = { r, theta, phi };
+	std::array<double, NDIM> X4D = { 0.0, r, theta, phi };
 
-    metric_obj.calculate_metric(X4D, metric_obj.gcov, metric_obj.gcon);
+	metric_obj.calculate_metric(X4D, metric_obj.gcov, metric_obj.gcon);
 	matrix_obj.print_matrix("g", metric_obj.gcov);
 	matrix_obj.print_matrix("g_inv", metric_obj.gcon);
-    double alpha;
-    Vector3 beta_cov, beta_con;
-    Matrix3x3 gamma3, gamma3_inv;
-    grid_obj.extract_3p1(metric_obj.gcov, metric_obj.gcon, &alpha, beta_cov, beta_con, gamma3, gamma3_inv);
+	
+	double alpha;
+	Vector3 beta_cov, beta_con;
+	Matrix3x3 gamma3, gamma3_inv;
+	grid_obj.extract_3p1(metric_obj.gcov, metric_obj.gcon, &alpha, beta_cov, beta_con, gamma3, gamma3_inv);
 
-    Tensor3D Gamma3;
-    grid_obj.calculate_christoffel_3D(X3D, Gamma3); 
-    for (int i = 0; i < DIM3; i++) {
-        for (int j = 0; j < DIM3; j++) {
-            for (int k = 0; k < DIM3; k++) {
-                printf("Gamma3[%d][%d][%d] = %e\n", i, j, k, Gamma3[i][j][k]);
-            }
-        }
-    }
+	Tensor3D Gamma3;
+	grid_obj.calculate_christoffel_3D(X3D, Gamma3);
+	for (int i = 0; i < DIM3; i++) {
+		for (int j = 0; j < DIM3; j++) {
+			for (int k = 0; k < DIM3; k++) {
+				printf("Gamma3[%d][%d][%d] = %e\n", i, j, k, Gamma3[i][j][k]);
+			}
+		}
+	}
 
-    Matrix3x3 dbeta;
-    grid_obj.calculate_dbeta(X3D, dbeta); 
+	Matrix3x3 dbeta;
+	grid_obj.calculate_dbeta(X3D, dbeta);
 
-    Matrix3x3 K;
-    grid_obj.compute_extrinsic_curvature_stationary_3D(
-        X3D, alpha, beta_cov,
-        Gamma3, dbeta, K
-    );
+	Matrix3x3 K;
+	grid_obj.compute_extrinsic_curvature_stationary_3D(X3D, alpha, beta_cov, Gamma3, dbeta, K);
 
-    double K_trace = grid_obj.compute_K(gamma3_inv, K);
-    double KijKij = grid_obj.compute_Kij_Kij(gamma3_inv, K);
-    printf("Trace K = %e\n", K_trace);
-    printf("Kij K^ij = %e\n", KijKij);
+	double K_trace = grid_obj.compute_K(gamma3_inv, K);
+	double KijKij = grid_obj.compute_Kij_Kij(gamma3_inv, K);
+	printf("Trace K = %e\n", K_trace);
+	printf("Kij K^ij = %e\n", KijKij);
+	printf("alpha = %f\n", alpha);
+	for (int i = 0; i < DIM3; i++) {
+		printf("beta_cov[%d] = %e\n", i, beta_cov[i]);
+	}
+	for (int i = 0; i < DIM3; i++) {
+		for (int j = 0; j < DIM3; j++) {
+			printf("K[%d][%d] = %e\n", i, j, K[i][j]);
+		}
+	}
 
-    printf("alpha = %f\n", alpha);
-    for (int i = 0; i < DIM3; i++) {
-        printf("beta_cov[%d] = %e\n", i, beta_cov[i]);
-    }
-    for (int i = 0; i < DIM3; i++) {
-        for (int j = 0; j < DIM3; j++) {
-            printf("K[%d][%d] = %e\n", i, j, K[i][j]);
-        }
-    }
+	Matrix3x3 Rij;
+	grid_obj.compute_ricci_3d(X3D, Gamma3, Rij);
 
-    Matrix3x3 Rij;
-    grid_obj.compute_ricci_3d(X3D, Gamma3, Rij);
-    double Hamiltonian = grid_obj.compute_hamiltonian_constraint(gamma3_inv, K, Rij);
-    printf("Hamiltonian constraint = %e\n", Hamiltonian);
-
-    return 0;
+	
+	Matrix3x3 gamma_current = gamma3;
+	Matrix3x3 K_current = K;
+	double t = 0.0;
+	double dt = 0.0001;
+	int nSteps = 1000;
+	std::ofstream outfile("simulation_data.csv");
+	outfile << "time,K_trace,Hamiltonian_constraint\n";
+	for (int step = 0; step < nSteps; step++) {
+		Matrix3x3 gamma_new, K_new;
+		evolveADM(gamma_current, K_current, alpha, X3D, dt, gamma_new, K_new);
+		gamma_current = gamma_new;
+		K_current = K_new;
+		t += dt;
+		double K_trace_current = grid_obj.compute_K(gamma3_inv, K_current);
+		printf("Step %d, t = %f, Trace K = %e\n", step, t, K_trace_current);
+		double Hamiltonian = grid_obj.compute_hamiltonian_constraint(gamma3_inv, K_current, Rij);
+		printf("Hamiltonian constraint = %e\n", Hamiltonian);
+		outfile << t << "," << K_trace_current << "," << Hamiltonian << "\n";
+	}
+	outfile.close();	
+	return 0;
 }
