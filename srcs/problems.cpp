@@ -161,18 +161,25 @@ int Metric_prob() {
 }
 
 
-#include <fstream>
 
 void save_grid_to_csv(const std::vector<std::vector<Grid::Cell2D>>& grid, 
                       int Nr, int Ntheta, double r_min, double dr, 
                       double theta_min, double dtheta, const std::string& filename) {
     std::ofstream file(filename);
     if (!file.is_open()) {
-        std::cerr << "Erreur : Impossible d'ouvrir le fichier " << filename << std::endl;
+        std::cerr << "" << filename << std::endl;
         return;
     }
 
-    file << "r,theta,gamma11,gamma12,gamma13,gamma22,gamma23,gamma33,K11,K12,K13,K22,K23,K33\n";
+    file << "r,theta,gamma11,gamma12,gamma13,gamma22,gamma23,gamma33,K11,K12,K13,K22,K23,K33";
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+            for (int k = 0; k < 3; k++) {
+                file << ",Gamma_" << i << "_" << j << "_" << k;
+            }
+        }
+    }
+    file << "\n";
 
     for (int i = 0; i < Nr; i++) {
         double r_i = r_min + i * dr;
@@ -181,6 +188,7 @@ void save_grid_to_csv(const std::vector<std::vector<Grid::Cell2D>>& grid,
 
             const Matrix3x3& gamma = grid[i][j].gamma;
             const Matrix3x3& K = grid[i][j].K;
+            const Tensor3D& Gamma3 = grid[i][j].Gamma3;
 
             file << r_i << "," << th_j;
             for (int a = 0; a < 3; a++) {
@@ -193,17 +201,26 @@ void save_grid_to_csv(const std::vector<std::vector<Grid::Cell2D>>& grid,
                     file << "," << K[a][b];
                 }
             }
+
+            for (int a = 0; a < 3; a++) {
+                for (int b = 0; b < 3; b++) {
+                    for (int c = 0; c < 3; c++) {
+                        file << "," << Gamma3[a][b][c];
+                    }
+                }
+            }
             file << "\n";
         }
     }
 
     file.close();
-    std::cout << "Données sauvegardées dans " << filename << std::endl;
+    std::cout << "save " << filename << std::endl;
 }
 
 
+
 int grid_setup() {
-    double r = 10.0;
+    double r = 30.0;
     double theta = M_PI / 2.0;
     double phi = 0.0;
 
@@ -265,34 +282,30 @@ int grid_setup() {
 
     std::vector<std::vector<Grid::Cell2D>> grid(Nr, std::vector<Grid::Cell2D>(Ntheta));
 
-    for (int i = 0; i < Nr; i++) {
-        for (int j = 0; j < Ntheta; j++) {
-            double r_i = r_min + i * dr;
-            double th_j = theta_min + j * dtheta;
-            std::array<double, 4> X4D = { 0.0, r_i, th_j, 0.0 };
-            Vector3 X3D_local = { r_i, th_j, 0.0 }; 
 
-            Matrix4x4 gcov, gcon;
-            metric_obj.calculate_metric(X4D, gcov, gcon);
+	for (int i = 0; i < Nr; i++) {
+		for (int j = 0; j < Ntheta; j++) {
+			double r_i = r_min + i * dr;
+			double th_j = theta_min + j * dtheta;
+			std::array<double, 4> X4D = { 0.0, r_i, th_j, 0.0 };
+			Vector3 X3D_local = { r_i, th_j, 0.0 }; 
 
-            Matrix3x3 gamma3, gamma_inv3;
-            for (int a = 0; a < 3; a++) {
-                for (int b = 0; b < 3; b++) {
-                    gamma3[a][b] = gcov[a + 1][b + 1];
-                }
-            }
+			Matrix4x4 gcov, gcon;
+			metric_obj.calculate_metric(X4D, gcov, gcon);
 
-            grid[i][j].gamma = gamma3;
-            grid[i][j].gamma_inv = gamma_inv3;
-            grid_obj.calculate_christoffel_3D(X3D_local, grid[i][j].Gamma3);
-        }
-    }
+			grid_obj.extract_3p1(gcov, gcon, &grid[i][j].alpha, grid[i][j].beta_cov, 
+					grid[i][j].beta_con, grid[i][j].gamma, grid[i][j].gamma_inv);
+			printf("r = %f, theta = %f\n", r_i, th_j);
+
+		}
+	}
+	grid_obj.calculate_christoffel_3D_grid(grid, Nr, Ntheta, dr, dtheta, r_min, theta_min);
 
 	save_grid_to_csv(grid, Nr, Ntheta, r_min, dr, theta_min, dtheta, "grid_data.csv");
-    grid_obj.calculate_christoffel_3D_grid(grid, Nr, Ntheta, dr, dtheta);
 
-    double dt = 1e-4;
-    int nSteps = 10;
+
+    double dt = 1e-6;
+    int nSteps = 30;
 
     for (int step = 0; step < nSteps; step++) {
         for (int i = 0; i < Nr; i++) {

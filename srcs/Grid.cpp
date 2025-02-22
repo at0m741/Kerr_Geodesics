@@ -18,6 +18,11 @@ void Grid::extract_3p1(const Matrix4x4& g,
     Matrix matrix_obj; 
     if (matrix_obj.inverse_3x3(gamma, gamma_inv) == 0) {
         printf("Erreur: gamma_{ij} est singulière ou mal définie\n");
+		for (int i = 0; i < 3; i++) {
+			for (int j = 0; j < 3; j++) {
+				printf("gamma[%d][%d] = %e\n", i, j, gamma[i][j]);
+			}
+		}
     }
 
     for (int i = 0; i < 3; i++) {

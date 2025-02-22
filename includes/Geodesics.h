@@ -113,3 +113,9 @@ void generate_blackhole_image();
 void generate_blackhole_shadow();
 void evolveADM(const Matrix3x3& gamma, const Matrix3x3& K,\
 		double alpha, const Vector3& X, double dt, Matrix3x3& gamma_new, Matrix3x3& K_new);
+void calc_gamma_ij_2D(
+    int i, int j,
+    double r_min, double dr,
+    double theta_min, double dtheta,
+    Metric &metric_obj,
+    Matrix3x3 &gamma3, Matrix3x3 &gamma3_inv); 
