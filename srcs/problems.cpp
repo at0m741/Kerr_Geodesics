@@ -160,67 +160,19 @@ int Metric_prob() {
 	return 0;
 }
 
-
-
-void save_grid_to_csv(const std::vector<std::vector<Grid::Cell2D>>& grid, 
-                      int Nr, int Ntheta, double r_min, double dr, 
-                      double theta_min, double dtheta, const std::string& filename) {
-    std::ofstream file(filename);
-    if (!file.is_open()) {
-        std::cerr << "" << filename << std::endl;
-        return;
-    }
-
-    file << "r,theta,gamma11,gamma12,gamma13,gamma22,gamma23,gamma33,K11,K12,K13,K22,K23,K33";
-    for (int i = 0; i < 3; i++) {
-        for (int j = 0; j < 3; j++) {
-            for (int k = 0; k < 3; k++) {
-                file << ",Gamma_" << i << "_" << j << "_" << k;
-            }
-        }
-    }
-    file << "\n";
-
-    for (int i = 0; i < Nr; i++) {
-        double r_i = r_min + i * dr;
-        for (int j = 0; j < Ntheta; j++) {
-            double th_j = theta_min + j * dtheta;
-
-            const Matrix3x3& gamma = grid[i][j].gamma;
-            const Matrix3x3& K = grid[i][j].K;
-            const Tensor3D& Gamma3 = grid[i][j].Gamma3;
-
-            file << r_i << "," << th_j;
-            for (int a = 0; a < 3; a++) {
-                for (int b = a; b < 3; b++) {  
-                    file << "," << gamma[a][b];
-                }
-            }
-            for (int a = 0; a < 3; a++) {
-                for (int b = a; b < 3; b++) {
-                    file << "," << K[a][b];
-                }
-            }
-
-            for (int a = 0; a < 3; a++) {
-                for (int b = 0; b < 3; b++) {
-                    for (int c = 0; c < 3; c++) {
-                        file << "," << Gamma3[a][b][c];
-                    }
-                }
-            }
-            file << "\n";
-        }
-    }
-
-    file.close();
-    std::cout << "save " << filename << std::endl;
+double perturbation_factor(double r, double theta) {
+    double r0 = 5.0, theta0 = M_PI / 2.0;
+    double sigma_r = 0.5, sigma_theta = 0.5;
+    double amplitude = 0.05; 
+    return 1.0 + amplitude * exp(- (pow(r - r0, 2) / (2 * sigma_r * sigma_r)
+                                    + pow(theta - theta0, 2) / (2 * sigma_theta * sigma_theta)));
 }
 
 
 
+
 int grid_setup() {
-    double r = 30.0;
+    double r = 90.0;
     double theta = M_PI / 2.0;
     double phi = 0.0;
 
@@ -241,7 +193,6 @@ int grid_setup() {
 
     Tensor3D Gamma3;
     grid_obj.calculate_christoffel_3D(X3D, Gamma3);
-    
     for (int i = 0; i < DIM3; i++) {
         for (int j = 0; j < DIM3; j++) {
             for (int k = 0; k < DIM3; k++) {
@@ -249,10 +200,10 @@ int grid_setup() {
             }
         }
     }
-
+    
     Matrix3x3 dbeta;
     grid_obj.calculate_dbeta(X3D, dbeta);
-
+    
     Matrix3x3 K;
     grid_obj.compute_extrinsic_curvature_stationary_3D(X3D, alpha, beta_cov, Gamma3, dbeta, K);
 
@@ -261,7 +212,6 @@ int grid_setup() {
     printf("Trace K = %e\n", K_trace);
     printf("Kij K^ij = %e\n", KijKij);
     printf("alpha = %f\n", alpha);
-
     for (int i = 0; i < DIM3; i++) {
         printf("beta_cov[%d] = %e\n", i, beta_cov[i]);
     }
@@ -270,10 +220,10 @@ int grid_setup() {
             printf("K[%d][%d] = %e\n", i, j, K[i][j]);
         }
     }
-
+    
     Matrix3x3 Rij;
     grid_obj.compute_ricci_3d(X3D, Gamma3, Rij);
-
+    
     int Nr = 101, Ntheta = 101;
     double r_min = 2.0, r_max = 10.0;
     double dr = (r_max - r_min) / (Nr - 1);
@@ -281,43 +231,51 @@ int grid_setup() {
     double dtheta = (theta_max - theta_min) / (Ntheta - 1);
 
     std::vector<std::vector<Grid::Cell2D>> grid(Nr, std::vector<Grid::Cell2D>(Ntheta));
+    for (int i = 0; i < Nr; i++) {
+        for (int j = 0; j < Ntheta; j++) {
+            double r_i = r_min + i * dr;
+            double th_j = theta_min + j * dtheta;
+            std::array<double, 4> X4D_local = { 0.0, r_i, th_j, 0.0 };
+            Vector3 X3D_local = { r_i, th_j, 0.0 }; 
 
-
-	for (int i = 0; i < Nr; i++) {
-		for (int j = 0; j < Ntheta; j++) {
-			double r_i = r_min + i * dr;
-			double th_j = theta_min + j * dtheta;
-			std::array<double, 4> X4D = { 0.0, r_i, th_j, 0.0 };
-			Vector3 X3D_local = { r_i, th_j, 0.0 }; 
-
-			Matrix4x4 gcov, gcon;
-			metric_obj.calculate_metric(X4D, gcov, gcon);
-
-			grid_obj.extract_3p1(gcov, gcon, &grid[i][j].alpha, grid[i][j].beta_cov, 
-					grid[i][j].beta_con, grid[i][j].gamma, grid[i][j].gamma_inv);
-			printf("r = %f, theta = %f\n", r_i, th_j);
-
-		}
-	}
-	grid_obj.calculate_christoffel_3D_grid(grid, Nr, Ntheta, dr, dtheta, r_min, theta_min);
-
-	save_grid_to_csv(grid, Nr, Ntheta, r_min, dr, theta_min, dtheta, "grid_data.csv");
-
-
-    double dt = 1e-6;
-    int nSteps = 30;
-
-    for (int step = 0; step < nSteps; step++) {
-        for (int i = 0; i < Nr; i++) {
-            for (int j = 0; j < Ntheta; j++) {
-                Matrix3x3 gamma_new, K_new;
-                evolveADM(grid[i][j].gamma, grid[i][j].K, grid[i][j].alpha, 
-                          X3D, dt, gamma_new, K_new);
-                grid[i][j].gamma = gamma_new;
-                grid[i][j].K = K_new;
-            }
+            Matrix4x4 gcov, gcon;
+            metric_obj.calculate_metric(X4D_local, gcov, gcon);
+            grid_obj.extract_3p1(gcov, gcon, &grid[i][j].alpha,
+                                  grid[i][j].beta_cov, grid[i][j].beta_con,
+                                  grid[i][j].gamma, grid[i][j].gamma_inv);
         }
     }
+    grid_obj.calculate_christoffel_3D_grid(grid, Nr, Ntheta, dr, dtheta, r_min, theta_min);
+	for (int i = 0; i < Nr; i++) { 
+		for (int j = 0; j < Ntheta; j++) {
+			printf("alpha[%d][%d] = %f\n", i, j, grid[i][j].alpha);
+		}
+	}
+    double dt = 1e-9;
+    int nSteps = 30;
 
-    return 0;
+    std::vector<std::vector<double>> alpha_grid(Nr, std::vector<double>(Ntheta));
+    
+    
+
+	std::ofstream file("output/dK_evolution.csv");
+	file << "t,i,j,r,theta,dK_00,dK_01,dK_02,dK_10,dK_11,dK_12,dK_20,dK_21,dK_22\n";
+
+	for (int step = 0; step < nSteps; step++) {
+		for (int i = 0; i < Nr; i++) {
+			for (int j = 0; j < Ntheta; j++) {
+				alpha_grid[i][j] = grid[i][j].alpha;
+			}
+		}
+
+		for (int i = 0; i < Nr; i++) {
+			for (int j = 0; j < Ntheta; j++) {
+				evolveADM(grid[i][j], i, j, dt, alpha_grid, r_min, theta_min, dr, dtheta, file, step);
+			}
+		}
+	}
+
+	file.close();
+
+	return 0;
 }

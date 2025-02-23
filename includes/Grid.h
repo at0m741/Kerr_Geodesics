@@ -23,7 +23,7 @@ class Grid {
 			Tensor3D Gamma3;    
 			Matrix3x3 K;        
 			Matrix3x3 Ricci;     
-			double H;            
+			double H;    
 
 			double alpha;        
 			Vector3 beta_cov;     

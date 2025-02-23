@@ -109,9 +109,9 @@ void calc_gamma_ij(const Vector3& X3D, Matrix3x3& gamma3, Matrix3x3& gamma3_inv)
         }
     }
 
-    if (!matrix_obj.inverse_3x3(gamma3_arr, gamma3_inv_arr)) {
-        printf("Erreur: gamma_{ij} est singulière ou mal définie\n");
-    }
+    /* if (!matrix_obj.inverse_3x3(gamma3_arr, gamma3_inv_arr)) { */
+    /*     printf("Erreur: gamma_{ij} est singulière ou mal définie\n"); */
+    /* } */
 
     gamma3 = gamma3_arr;
     gamma3_inv = gamma3_inv_arr;
@@ -181,7 +181,6 @@ void Grid::calculate_christoffel_3D_grid(
     double r_min,
     double theta_min
 ) {
-    // 1) Calculer Christoffel pour chaque (i,j)
     for (int i = 1; i < Nx - 1; i++) {
         for (int j = 1; j < Ny - 1; j++) {
             const Matrix3x3 &gamma_ij = grid[i][j].gamma;
@@ -219,44 +218,4 @@ void Grid::calculate_christoffel_3D_grid(
             grid[i][j].Gamma3 = localGamma3;
         }
     }
-
-    // 2) Écrire le résultat dans un fichier CSV
-    std::ofstream file("christoffel_data.csv");
-    if (!file.is_open()) {
-        std::cerr << "Impossible d'ouvrir christoffel_data.csv" << std::endl;
-        return;
-    }
-
-    // En-tête
-    file << "i,j,r,theta";
-    for (int k = 0; k < 3; k++) {
-        for (int a = 0; a < 3; a++) {
-            for (int b = 0; b < 3; b++) {
-                file << ",Gamma3_" << k << "_" << a << "_" << b;
-            }
-        }
-    }
-    file << "\n";
-
-    // Boucle pour enregistrer chaque point (i,j)
-    for (int i = 0; i < Nx; i++) {
-        for (int j = 0; j < Ny; j++) {
-            double r_i   = r_min   + i   * dr;
-            double th_j  = theta_min + j * dtheta;
-
-            file << i << "," << j << "," << r_i << "," << th_j;
-
-            for (int k = 0; k < 3; k++) {
-                for (int a = 0; a < 3; a++) {
-                    for (int b = 0; b < 3; b++) {
-                        file << "," << grid[i][j].Gamma3[k][a][b];
-                    }
-                }
-            }
-            file << "\n";
-        }
-    }
-
-    file.close();
-    std::cout << "Données Christoffel sauvegardées dans christoffel_data.csv" << std::endl;
 }
