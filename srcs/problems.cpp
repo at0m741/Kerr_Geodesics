@@ -160,13 +160,70 @@ int Metric_prob() {
 	return 0;
 }
 
-double perturbation_factor(double r, double theta) {
-    double r0 = 5.0, theta0 = M_PI / 2.0;
-    double sigma_r = 0.5, sigma_theta = 0.5;
-    double amplitude = 0.05; 
-    return 1.0 + amplitude * exp(- (pow(r - r0, 2) / (2 * sigma_r * sigma_r)
-                                    + pow(theta - theta0, 2) / (2 * sigma_theta * sigma_theta)));
+
+
+void Grid::save_christoffel_symbols(const std::vector<std::vector<Cell2D>>& grid,
+                                      int Nx, int Ny,
+                                      const std::string &filename) {
+    std::ofstream file(filename);
+    if (!file.is_open()) {
+        std::cerr << "Erreur: Impossible d'ouvrir le fichier " << filename << "\n";
+        return;
+    }
+    
+    file << "Cellule,i,j,k,l,m,Gamma3,Ricci,Kij\n";
+    
+    for (int i = 0; i < Nx; i++) {
+        for (int j = 0; j < Ny; j++) {
+            for (int k = 0; k < 3; k++) {
+                for (int l = 0; l < 3; l++) {
+                    for (int m = 0; m < 3; m++) {
+                        file << i << "," << j << "," << k << "," << l << "," << m << ","
+                             << std::setprecision(12) << grid[i][j].Gamma3[k][l][m] << ","
+							 << std::setprecision(12) << grid[i][j].Ricci[k][l]  << ","
+							 << std::setprecision(12) << grid[i][j].K[k][l] << "\n";
+                    }
+                }
+            }
+        }
+    }
+    
+    file.close();
+    std::cout << "Les symboles de Christoffel ont été enregistrés dans " << filename << "\n";
 }
+
+
+void Grid::initialize_grid(int Nr, int Ntheta, double r_min, double r_max, double theta_min, double theta_max) {
+    this->Nr = Nr;
+    this->Ntheta = Ntheta;
+    this->dr = (r_max - r_min) / (Nr - 1);
+    this->dtheta = (theta_max - theta_min) / (Ntheta - 1);
+
+    grid.resize(Nr, std::vector<Cell2D>(Ntheta));
+
+    Metric metric_obj;
+    for (int i = 0; i < Nr; i++) {
+        for (int j = 0; j < Ntheta; j++) {
+            double r_i = r_min + i * dr;
+            double th_j = theta_min + j * dtheta;
+            std::array<double, 4> X4D_local = { 0.0, r_i, th_j, 0.0 };
+            Vector3 X3D_local = { r_i, th_j, 0.0 };
+
+            Matrix4x4 gcov, gcon;
+            metric_obj.calculate_metric(X4D_local, gcov, gcon);
+            extract_3p1(gcov, gcon, &grid[i][j].alpha,
+                        grid[i][j].beta_cov, grid[i][j].beta_con,
+                        grid[i][j].gamma, grid[i][j].gamma_inv);
+            calculate_christoffel_3D(X3D_local, grid[i][j].Gamma3, grid[i][j].gamma, grid[i][j].gamma_inv);
+            compute_ricci_3d(X3D_local, grid[i][j].Gamma3, grid[i][j].Ricci);
+            print_ricci_tensor(grid[i][j].Ricci);
+            compute_hamiltonian_constraint(grid[i][j].gamma_inv, grid[i][j].K, grid[i][j].Ricci);
+			evolve_Kij(0.0001);
+			printf("r = %e, theta = %e\n", r_i, th_j);
+        }
+    }
+}
+
 
 
 int grid_setup() {
@@ -223,28 +280,11 @@ int grid_setup() {
     printf("Trace K = %e\n", K_trace);
     printf("Kij K^ij = %e\n", KijKij);
 	grid_obj.compute_hamiltonian_constraint(gamma3_inv, K, Rij);
-	int Nr = 101, Ntheta = 101;
-    double r_min = 2.0, r_max = 10.0;
-    double dr = (r_max - r_min) / (Nr - 1);
-    double theta_min = 0.0, theta_max = M_PI;
-    double dtheta = (theta_max - theta_min) / (Ntheta - 1);
 
-    std::vector<std::vector<Grid::Cell2D>> grid(Nr, std::vector<Grid::Cell2D>(Ntheta));
-    for (int i = 0; i < Nr; i++) {
-        for (int j = 0; j < Ntheta; j++) {
-            double r_i = r_min + i * dr;
-            double th_j = theta_min + j * dtheta;
-            std::array<double, 4> X4D_local = { 0.0, r_i, th_j, 0.0 };
-            Vector3 X3D_local = { r_i, th_j, 0.0 }; 
-
-            Matrix4x4 gcov, gcon;
-            metric_obj.calculate_metric(X4D_local, gcov, gcon);
-            grid_obj.extract_3p1(gcov, gcon, &grid[i][j].alpha,
-                                  grid[i][j].beta_cov, grid[i][j].beta_con,
-                                  grid[i][j].gamma, grid[i][j].gamma_inv);
-        }
-    }
-    grid_obj.calculate_christoffel_3D_grid(grid, Nr, Ntheta, dr, dtheta, r_min, theta_min);
-
+    grid_obj.initialize_grid(10, 10, 2.0, 100.0, 0.0, M_PI);
+    
+    grid_obj.calculate_christoffel_3D_grid(grid_obj.grid, grid_obj.Nr, grid_obj.Ntheta, grid_obj.dr, grid_obj.dtheta, 2.0, 0.0);
+    grid_obj.compute_ricci_3d_grid(grid_obj.grid, grid_obj.Nr, grid_obj.Ntheta, 2.0, 0.0, grid_obj.dr, grid_obj.dtheta, 0.001);
+    grid_obj.save_christoffel_symbols(grid_obj.grid, grid_obj.Nr, grid_obj.Ntheta, "output/christoffel.csv");
     return 0;
 }

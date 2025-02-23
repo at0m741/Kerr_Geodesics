@@ -195,6 +195,25 @@ void Grid::compute_ricci_3d(
     print_ricci_tensor(R3);
 }
 
+void Grid::compute_ricci_3d_grid(
+    std::vector<std::vector<Cell2D>>& grid,
+    int Nr, int Ntheta,
+    double dr, double dtheta,
+    double r_min, double theta_min,
+    double delta
+) {
+    for (int i = 0; i < Nr; i++) {
+        for (int j = 0; j < Ntheta; j++) {
+            double r_i = r_min + i * dr;
+            double th_j = theta_min + j * dtheta;
+            Vector3 X3D = {r_i, th_j, 0.0};
+            compute_ricci_3d(X3D, grid[i][j].Gamma3, grid[i][j].Ricci);
+			printf("Ricci tensor computed\n"); 
+        }
+    }
+}
+
+
 void Grid::print_ricci_tensor(const Matrix3x3& R3) {
     printf("\nRicci tensor:\n");
     for (int i = 0; i < DIM3; i++) {

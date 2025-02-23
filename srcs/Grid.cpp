@@ -9,7 +9,6 @@ void Grid::extract_3p1(const Matrix4x4& g,
                  Matrix3x3& gamma,
                  Matrix3x3& gamma_inv) {
 
-    // Extraire gamma_{ij} de g_{mu nu}
     for (int i = 0; i < 3; i++) {
         for (int j = 0; j < 3; j++) {
             gamma[i][j] = g[i+1][j+1];
@@ -118,6 +117,74 @@ double Grid::compute_Kij_Kij(const Matrix3x3& gamma_inv, const Matrix3x3& K) {
     return K_sq;
 }
 
+
+Matrix3x3 Grid::compute_beta_gradient(int i, int j) {
+    Matrix3x3 beta_grad;
+    for (auto& row : beta_grad) {
+        row.fill(0.0);
+    }
+
+    beta_grad[0][0] = (grid[i+1][j].beta_con[0] - grid[i-1][j].beta_con[0]) / (2.0 * dr);
+    beta_grad[1][1] = (grid[i][j+1].beta_con[1] - grid[i][j-1].beta_con[1]) / (2.0 * dtheta);
+
+    return beta_grad;
+}
+
+Matrix3x3 Grid::compute_second_derivative_alpha(int i, int j) {
+    Matrix3x3 d2alpha;
+    for (auto& row : d2alpha) {
+        row.fill(0.0);
+    }
+
+    d2alpha[0][0] = (grid[i+1][j].alpha - 2.0 * grid[i][j].alpha + grid[i-1][j].alpha) / (dr * dr);
+    d2alpha[1][1] = (grid[i][j+1].alpha - 2.0 * grid[i][j].alpha + grid[i][j-1].alpha) / (dtheta * dtheta);
+
+    return d2alpha;
+}
+
+
+
+double Grid::compute_KijKij_component(const Matrix3x3& gamma_inv, const Matrix3x3& K, int a, int b) {
+    double sum = 0.0;
+    for (int k = 0; k < DIM3; k++) {
+        sum += gamma_inv[a][k] * K[k][b];
+		printf("sum = %e\n", sum);
+    }
+    return sum;
+}
+
+void Grid::evolve_Kij(double dt) {
+    for (int i = 1; i < Nr - 1; i++) {
+        for (int j = 1; j < Ntheta - 1; j++) {
+            Cell2D& cell = grid[i][j];
+
+            double alpha = cell.alpha;
+            Vector3 beta_con = cell.beta_con;
+            Matrix3x3& K = cell.K;
+            Matrix3x3& Ricci = cell.Ricci;
+
+            double K_trace = compute_K(cell.gamma_inv, K);
+            Matrix3x3 d2alpha = compute_second_derivative_alpha(i, j);
+            Matrix3x3 beta_grad = compute_beta_gradient(i, j);
+		
+            Matrix3x3 K_new;
+            for (int a = 0; a < DIM3; a++) {
+                for (int b = 0; b < DIM3; b++) {
+                    double term1 = -d2alpha[a][b];
+					double term2 = alpha * (Ricci[a][b] + K_trace * K[a][b] - 2.0 * compute_KijKij_component(cell.gamma_inv, K, a, b));
+                    double term3 = beta_con[0] * (grid[i+1][j].K[a][b] - grid[i-1][j].K[a][b]) / (2.0 * dr) +
+                                   beta_con[1] * (grid[i][j+1].K[a][b] - grid[i][j-1].K[a][b]) / (2.0 * dtheta);
+                    double term4 = K[a][0] * beta_grad[0][b] + K[a][1] * beta_grad[1][b] + K[a][2] * beta_grad[2][b];
+
+                    K_new[a][b] = K[a][b] + dt * (term1 + term2 + term3 + term4);
+					printf("K_new[%d][%d] = %e\n", a, b, K_new[a][b]);
+                }
+            }
+
+            cell.K = K_new;
+        }
+    }
+}
 
 double Grid::compute_hamiltonian_constraint(const Matrix3x3& gamma_inv, const Matrix3x3& K, const Matrix3x3& Ricci) {
     double R = 0.0;

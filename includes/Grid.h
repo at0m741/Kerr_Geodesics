@@ -16,7 +16,7 @@ using Tensor4D  = std::array<std::array<std::array<std::array<double, DIM3>, DIM
 class Grid {
     public:
 		
-
+		
 		struct Cell2D {
 			Matrix3x3 gamma;     
 			Matrix3x3 gamma_inv; 
@@ -72,4 +72,24 @@ class Grid {
 				double dr, double dtheta,
 				double r_min,
 				double theta_min);
+		void save_christoffel_symbols(const std::vector<std::vector<Cell2D>>& grid,
+				int Nx, int Ny,
+				const std::string &filename);
+		void compute_ricci_3d_grid(
+				std::vector<std::vector<Cell2D>>& grid,
+				int Nr, int Ntheta,
+				double dr, double dtheta,
+				double r_min, double theta_min,
+				double delta);
+		std::vector<std::vector<Cell2D>> grid; // Stocke la grille
+		int Nr, Ntheta;
+		double dr, dtheta;
+		void save_extrinsic_curvature(const std::vector<std::vector<Cell2D>>& grid,
+				int Nx, int Ny,
+				const std::string &filename);
+		void evolve_Kij(double dt);
+		Matrix3x3 compute_second_derivative_alpha(int i, int j);
+		Matrix3x3 compute_beta_gradient(int i, int j);
+		double compute_KijKij_component(const Matrix3x3& gamma_inv, const Matrix3x3& K, int a, int b);
+		void initialize_grid(int Nr, int Ntheta, double r_min, double r_max, double theta_min, double theta_max);
 };
