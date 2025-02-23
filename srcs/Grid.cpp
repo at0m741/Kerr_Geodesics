@@ -9,21 +9,25 @@ void Grid::extract_3p1(const Matrix4x4& g,
                  Matrix3x3& gamma,
                  Matrix3x3& gamma_inv) {
 
+    // Extraire gamma_{ij} de g_{mu nu}
     for (int i = 0; i < 3; i++) {
         for (int j = 0; j < 3; j++) {
             gamma[i][j] = g[i+1][j+1];
         }
     }
 
-    Matrix matrix_obj; 
-    if (matrix_obj.inverse_3x3(gamma, gamma_inv) == 0) {
-        printf("Erreur: gamma_{ij} est singulière ou mal définie\n");
-		for (int i = 0; i < 3; i++) {
-			for (int j = 0; j < 3; j++) {
-				printf("gamma[%d][%d] = %e\n", i, j, gamma[i][j]);
-			}
-		}
-    }
+    double det_gamma = gamma[0][0] * (gamma[1][1] * gamma[2][2] - gamma[1][2] * gamma[2][1]) -
+                       gamma[0][1] * (gamma[1][0] * gamma[2][2] - gamma[1][2] * gamma[2][0]) +
+                       gamma[0][2] * (gamma[1][0] * gamma[2][1] - gamma[1][1] * gamma[2][0]);
+
+
+	Matrix matrix_obj; 
+	if (matrix_obj.inverse_3x3(gamma, gamma_inv) == 0) {
+		printf("Erreur: gamma_{ij} est singulière ou mal définie\n");
+	} else {
+		printf("gamma_{ij} est inversible\n");
+	}
+
 
     for (int i = 0; i < 3; i++) {
         beta_cov[i] = g[0][i+1];
@@ -46,6 +50,8 @@ void Grid::extract_3p1(const Matrix4x4& g,
     matrix_obj.print_matrix_3x3("gamma", gamma);
     matrix_obj.print_matrix_3x3("gamma_inv", gamma_inv);
     printf("beta_i = (%e, %e, %e)\n", beta_cov[0], beta_cov[1], beta_cov[2]);
+	printf("beta^i = (%e, %e, %e)\n", beta_con[0], beta_con[1], beta_con[2]);
+	printf("alpha = %e\n", *alpha);
 }
 
 

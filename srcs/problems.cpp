@@ -169,62 +169,61 @@ double perturbation_factor(double r, double theta) {
 }
 
 
-
-
 int grid_setup() {
-    double r = 90.0;
+    double r = 2.0;
     double theta = M_PI / 2.0;
     double phi = 0.0;
 
     Metric metric_obj;
     Grid grid_obj;
     Matrix matrix_obj; 
+
     Vector3 X3D = { r, theta, phi };  
     std::array<double, NDIM> X4D = { 0.0, r, theta, phi };
 
     metric_obj.calculate_metric(X4D, metric_obj.gcov, metric_obj.gcon);
-    matrix_obj.print_matrix("g", metric_obj.gcov);
-    matrix_obj.print_matrix("g_inv", metric_obj.gcon);
-    
     double alpha;
     Vector3 beta_cov, beta_con;
     Matrix3x3 gamma3, gamma3_inv;
     grid_obj.extract_3p1(metric_obj.gcov, metric_obj.gcon, &alpha, beta_cov, beta_con, gamma3, gamma3_inv);
-
     Tensor3D Gamma3;
-    grid_obj.calculate_christoffel_3D(X3D, Gamma3);
-    for (int i = 0; i < DIM3; i++) {
-        for (int j = 0; j < DIM3; j++) {
-            for (int k = 0; k < DIM3; k++) {
-                printf("Gamma3[%d][%d][%d] = %e\n", i, j, k, Gamma3[i][j][k]);
-            }
-        }
-    }
-    
+    grid_obj.calculate_christoffel_3D(X3D, Gamma3, gamma3, gamma3_inv);
+	for (int i = 0; i < DIM3; i++) {
+		for (int j = 0; j < DIM3; j++) {
+			for (int k = 0; k < DIM3; k++) {
+				printf("Gamma3[%d][%d][%d] = %e\n", i, j, k, Gamma3[i][j][k]);
+			}
+		}
+	}
     Matrix3x3 dbeta;
     grid_obj.calculate_dbeta(X3D, dbeta);
-    
+
     Matrix3x3 K;
     grid_obj.compute_extrinsic_curvature_stationary_3D(X3D, alpha, beta_cov, Gamma3, dbeta, K);
 
     double K_trace = grid_obj.compute_K(gamma3_inv, K);
     double KijKij = grid_obj.compute_Kij_Kij(gamma3_inv, K);
-    printf("Trace K = %e\n", K_trace);
-    printf("Kij K^ij = %e\n", KijKij);
-    printf("alpha = %f\n", alpha);
-    for (int i = 0; i < DIM3; i++) {
+
+    Matrix3x3 Rij;
+    grid_obj.compute_ricci_3d(X3D, Gamma3, Rij);
+	for (int i = 0; i < DIM3; i++) {
+		for (int j = 0; j < DIM3; j++) {
+			printf("Rij[%d][%d] = %e\n", i, j, Rij[i][j]);
+		}
+	}
+    printf("alpha = %e\n", alpha);
+    for (int i = 0; i < DIM3; ++i) {
         printf("beta_cov[%d] = %e\n", i, beta_cov[i]);
     }
-    for (int i = 0; i < DIM3; i++) {
-        for (int j = 0; j < DIM3; j++) {
+    for (int i = 0; i < DIM3; ++i) {
+        for (int j = 0; j < DIM3; ++j) {
             printf("K[%d][%d] = %e\n", i, j, K[i][j]);
         }
     }
-    
-    Matrix3x3 Rij;
-    grid_obj.compute_ricci_3d(X3D, Gamma3, Rij);
-    
-    int Nr = 101, Ntheta = 101;
+    printf("Trace K = %e\n", K_trace);
+    printf("Kij K^ij = %e\n", KijKij);
+	grid_obj.compute_hamiltonian_constraint(gamma3_inv, K, Rij);
+	int Nr = 101, Ntheta = 101;
     double r_min = 2.0, r_max = 10.0;
     double dr = (r_max - r_min) / (Nr - 1);
     double theta_min = 0.0, theta_max = M_PI;
@@ -246,36 +245,6 @@ int grid_setup() {
         }
     }
     grid_obj.calculate_christoffel_3D_grid(grid, Nr, Ntheta, dr, dtheta, r_min, theta_min);
-	for (int i = 0; i < Nr; i++) { 
-		for (int j = 0; j < Ntheta; j++) {
-			printf("alpha[%d][%d] = %f\n", i, j, grid[i][j].alpha);
-		}
-	}
-    double dt = 1e-9;
-    int nSteps = 30;
 
-    std::vector<std::vector<double>> alpha_grid(Nr, std::vector<double>(Ntheta));
-    
-    
-
-	std::ofstream file("output/dK_evolution.csv");
-	file << "t,i,j,r,theta,dK_00,dK_01,dK_02,dK_10,dK_11,dK_12,dK_20,dK_21,dK_22\n";
-
-	for (int step = 0; step < nSteps; step++) {
-		for (int i = 0; i < Nr; i++) {
-			for (int j = 0; j < Ntheta; j++) {
-				alpha_grid[i][j] = grid[i][j].alpha;
-			}
-		}
-
-		for (int i = 0; i < Nr; i++) {
-			for (int j = 0; j < Ntheta; j++) {
-				evolveADM(grid[i][j], i, j, dt, alpha_grid, r_min, theta_min, dr, dtheta, file, step);
-			}
-		}
-	}
-
-	file.close();
-
-	return 0;
+    return 0;
 }

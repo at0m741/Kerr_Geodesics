@@ -86,7 +86,7 @@ void evolveADM(Grid::Cell2D& cell, int i, int j, double dt,
     cell.rho = rho;
 
     Vector3 X3D = { r, theta, 0.0 };
-    grid_obj.calculate_christoffel_3D(X3D, Gamma3);
+    grid_obj.calculate_christoffel_3D(X3D, Gamma3, cell.gamma, cell.gamma_inv);
     grid_obj.compute_ricci_3d(X3D, Gamma3, R);
 
     double K_trace = 0.0;
@@ -128,7 +128,6 @@ void evolveADM(Grid::Cell2D& cell, int i, int j, double dt,
     cell.gamma = RK4_update_gamma(cell.gamma, dgamma_dt, dt);
     cell.K = RK4_update_K(cell.K, dK_dt, dt);
 
-    // Ajout des valeurs dans le fichier CSV
     file << step << "," << i << "," << j << "," << r << "," << theta;
     for (int a = 0; a < 3; a++) {
         for (int b = 0; b < 3; b++) {

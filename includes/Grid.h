@@ -63,8 +63,9 @@ class Grid {
 				std::array<std::array<std::array<double, DIM3>, DIM3>, DIM3>& Gamma3,
 				const Matrix3x3& dbeta,
 				Matrix3x3& K);
-		void calculate_christoffel_3D(const Vector3& X, Tensor3D& Gamma3);
-		double compute_hamiltonian_constraint(const Matrix3x3& gamma_inv, const Matrix3x3& K, const Matrix3x3& Ricci);
+		void calculate_christoffel_3D(const Vector3& X, Tensor3D& Gamma3, 
+				const Matrix3x3& gamma, const Matrix3x3& gamma_inv);
+			double compute_hamiltonian_constraint(const Matrix3x3& gamma_inv, const Matrix3x3& K, const Matrix3x3& Ricci);
 		void calculate_christoffel_3D_grid(
 				std::vector<std::vector<Grid::Cell2D>>& grid,
 				int Nx, int Ny,

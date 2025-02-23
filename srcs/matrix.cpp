@@ -107,8 +107,6 @@ int Matrix::inverse_matrix(const MatrixNDIM& mat, MatrixNDIM& inverse) {
 int Matrix::inverse_3x3(const Matrix3x3& mat, Matrix3x3& inv) {
     double det = determinant3x3(mat);
     if (fabs(det) < 1e-6) {
-        std::cerr << "Matrix is singular or nearly singular!" << std::endl;
-		std::cout << "det = " << det << std::endl;
         return 0; 
     }
 
