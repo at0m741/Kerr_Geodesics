@@ -56,7 +56,7 @@ $(OBJ_DIR):
 clean:
 	@echo -e "$(RED)Cleaning up...$(NC)"
 	rm -rf $(OBJ_DIR)
-	rm -f $(OUT_VTK_DIR)/*.vtk
+	rm -f $(OUT_VTK_DIR)/*
 
 fclean: clean
 	rm -f $(NAME)

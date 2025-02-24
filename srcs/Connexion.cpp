@@ -1,29 +1,6 @@
 #include <Geodesics.h>
 
 
-void Tensor::calculate_Gamma_at_offset(const std::array<double, NDIM>& X, int direction, 
-                                         double offset, double delta,
-                                         Tensor::MatrixNDIM& gcov, 
-                                         Tensor::MatrixNDIM& gcon, 
-                                         Tensor::Christoffel3D& Gamma_slice, 
-                                         const char* metric_type) {
-    std::array<double, NDIM> X_offset = X;
-    X_offset[direction] += offset;
-    Tensor::Christoffel3D tempGamma{};
-    Connexion connexion;
-    Metric metric;
-    
-    if (strcmp(metric_type, "minkowski") == 0) {
-        connexion.calculate_christoffel(X_offset, delta, tempGamma, gcov, gcon, "minkowski");
-    } else if (strcmp(metric_type, "kerr") == 0 || strcmp(metric_type, "schwarzschild") == 0) {
-        metric.calculate_metric(X_offset, gcov, gcon);
-    }
-    connexion.calculate_christoffel(X_offset, delta, tempGamma, gcov, gcon, metric_type);
-    
-    Gamma_slice = tempGamma;
-}
-
-
 void Connexion::calculate_christoffel(const VectorNDIM& X, double h,
                                       Christoffel3D& gamma,
                                       std::array<std::array<double, NDIM>, NDIM>& g,
