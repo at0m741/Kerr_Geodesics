@@ -34,3 +34,78 @@ void Connexion::check_symmetry_christoffel(const Christoffel3D& gamma) {
     }
     printf("Symmetric !\n");
 }
+
+bool Grid::verify_riemann_symmetries(const Riemann3D &Riemann) {
+    bool ok = true;
+    const double tol = 1e-12;
+
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+            for (int k = 0; k < 3; k++) {
+                for (int l = 0; l < 3; l++) {
+                    double diff = Riemann[i][j][k][l] + Riemann[i][j][l][k];
+                    if (fabs(diff) > tol) {
+                        printf("Violation antisymétrie (indices 3 et 4) à Riemann[%d][%d][%d][%d] + Riemann[%d][%d][%d][%d] = %e\n",
+                               i, j, k, l, i, j, l, k, diff);
+                        ok = false;
+                    }
+                }
+            }
+        }
+    }
+
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+            for (int k = 0; k < 3; k++) {
+                for (int l = 0; l < 3; l++) {
+                    double diff = Riemann[i][j][k][l] + Riemann[j][i][k][l];
+                    if (fabs(diff) > tol) {
+                        printf("Violation antisymétrie (indices 1 et 2) à Riemann[%d][%d][%d][%d] + Riemann[%d][%d][%d][%d] = %e\n",
+                               i, j, k, l, j, i, k, l, diff);
+                        ok = false;
+                    }
+                }
+            }
+        }
+    }
+
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+            for (int k = 0; k < 3; k++) {
+                for (int l = 0; l < 3; l++) {
+                    double diff = Riemann[i][j][k][l] - Riemann[k][l][i][j];
+                    if (fabs(diff) > tol) {
+                        printf("Violation symétrie par échange de paires à Riemann[%d][%d][%d][%d] - Riemann[%d][%d][%d][%d] = %e\n",
+                               i, j, k, l, k, l, i, j, diff);
+                        ok = false;
+                    }
+                }
+            }
+        }
+    }
+
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+            for (int k = 0; k < 3; k++) {
+                for (int l = 0; l < 3; l++) {
+                    double bianchi = Riemann[i][j][k][l] + Riemann[i][k][l][j] + Riemann[i][l][j][k];
+                    if (fabs(bianchi) > tol) {
+                        printf("Violation de l'identité de Bianchi à Riemann[%d][%d][*][*] somme = %e\n", i, j, bianchi);
+                        ok = false;
+                    }
+                }
+            }
+        }
+    }
+
+	for (int i = 0; i < 3; i++) {
+		for (int j = 0; j < 3; j++) {
+			for (int k = 0; k < 3; k++) {
+				printf("Riemann[%d][%d][%d][%d] = %e\n", i, j, k, k, Riemann[i][j][k][k]);
+			}
+		}
+	}
+    
+    return ok;
+}
+

@@ -192,68 +192,7 @@ void Grid::save_christoffel_symbols(const std::vector<std::vector<Cell2D>>& grid
     std::cout << "Les symboles de Christoffel ont été enregistrés dans " << filename << "\n";
 }
 
-void Grid::initialize_grid(int Nr, int Ntheta, double r_min, double r_max, double theta_min, double theta_max) {
-    this->Nr = Nr;
-    this->Ntheta = Ntheta;
-    this->dr = (r_max - r_min) / (Nr - 1);
-    this->dtheta = (theta_max - theta_min) / (Ntheta - 1);
-    grid.resize(Nr, std::vector<Cell2D>(Ntheta));
-    Metric metric_obj;
-    double h_riemann = 1e-5;
 
-    for (int i = 0; i < Nr; i++) {
-        for (int j = 0; j < Ntheta; j++) {
-            double r_i = r_min + i * dr;
-            double th_j = theta_min + j * dtheta;
-            std::array<double, 4> X4D_local = {0.0, r_i, th_j, 0.0};
-            Vector3 X3D_local = {r_i, th_j, 0.0};
-
-            Matrix4x4 gcov, gcon;
-            metric_obj.calculate_metric(X4D_local, gcov, gcon);
-
-            extract_3p1(gcov, gcon, &grid[i][j].alpha,
-                        grid[i][j].beta_cov, grid[i][j].beta_con,
-                        grid[i][j].gamma, grid[i][j].gamma_inv);
-
-            calculate_christoffel_3D(X3D_local, grid[i][j].Gamma3, grid[i][j].gamma, grid[i][j].gamma_inv);
-
-            Christoffel3D Gamma = grid[i][j].Gamma3;
-            Christoffel3D Gamma_plus_h, Gamma_minus_h, Gamma_plus_half_h, Gamma_minus_half_h;
-            {
-                Vector3 Xp = X3D_local, Xm = X3D_local;
-                Xp[0] += h_riemann;
-                Xm[0] -= h_riemann;
-                calculate_christoffel_3D(Xp, Gamma_plus_h, grid[i][j].gamma, grid[i][j].gamma_inv);
-                calculate_christoffel_3D(Xm, Gamma_minus_h, grid[i][j].gamma, grid[i][j].gamma_inv);
-
-                Vector3 Xp_half = X3D_local, Xm_half = X3D_local;
-                Xp_half[0] += h_riemann / 2.0;
-                Xm_half[0] -= h_riemann / 2.0;
-                calculate_christoffel_3D(Xp_half, Gamma_plus_half_h, grid[i][j].gamma, grid[i][j].gamma_inv);
-                calculate_christoffel_3D(Xm_half, Gamma_minus_half_h, grid[i][j].gamma, grid[i][j].gamma_inv);
-            }
-
-            Riemann3D Riemann;
-            calculate_riemann_3d(Gamma, Gamma_plus_h, Gamma_minus_h,
-                                 Gamma_plus_half_h, Gamma_minus_half_h,
-                                 Riemann, h_riemann, 1.0);
-			for (int k = 0; k < DIM3; k++) {
-				for (int l = 0; l < DIM3; l++) {
-					for (int m = 0; m < DIM3; m++) {
-						printf("Riemann[%d][%d][%d][%d] = %e\n", k, l, m, m, Riemann[k][l][m][m]);
-					}
-				}
-			}
-            Matrix3x3 Ricci;
-            calculate_ricci_3d_from_riemann(Riemann, Ricci);
-            grid[i][j].Ricci = Ricci;
-			print_ricci_tensor(Ricci);
-            double H_constraint = compute_hamiltonian_constraint(grid[i][j].gamma_inv, grid[i][j].K, grid[i][j].Ricci);
-            printf("r = %e, theta = %e, Hamiltonian constraint = %e\n", r_i, th_j, H_constraint);
-        }
-    }
-    evolve_Kij(1e-8);
-}
 
 int grid_setup() {
     double r = 6.0;
@@ -285,57 +224,28 @@ int grid_setup() {
     }
     Matrix3x3 dbeta;
     grid_obj.calculate_dbeta(X3D, dbeta);
-
+    
     Matrix3x3 K;
     grid_obj.compute_extrinsic_curvature_stationary_3D(X3D, alpha, beta_cov, Gamma3, dbeta, K);
-
+    
     double K_trace = grid_obj.compute_K(gamma3_inv, K);
     double KijKij = grid_obj.compute_Kij_Kij(gamma3_inv, K);
-
+    
     for (int i = 0; i < DIM3; i++) {
         for (int j = 0; j < DIM3; j++) {
             printf("K[%d][%d] = %e\n", i, j, K[i][j]);
         }
     }
-    printf("Trace K = %e\n", K_trace);
-    printf("Kij K^ij = %e\n", KijKij);
-    
 
-    double h_riemann = 1e-5;
-    Riemann3D Riemann;
-    Christoffel3D Gamma_plus_h, Gamma_minus_h, Gamma_plus_half_h, Gamma_minus_half_h;
-    {
-        Vector3 Xp = X3D, Xm = X3D, Xp_half = X3D, Xm_half = X3D;
-        Xp[0] += h_riemann;
-        Xm[0] -= h_riemann;
-        Xp_half[0] += h_riemann / 2.0;
-        Xm_half[0] -= h_riemann / 2.0;
-        grid_obj.calculate_christoffel_3D(Xp, Gamma_plus_h, gamma3, gamma3_inv);
-        grid_obj.calculate_christoffel_3D(Xm, Gamma_minus_h, gamma3, gamma3_inv);
-        grid_obj.calculate_christoffel_3D(Xp_half, Gamma_plus_half_h, gamma3, gamma3_inv);
-        grid_obj.calculate_christoffel_3D(Xm_half, Gamma_minus_half_h, gamma3, gamma3_inv);
-    }
-    grid_obj.calculate_riemann_3d(Gamma3, Gamma_plus_h, Gamma_minus_h,
-                         Gamma_plus_half_h, Gamma_minus_half_h,
-                         Riemann, h_riemann, DELTA);
-	for (int k = 0; k < DIM3; k++) {
-		for (int l = 0; l < DIM3; l++) {
-			for (int m = 0; m < DIM3; m++) {
-				printf("Riemann[%d][%d][%d][%d] = %e\n", k, l, m, m, Riemann[k][l][m][m]);
-			}
-		}
-	}
-
-    Matrix3x3 Ricci;
-    grid_obj.calculate_ricci_3d_from_riemann(Riemann, Ricci);
-    /*  */
-    /* grid_obj.initialize_grid(20, 20, 6.0, 12.0, 0.0, M_PI); */
-    /* 	 */
-    /* grid_obj.calculate_christoffel_3D_grid(grid_obj.grid, grid_obj.Nr, grid_obj.Ntheta, grid_obj.dr, grid_obj.dtheta, 2.0, 0.0); */
-    /* grid_obj.compute_ricci_3d_grid(grid_obj.grid, grid_obj.Nr, grid_obj.Ntheta, 2.0, 0.0, grid_obj.dr, grid_obj.dtheta, 1e-12); */
-    /* grid_obj.save_christoffel_symbols(grid_obj.grid, grid_obj.Nr, grid_obj.Ntheta, "output/christoffel.csv"); */
-    /*  */
-    grid_obj.evolve_Kij(1e-8);
+	Matrix3x3 Ricci2;
+	grid_obj.compute_ricci_3d(X3D, Gamma3, Ricci2);
     
+	printf("Hamiltonian constraint = %e\n", grid_obj.compute_hamiltonian_constraint(gamma3_inv, K, Ricci2));
+    
+	
+	grid_obj.allocateGlobalGrid();
+	grid_obj.initializeData();
+	grid_obj.evolve(0.00001, 100);
+	printf("end of compute\n");
     return 0;
 }

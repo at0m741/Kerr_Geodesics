@@ -66,14 +66,11 @@ void Connexion::calculate_christoffel(const VectorNDIM& X, double h,
 static double dgamma[NDIM3][NDIM3][NDIM3];
 
 void calc_gamma_ij(const Vector3& X3D, Matrix3x3& gamma3, Matrix3x3& gamma3_inv) {
-    Vector4 X4D = {0.0, X3D[0], X3D[1], X3D[2]}; 
-
+    Vector4 X4D = { 0.0, X3D[0], X3D[1], X3D[2] };
     Matrix4x4 g{};    
     Matrix4x4 g_inv{}; 
-
     Metric metric;
     Matrix matrix_obj;
-
     metric.calculate_metric(X4D, g, g_inv);
 
     Matrix3x3 gamma3_arr{};
@@ -92,8 +89,9 @@ void calc_gamma_ij(const Vector3& X3D, Matrix3x3& gamma3, Matrix3x3& gamma3_inv)
     gamma3_inv = gamma3_inv_arr;
 }
 
+
 void Grid::calculate_christoffel_3D(const Vector3& X, Tensor3D& Gamma3, 
-                                     const Matrix3x3& gamma, const Matrix3x3& gamma_inv) {
+                                     const Matrix3x3& gamma, Matrix3x3 gamma_inv) {
     Matrix3x3 gamma_p{}, gamma_m{};
     Tensor3D dgamma{};
     Gamma3.fill({});  
@@ -104,10 +102,8 @@ void Grid::calculate_christoffel_3D(const Vector3& X, Tensor3D& Gamma3,
         Xp[m] += DELTA3;
         Xm[m] -= DELTA3;
 
-        Matrix3x3 dummy1{}, dummy2{};
-        calc_gamma_ij(Xp, gamma_p, dummy1);
-        calc_gamma_ij(Xm, gamma_m, dummy2);
-
+        calc_gamma_ij(Xp, gamma_p, gamma_inv);
+        calc_gamma_ij(Xm, gamma_m, gamma_inv);
         for (int i = 0; i < NDIM3; i++) {
             for (int j = 0; j < NDIM3; j++) {
                 dgamma[m][i][j] = (gamma_p[i][j] - gamma_m[i][j]) / (2.0 * DELTA3);

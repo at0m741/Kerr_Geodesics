@@ -184,10 +184,11 @@ void print_matrix(const Matrix3x3& matrix) {
 
 
 void Grid::evolve_Kij(double dt) {
-    for (int i = 1; i < Nr - 1; i++) {
+	printf("Evolve Kij\n");
+	for (int i = 1; i < Nr - 1; i++) {
         for (int j = 1; j < Ntheta - 1; j++) {
             Cell2D& cell = grid[i][j];
-
+			compute_time_derivatives(i, j, 0);
             double alpha = cell.alpha;
             Vector3 beta_con = cell.beta_con;
             Matrix3x3& K = cell.K;
@@ -196,7 +197,7 @@ void Grid::evolve_Kij(double dt) {
             double K_trace = compute_K(cell.gamma_inv, K);
             Matrix3x3 d2alpha = compute_second_derivative_alpha(i, j);
             Matrix3x3 beta_grad = compute_beta_gradient(i, j);
-
+			printf("lol");
             Matrix3x3 K1, K2, K3, K4;
 
             for (int a = 0; a < DIM3; a++) {
@@ -214,54 +215,30 @@ void Grid::evolve_Kij(double dt) {
 
             for (int a = 0; a < DIM3; a++) {
                 for (int b = 0; b < DIM3; b++) {
-                    K2[a][b] = dt * (K1[a][b] + K[a][b]);
+                    K2[a][b] = (K1[a][b] + K[a][b]) * dt / 2.0;
                 }
             }
 
             for (int a = 0; a < DIM3; a++) {
                 for (int b = 0; b < DIM3; b++) {
-                    K3[a][b] = dt * (K2[a][b] + K[a][b]);
+                    K3[a][b] = (K2[a][b] + K[a][b]) * dt / 2.0;
                 }
             }
 
             for (int a = 0; a < DIM3; a++) {
                 for (int b = 0; b < DIM3; b++) {
-                    K4[a][b] = dt * (K3[a][b] + K[a][b]);
+                    K4[a][b] = (K3[a][b] + K[a][b]) * dt / 2.0;
                 }
             }
 
             for (int a = 0; a < DIM3; a++) {
                 for (int b = 0; b < DIM3; b++) {
                     K[a][b] += (K1[a][b] + 2.0 * K2[a][b] + 2.0 * K3[a][b] + K4[a][b]) / 6.0;
+					printf("K[%d][%d] = %e\n", a, b, K[a][b]);
                 }
             }
         }
     }
-	double K_min = 1e9, K_max = -1e9;
-	for (int i = 0; i < Nr; i++) {
-		for (int j = 0; j < Ntheta; j++) {
-			for (int a = 0; a < DIM3; a++) {
-				for (int b = 0; b < DIM3; b++) {
-					double K_ij = grid[i][j].K[a][b];
-					if (K_ij < K_min) K_min = K_ij;
-					if (K_ij > K_max) K_max = K_ij;
-				}
-			}
-		}
-	}
-	
-	double max_hamiltonian_error = 0.0;
-
-	for (int i = 0; i < Nr; i++) {
-		for (int j = 0; j < Ntheta; j++) {
-			double H = compute_hamiltonian_constraint(grid[i][j].gamma_inv, grid[i][j].K, grid[i][j].Ricci);
-			double abs_H = fabs(H);
-			if (abs_H > max_hamiltonian_error) {
-				max_hamiltonian_error = abs_H;
-			}
-		}
-	}
-
 }
 
 

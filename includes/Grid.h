@@ -3,6 +3,13 @@
 #include <Geodesics.h>
 
 #define DIM3 3
+#define DX 1e-6
+#define DY 1e-6
+#define DZ 1e-6
+#define NX 16
+#define NY 16
+#define NZ 16
+
 using Matrix4x4 = std::array<std::array<double, NDIM>, NDIM>;
 using Matrix3x3 = std::array<std::array<double, DIM3>, DIM3>;
 using Vector3   = std::array<double, DIM3>;
@@ -29,7 +36,7 @@ class Grid {
 			double alpha;        
 			Vector3 beta_cov;     
 			Vector3 beta_con;    
-
+			double beta[3];
 			Matrix3x3 dgamma_dt;   
 			Matrix3x3 dK_dt;      
 
@@ -40,27 +47,32 @@ class Grid {
 			double rho;          
 			Vector3 S_i;         
 			Matrix3x3 S_ij;     
-			double S;            
+			double S; 
+			double dgt[3][3]; 
+			double dKt[3][3];  
+
+			double gammaStage[4][3][3];  
+			double KStage[4][3][3];           
 		};
-
-        void extract_3p1(const Matrix4x4& g,
-                         const Matrix4x4& g_inv,  
-                         double* alpha,
-                         Vector3& beta_cov,
-                         Vector3& beta_con,
-                         Matrix3x3& gamma,
-                         Matrix3x3& gamma_inv);
-
-        void calculeBeta(const Vector3& X, Vector3& beta_cov);
-        void calculate_dbeta(const Vector3& X, Matrix3x3& dbeta);
+		void evolve(double dt, int nSteps);
+		void extract_3p1(const Matrix4x4& g,
+				const Matrix4x4& g_inv,  
+				double* alpha,
+				Vector3& beta_cov,
+				Vector3& beta_con,
+				Matrix3x3& gamma,
+				Matrix3x3& gamma_inv);
+		void initializeData(); 
+		void calculeBeta(const Vector3& X, Vector3& beta_cov);
+		void calculate_dbeta(const Vector3& X, Matrix3x3& dbeta);
 		void compute_ricci_3d(
 				Grid& grid_obj,  
 				const Vector3& X,       
 				const Tensor3D& Gamma3, 
 				Matrix3x3& R3);
-        void print_ricci_tensor(const Matrix3x3& R3);
-        double compute_K(const Matrix3x3& gamma_inv, const Matrix3x3& K);
-        double compute_Kij_Kij(const Matrix3x3& gamma_inv, const Matrix3x3& K);
+		void print_ricci_tensor(const Matrix3x3& R3);
+		double compute_K(const Matrix3x3& gamma_inv, const Matrix3x3& K);
+		double compute_Kij_Kij(const Matrix3x3& gamma_inv, const Matrix3x3& K);
 		void compute_extrinsic_curvature_stationary_3D(
 				const Vector3& X,
 				double alpha,
@@ -69,7 +81,7 @@ class Grid {
 				const Matrix3x3& dbeta,
 				Matrix3x3& K);
 		void calculate_christoffel_3D(const Vector3& X, Tensor3D& Gamma3, 
-				const Matrix3x3& gamma, const Matrix3x3& gamma_inv);
+				const Matrix3x3& gamma, Matrix3x3 gamma_inv) ;
 		double compute_hamiltonian_constraint(const Matrix3x3& gamma_inv, const Matrix3x3& K, const Matrix3x3& Ricci);
 		void calculate_christoffel_3D_grid(
 				std::vector<std::vector<Grid::Cell2D>>& grid,
@@ -80,13 +92,17 @@ class Grid {
 		void save_christoffel_symbols(const std::vector<std::vector<Cell2D>>& grid,
 				int Nx, int Ny,
 				const std::string &filename);
+		void compute_ricci_3d(
+				const Vector3& X,       
+				const Tensor3D& Gamma3, 
+				Matrix3x3& R3);
 		void compute_ricci_3d_grid(
 				std::vector<std::vector<Cell2D>>& grid,
 				int Nr, int Ntheta,
 				double dr, double dtheta,
 				double r_min, double theta_min,
 				double delta);
-		std::vector<std::vector<Cell2D>> grid; // Stocke la grille
+		std::vector<std::vector<Cell2D>> grid; 
 		int Nr, Ntheta;
 		double dr, dtheta;
 		void save_extrinsic_curvature(const std::vector<std::vector<Cell2D>>& grid,
@@ -109,12 +125,22 @@ class Grid {
 
 		void calculate_riemann_3d(
 				const Christoffel3D& Gamma, 
-				const Christoffel3D& Gamma_plus_h, 
-				const Christoffel3D& Gamma_minus_h, 
-				const Christoffel3D& Gamma_plus_half_h,
-				const Christoffel3D& Gamma_minus_half_h,
+				const std::array<Christoffel3D, 3>& Gamma_plus_h,
+				const std::array<Christoffel3D, 3>& Gamma_minus_h,
+				const std::array<Christoffel3D, 3>& Gamma_plus_half_h,
+				const std::array<Christoffel3D, 3>& Gamma_minus_half_h,
 				Riemann3D& Riemann,
 				double h,
-				double scale);
+				double scale); 
 		void calculate_ricci_3d_from_riemann(const Riemann3D& Riemann, Matrix3x3& Ricci);
+		bool verify_riemann_symmetries(const Riemann3D &Riemann);
+		void calculate_riemann_4d_from_3d(
+				const Riemann3D &Riemann3,
+				const Matrix3x3 &K,     
+				Riemann3D &Riemann4) ;
+		void compute_time_derivatives(int i, int j, int k);
+		void allocateGlobalGrid();
 };
+
+
+

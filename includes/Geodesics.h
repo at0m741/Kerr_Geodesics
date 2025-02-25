@@ -28,7 +28,7 @@
 #define AVX2 1
 #define ARCH "AVX2"
 #define TOLERANCE 1e-4
-#define DELTA 1e-4
+#define DELTA 1e-6
 #define NDIM3 3
 #define DELTA3 1e-4
 
@@ -120,4 +120,5 @@ void calc_gamma_ij_2D(
     double r_min, double dr,
     double theta_min, double dtheta,
     Metric &metric_obj,
-    Matrix3x3 &gamma3, Matrix3x3 &gamma3_inv); 
+    Matrix3x3 &gamma3, Matrix3x3 &gamma3_inv);
+void calc_gamma_ij(const Vector3& X3D, Matrix3x3& gamma3, Matrix3x3& gamma3_inv);
