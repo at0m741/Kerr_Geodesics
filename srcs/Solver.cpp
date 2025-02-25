@@ -29,10 +29,13 @@ void Grid::initializeData() {
 			for(int k=0; k<NZ; k++){
 				double z = z_min + k*dz;
 
-				double rho = sqrt(x*x + y*y + z*z);
-				if(rho < 1e-7) rho = 1e-7;
 
-				double Phi = 1.0 + 0.5*M/rho;
+				double epsilon = 1e-7;
+				double rho = sqrt(x*x + y*y + z*z);
+				// Smoothing type :  rho_effectif = sqrt(rho^2 + epsilon^2)
+				double rho_eff = sqrt(rho * rho + epsilon * epsilon);
+
+				double Phi = 1.0 + 0.5 * M / rho_eff;
 				Cell2D &cell = globalGrid[i][j][k];
 				cell.alpha = (1.0 - M/(2*rho)) / (1.0 + M/(2*rho));
 				cell.beta[0]=0; cell.beta[1]=0; cell.beta[2]=0;
@@ -148,16 +151,16 @@ void compute_christoffel_3D(int i, int j, int k, double christof[3][3][3]) {
 			}
 		}
 	}
-	/* printf("\nChristoffel Symbols:\n"); */
-	/* for (int lambda = 0; lambda < NDIM; lambda++) { */
-	/* 	printf("\nGamma^%d:\n", lambda); */
-	/* 	for (int mu = 0; mu < NDIM; mu++) { */
-	/* 		for (int nu = 0; nu < NDIM; nu++) { */
-	/* 			printf("%12.6f\t", christof[lambda][mu][nu]); */
-	/* 		} */
-	/* 		printf("\n"); */
-	/* 	} */
-	/* } */
+	printf("\nChristoffel Symbols:\n");
+	for (int lambda = 0; lambda < NDIM; lambda++) {
+		printf("\nGamma^%d:\n", lambda);
+		for (int mu = 0; mu < NDIM; mu++) {
+			for (int nu = 0; nu < NDIM; nu++) {
+				printf("%12.6f\t", christof[lambda][mu][nu]);
+			}
+			printf("\n");
+		}
+	}
 }
 
 
@@ -304,13 +307,13 @@ void compute_ricci_3D(int i, int j, int k, double Ricci[3][3])
         }
     }
 
-    printf("Tenseur de Ricci au point (%d,%d,%d) :\n", i, j, k);
-    for (int a = 0; a < 3; a++) {
-        for (int b = 0; b < 3; b++) {
-            printf(" % .6e", Ricci[a][b]);
-        }
-        printf("\n");
-    }
+    /* printf("Tenseur de Ricci au point (%d,%d,%d) :\n", i, j, k); */
+    /* for (int a = 0; a < 3; a++) { */
+    /*     for (int b = 0; b < 3; b++) { */
+    /*         printf(" % .6e", Ricci[a][b]); */
+    /*     } */
+    /*     printf("\n"); */
+    /* } */
 }
 
 void Grid::compute_time_derivatives(int i, int j, int k)
