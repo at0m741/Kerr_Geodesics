@@ -6,9 +6,9 @@
 #define DX 1e-6
 #define DY 1e-6
 #define DZ 1e-6
-#define NX 16
-#define NY 16
-#define NZ 16
+#define NX 128
+#define NY 128
+#define NZ 128
 
 using Matrix4x4 = std::array<std::array<double, NDIM>, NDIM>;
 using Matrix3x3 = std::array<std::array<double, DIM3>, DIM3>;
@@ -54,6 +54,9 @@ class Grid {
 			double gammaStage[4][3][3];  
 			double KStage[4][3][3];           
 		};
+
+
+
 		void evolve(double dt, int nSteps);
 		void extract_3p1(const Matrix4x4& g,
 				const Matrix4x4& g_inv,  
@@ -143,4 +146,18 @@ class Grid {
 };
 
 
+
+extern std::vector<std::vector<std::vector<Grid::Cell2D>>> globalGrid;
+double partialX_alpha(int i, int j, int k);
+double partialY_alpha(int i, int j, int k);
+double partialZ_alpha(int i, int j, int k);
+double partialXX_alpha(int i, int j, int k);
+double partialYY_alpha(int i, int j, int k);
+double partialZZ_alpha(int i, int j, int k);
+double partialX_gamma(int i, int j, int k, int a, int b);
+double partialY_gamma(int i, int j, int k, int a, int b);
+double partialZ_gamma(int i, int j, int k, int a, int b);
+double partialX_betacomp(int i, int j, int k, int comp);
+double partialY_betacomp(int i, int j, int k, int comp);
+double partialZ_betacomp(int i, int j, int k, int comp);
 

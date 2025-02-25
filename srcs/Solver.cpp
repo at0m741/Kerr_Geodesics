@@ -1,58 +1,7 @@
 #include <Geodesics.h>
 #include <cassert>
 
-
-static std::vector<std::vector<std::vector<Grid::Cell2D>>> globalGrid;
-
-inline double partialX_alpha(int i, int j, int k) {
-    return (globalGrid[i+1][j][k].alpha - globalGrid[i-1][j][k].alpha)/(2.0*DX-1);
-}
-inline double partialY_alpha(int i, int j, int k) {
-    return (globalGrid[i][j+1][k].alpha - globalGrid[i][j-1][k].alpha)/(2.0*DY-1);
-}
-inline double partialZ_alpha(int i, int j, int k) {
-    return (globalGrid[i][j][k+1].alpha - globalGrid[i][j][k-1].alpha)/(2.0*DZ-1);
-}
-inline double partialXX_alpha(int i, int j, int k) {
-	return (globalGrid[i+1][j][k].alpha - 2.0*globalGrid[i][j][k].alpha + globalGrid[i-1][j][k].alpha)/(DX-1*DX-1);
-}
-inline double partialYY_alpha(int i, int j, int k) {
-	return (globalGrid[i][j+1][k].alpha - 2.0*globalGrid[i][j][k].alpha + globalGrid[i][j-1][k].alpha)/(DY-1*DY-1);
-}
-inline double partialZZ_alpha(int i, int j, int k) {
-	return (globalGrid[i][j][k+1].alpha - 2.0*globalGrid[i][j][k].alpha + globalGrid[i][j][k-1].alpha)/(DZ-1*DZ-1);
-}
-
-inline double partialX_gamma(int i, int j, int k, int a, int b) {
-    if (i <= 0 || i >= NX-1) {
-        return 0.0; 
-    }
-    return (globalGrid[i+1][j][k].gamma[a][b] - globalGrid[i-1][j][k].gamma[a][b]) 
-           / (2.0 * DX);
-}
-inline double partialY_gamma(int i, int j, int k, int a, int b) {
-    if (j <= 0 || j >= NY-1) {
-        return 0.0;
-    }
-    return (globalGrid[i][j+1][k].gamma[a][b] - globalGrid[i][j-1][k].gamma[a][b]) 
-           / (2.0 * DY);
-}
-inline double partialZ_gamma(int i, int j, int k, int a, int b) {
-    if (k <= 0 || k >= NZ-1) {
-        return 0.0;
-    }
-    return (globalGrid[i][j][k+1].gamma[a][b] - globalGrid[i][j][k-1].gamma[a][b]) 
-           / (2.0 * DZ);
-}
-inline double partialX_betacomp(int i, int j, int k, int comp) {
-    return (globalGrid[i+1][j][k].beta[comp] - globalGrid[i-1][j][k].beta[comp])/(2.0*DX-1);
-}
-inline double partialY_betacomp(int i, int j, int k, int comp) {
-	return (globalGrid[i][j+1][k].beta[comp] - globalGrid[i][j-1][k].beta[comp])/(2.0*DY-1);
-}
-inline double partialZ_betacomp(int i, int j, int k, int comp) {
-	return (globalGrid[i][j][k+1].beta[comp] - globalGrid[i][j][k-1].beta[comp])/(2.0*DZ-1);
-}
+ std::vector<std::vector<std::vector<Grid::Cell2D>>> globalGrid;
 
 void Grid::allocateGlobalGrid(){
 	printf("Allocating global grid\n");
@@ -66,9 +15,9 @@ void Grid::allocateGlobalGrid(){
 }
 
 void Grid::initializeData() {
-	double x_min = -50.0, x_max = 50.0;
-	double y_min = -50.0, y_max = 50.0;
-	double z_min = -50.0, z_max = 50.0;
+	double x_min = -128.0, x_max = 128.0;
+	double y_min = -128.0, y_max = 128.0;
+	double z_min = -128.0, z_max = 128.0;
 	double dx = (x_max - x_min)/(NX-1);
 	double dy = (y_max - y_min)/(NY-1);
 	double dz = (z_max - z_min)/(NZ-1);
@@ -101,143 +50,267 @@ void Grid::initializeData() {
 		}
 	}
 
+
+	double test_radii[] = {1.0, 2.0, 5.0, 10.0, 20.0, 128.0};
+	printf("\nVérification des valeurs analytiques aux points clés :\n");
+	for (double test_r : test_radii) {
+		double Phi_test = 1.0 + 0.5 * M / test_r;
+		double alpha_test = (1.0 - M / (2 * test_r)) / (1.0 + M / (2 * test_r));
+		printf("r = %f : Phi^4 = %e, alpha = %e\n", test_r, pow(Phi_test, 4), alpha_test);
+	}
+
+	printf("\nVérification de la diagonale de γ_{ij} :\n");
 	for (int iCell = 0; iCell < 3; iCell++) {
 		for (int jCell = 0; jCell < 3; jCell++) {
 			for (int kCell = 0; kCell < 3; kCell++) {
 				Cell2D &cell = globalGrid[iCell][jCell][kCell];
-				printf("Cell (%d,%d,%d):\n", iCell, jCell, kCell);
-
 				for (int a = 0; a < 3; a++) {
 					for (int b = 0; b < 3; b++) {
-						printf("%12.6e ", cell.gamma[a][b]);
+						if (a != b && fabs(cell.gamma[a][b]) > 1e-12) {
+							printf("⚠️ γ[%d][%d] non diagonale en (%d,%d,%d) : %e\n", 
+									a, b, iCell, jCell, kCell, cell.gamma[a][b]);
+						}
 					}
-					printf("\n");
 				}
-				printf("\n");
 			}
 		}
 	}
 
+	/* printf("\nTest sur les dérivées de γ_{ij} :\n"); */
+	/* for (int iCell = 1; iCell < NX-1; iCell++) { */
+	/* 	for (int jCell = 1; jCell < NY-1; jCell++) { */
+	/* 		for (int kCell = 1; kCell < NZ-1; kCell++) { */
+	/* 			double dgammaX = (globalGrid[iCell+1][jCell][kCell].gamma[0][0] -  */
+	/* 					globalGrid[iCell-1][jCell][kCell].gamma[0][0]) / (2.0*dx); */
+	/* 			double rho = sqrt((iCell*dx)*(iCell*dx) + (jCell*dy)*(jCell*dy) + (kCell*dz)*(kCell*dz)); */
+	/* 			double Phi_test = 1.0 + 0.5 * M / rho; */
+	/* 			double dPhiX = (-0.5 * M / (rho*rho)) * (iCell*dx/rho); */
+	/* 			double expected_dgammaX = 4 * pow(Phi_test, 3) * dPhiX; */
+	/* 			printf("Cell (%d,%d,%d): dγ/dx = %e, attendu = %e\n", iCell, jCell, kCell, dgammaX, expected_dgammaX); */
+	/* 		} */
+	/* 	} */
+	/* } */
 }
 
 
 bool invert_3x3(const double m[3][3], double inv[3][3]) {
-    double det =
-          m[0][0]*(m[1][1]*m[2][2]-m[1][2]*m[2][1])
-        - m[0][1]*(m[1][0]*m[2][2]-m[1][2]*m[2][0])
-        + m[0][2]*(m[1][0]*m[2][1]-m[1][1]*m[2][0]);
+	double det =
+		m[0][0]*(m[1][1]*m[2][2]-m[1][2]*m[2][1])
+		- m[0][1]*(m[1][0]*m[2][2]-m[1][2]*m[2][0])
+		+ m[0][2]*(m[1][0]*m[2][1]-m[1][1]*m[2][0]);
 
-    if (std::fabs(det) < 1e-14) return false;
-    double idet = 1.0/det;
+	if (std::fabs(det) < 1e-14) return false;
+	double idet = 1.0/det;
 
-    inv[0][0] =  (m[1][1]*m[2][2]-m[2][1]*m[1][2]) * idet;
-    inv[0][1] = -(m[0][1]*m[2][2]-m[2][1]*m[0][2]) * idet;
-    inv[0][2] =  (m[0][1]*m[1][2]-m[1][1]*m[0][2]) * idet;
+	inv[0][0] =  (m[1][1]*m[2][2]-m[2][1]*m[1][2]) * idet;
+	inv[0][1] = -(m[0][1]*m[2][2]-m[2][1]*m[0][2]) * idet;
+	inv[0][2] =  (m[0][1]*m[1][2]-m[1][1]*m[0][2]) * idet;
 
-    inv[1][0] = -(m[1][0]*m[2][2]-m[2][0]*m[1][2]) * idet;
-    inv[1][1] =  (m[0][0]*m[2][2]-m[2][0]*m[0][2]) * idet;
-    inv[1][2] = -(m[0][0]*m[1][2]-m[1][0]*m[0][2]) * idet;
+	inv[1][0] = -(m[1][0]*m[2][2]-m[2][0]*m[1][2]) * idet;
+	inv[1][1] =  (m[0][0]*m[2][2]-m[2][0]*m[0][2]) * idet;
+	inv[1][2] = -(m[0][0]*m[1][2]-m[1][0]*m[0][2]) * idet;
 
-    inv[2][0] =  (m[1][0]*m[2][1]-m[2][0]*m[1][1]) * idet;
-    inv[2][1] = -(m[0][0]*m[2][1]-m[2][0]*m[0][1]) * idet;
-    inv[2][2] =  (m[0][0]*m[1][1]-m[1][0]*m[0][1]) * idet;
+	inv[2][0] =  (m[1][0]*m[2][1]-m[2][0]*m[1][1]) * idet;
+	inv[2][1] = -(m[0][0]*m[2][1]-m[2][0]*m[0][1]) * idet;
+	inv[2][2] =  (m[0][0]*m[1][1]-m[1][0]*m[0][1]) * idet;
 
-    return true;
+	return true;
 }
 
 
 void compute_christoffel_3D(int i, int j, int k, double christof[3][3][3]) {
 	Matrix matrix_obj;
-    double g[3][3];
-    for(int a=0;a<3;a++){
-        for(int b=0;b<3;b++){
-            g[a][b] = globalGrid[i][j][k].gamma[a][b];
-        }
-    }
-    double invg[3][3];
-    bool ok = invert_3x3(g, invg);
-    double dgamma[3][3][3];
-    for(int a=0;a<3;a++){
-        for(int b=0;b<3;b++){
-            dgamma[0][a][b] = partialX_gamma(i,j,k,a,b);
-            dgamma[1][a][b] = partialY_gamma(i,j,k,a,b);
-            dgamma[2][a][b] = partialZ_gamma(i,j,k,a,b);
-        }
-    }
-    for(int kk=0; kk<3; kk++){
-        for(int aa=0; aa<3; aa++){
-            for(int bb=0; bb<3; bb++){
-                double sum=0.0;
-                for(int ll=0; ll<3; ll++){
-                    double tmp = dgamma[aa][ll][bb] + dgamma[bb][ll][aa] - dgamma[ll][aa][bb];
-                    sum += invg[kk][ll]*tmp;
-                }
-                christof[kk][aa][bb] = 0.5 * sum;
-            }
-        }
-    }
+	double g[3][3];
+	for(int a=0;a<3;a++){
+		for(int b=0;b<3;b++){
+			g[a][b] = globalGrid[i][j][k].gamma[a][b];
+		}
+	}
+	double invg[3][3];
+	bool ok = invert_3x3(g, invg);
+	double dgamma[3][3][3];
+	for(int a=0;a<3;a++){
+		for(int b=0;b<3;b++){
+			dgamma[0][a][b] = partialX_gamma(i,j,k,a,b);
+			dgamma[1][a][b] = partialY_gamma(i,j,k,a,b);
+			dgamma[2][a][b] = partialZ_gamma(i,j,k,a,b);
+		}
+	}
+	for(int kk=0; kk<3; kk++){
+		for(int aa=0; aa<3; aa++){
+			for(int bb=0; bb<3; bb++){
+				double sum=0.0;
+				for(int ll=0; ll<3; ll++){
+					double tmp = dgamma[aa][ll][bb] + dgamma[bb][ll][aa] - dgamma[ll][aa][bb];
+					sum += invg[kk][ll]*tmp;
+				}
+				christof[kk][aa][bb] = 0.5 * sum;
+			}
+		}
+	}
+	/* printf("\nChristoffel Symbols:\n"); */
+	/* for (int lambda = 0; lambda < NDIM; lambda++) { */
+	/* 	printf("\nGamma^%d:\n", lambda); */
+	/* 	for (int mu = 0; mu < NDIM; mu++) { */
+	/* 		for (int nu = 0; nu < NDIM; nu++) { */
+	/* 			printf("%12.6f\t", christof[lambda][mu][nu]); */
+	/* 		} */
+	/* 		printf("\n"); */
+	/* 	} */
+	/* } */
 }
 
-void compute_ricci_3D(int i, int j, int k, double Ricci[3][3]) {
+
+void compute_ricci_3D(int i, int j, int k, double Ricci[3][3])
+{
     double Gamma[3][3][3];
-    compute_christoffel_3D(i,j,k, Gamma);
-    double partialGamma[3][3][3][3]; 
+    compute_christoffel_3D(i, j, k, Gamma);
+
+    static double partialGamma[3][3][3][3];
 
     {
-        double Gp[3][3][3], Gm[3][3][3];
-        compute_christoffel_3D(i+1,j,k, Gp);
-        compute_christoffel_3D(i-1,j,k, Gm);
-        for(int kk=0; kk<3; kk++){
-            for(int aa=0; aa<3; aa++){
-                for(int bb=0; bb<3; bb++){
-                    partialGamma[0][kk][aa][bb] = (Gp[kk][aa][bb] - Gm[kk][aa][bb])/(2.0*DX-1);
-                }
-            }
+        double Gmm[3][3][3], Gm[3][3][3], Gp[3][3][3], Gpp[3][3][3];
+
+        if (i >= 2 && i <= NX - 3) {
+            compute_christoffel_3D(i-2, j, k, Gmm);
+            compute_christoffel_3D(i-1, j, k, Gm );
+            compute_christoffel_3D(i+1, j, k, Gp );
+            compute_christoffel_3D(i+2, j, k, Gpp);
         }
-    }{
-        double Gp[3][3][3], Gm[3][3][3];
-        compute_christoffel_3D(i,j+1,k, Gp);
-        compute_christoffel_3D(i,j-1,k, Gm);
-        for(int kk=0; kk<3; kk++){
-            for(int aa=0; aa<3; aa++){
-                for(int bb=0; bb<3; bb++){
-                    partialGamma[1][kk][aa][bb] = (Gp[kk][aa][bb] - Gm[kk][aa][bb])/(2.0*DY-1);
-                }
-            }
+        else if (i >= 1 && i <= NX - 2) {
+            compute_christoffel_3D(i-1, j, k, Gm );
+            compute_christoffel_3D(i+1, j, k, Gp );
         }
-    }{
-        double Gp[3][3][3], Gm[3][3][3];
-        compute_christoffel_3D(i,j,k+1, Gp);
-        compute_christoffel_3D(i,j,k-1, Gm);
-        for(int kk=0; kk<3; kk++){
-            for(int aa=0; aa<3; aa++){
-                for(int bb=0; bb<3; bb++){
-                    partialGamma[2][kk][aa][bb] = (Gp[kk][aa][bb] - Gm[kk][aa][bb])/(2.0*DZ-1);
+
+        for (int kk = 0; kk < 3; kk++) {
+            for (int aa = 0; aa < 3; aa++) {
+                for (int bb = 0; bb < 3; bb++) {
+
+                    if (i >= 2 && i <= NX - 3) {
+                        partialGamma[0][kk][aa][bb] = (
+                            -   Gpp[kk][aa][bb]
+                            + 8.*Gp [kk][aa][bb]
+                            - 8.*Gm [kk][aa][bb]
+                            +    Gmm[kk][aa][bb]
+                        ) / (12.0 * DX);
+
+                    } else if (i >= 1 && i <= NX - 2) {
+                        partialGamma[0][kk][aa][bb] = (
+                            Gp[kk][aa][bb] - Gm[kk][aa][bb]
+                        ) / (2.0 * DX);
+
+                    } else {
+                        partialGamma[0][kk][aa][bb] = 0.0;
+                    }
                 }
             }
         }
     }
-    for(int a=0; a<3; a++){
-        for(int b=0; b<3; b++){
-            double term1=0.0, term2=0.0, term3=0.0, term4=0.0;
-            for(int kk=0; kk<3; kk++){
-                term1 += partialGamma[kk][kk][a][b];
+
+    {
+        double Gmm[3][3][3], Gm[3][3][3], Gp[3][3][3], Gpp[3][3][3];
+
+        if (j >= 2 && j <= NY - 3) {
+            compute_christoffel_3D(i, j-2, k, Gmm);
+            compute_christoffel_3D(i, j-1, k, Gm );
+            compute_christoffel_3D(i, j+1, k, Gp );
+            compute_christoffel_3D(i, j+2, k, Gpp);
+        }
+        else if (j >= 1 && j <= NY - 2) {
+            compute_christoffel_3D(i, j-1, k, Gm );
+            compute_christoffel_3D(i, j+1, k, Gp );
+        }
+
+        for (int kk = 0; kk < 3; kk++) {
+            for (int aa = 0; aa < 3; aa++) {
+                for (int bb = 0; bb < 3; bb++) {
+
+                    if (j >= 2 && j <= NY - 3) {
+                        partialGamma[1][kk][aa][bb] = (
+                            -   Gpp[kk][aa][bb]
+                            + 8.*Gp [kk][aa][bb]
+                            - 8.*Gm [kk][aa][bb]
+                            +    Gmm[kk][aa][bb]
+                        ) / (12.0 * DY);
+
+                    } else if (j >= 1 && j <= NY - 2) {
+                        partialGamma[1][kk][aa][bb] = (
+                            Gp[kk][aa][bb] - Gm[kk][aa][bb]
+                        ) / (2.0 * DY);
+
+                    } else {
+                        partialGamma[1][kk][aa][bb] = 0.0;
+                    }
+                }
             }
-            for(int kk=0; kk<3; kk++){
+        }
+    }
+
+    {
+        double Gmm[3][3][3], Gm[3][3][3], Gp[3][3][3], Gpp[3][3][3];
+
+        if (k >= 2 && k <= NZ - 3) {
+            compute_christoffel_3D(i, j, k-2, Gmm);
+            compute_christoffel_3D(i, j, k-1, Gm );
+            compute_christoffel_3D(i, j, k+1, Gp );
+            compute_christoffel_3D(i, j, k+2, Gpp);
+        }
+        else if (k >= 1 && k <= NZ - 2) {
+            compute_christoffel_3D(i, j, k-1, Gm );
+            compute_christoffel_3D(i, j, k+1, Gp );
+        }
+
+        for (int kk = 0; kk < 3; kk++) {
+            for (int aa = 0; aa < 3; aa++) {
+                for (int bb = 0; bb < 3; bb++) {
+
+                    if (k >= 2 && k <= NZ - 3) {
+                        partialGamma[2][kk][aa][bb] = (
+                            -   Gpp[kk][aa][bb]
+                            + 8.*Gp [kk][aa][bb]
+                            - 8.*Gm [kk][aa][bb]
+                            +    Gmm[kk][aa][bb]
+                        ) / (12.0 * DZ);
+
+                    } else if (k >= 1 && k <= NZ - 2) {
+                        partialGamma[2][kk][aa][bb] = (
+                            Gp[kk][aa][bb] - Gm[kk][aa][bb]
+                        ) / (2.0 * DZ);
+
+                    } else {
+                        partialGamma[2][kk][aa][bb] = 0.0;
+                    }
+                }
+            }
+        }
+    }
+
+    for (int a = 0; a < 3; a++) {
+        for (int b = 0; b < 3; b++) {
+            double term1 = 0.0, term2 = 0.0, term3 = 0.0, term4 = 0.0;
+
+            for (int kk = 0; kk < 3; kk++) {
+                term1 += partialGamma[kk][kk][a][b];
                 term2 += partialGamma[b][kk][a][kk];
             }
-			for(int kk=0; kk<3; kk++){
-                for(int ll=0; ll<3; ll++){
+
+            for (int kk = 0; kk < 3; kk++) {
+                for (int ll = 0; ll < 3; ll++) {
                     term3 += Gamma[kk][a][b] * Gamma[ll][kk][ll];
                     term4 += Gamma[ll][a][kk] * Gamma[kk][b][ll];
                 }
             }
             Ricci[a][b] = term1 - term2 + term3 - term4;
-			printf("Ricci[%d][%d] = %e\n", a, b, Ricci[a][b]);
         }
     }
-	
 
+    printf("Tenseur de Ricci au point (%d,%d,%d) :\n", i, j, k);
+    for (int a = 0; a < 3; a++) {
+        for (int b = 0; b < 3; b++) {
+            printf(" % .6e", Ricci[a][b]);
+        }
+        printf("\n");
+    }
 }
 
 void Grid::compute_time_derivatives(int i, int j, int k)
