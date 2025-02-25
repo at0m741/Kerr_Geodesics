@@ -15,9 +15,9 @@ void Grid::allocateGlobalGrid(){
 }
 
 void Grid::initializeData() {
-	double x_min = -128.0, x_max = 128.0;
-	double y_min = -128.0, y_max = 128.0;
-	double z_min = -128.0, z_max = 128.0;
+	double x_min = -256.0, x_max = 256.0;
+	double y_min = -256.0, y_max = 256.0;
+	double z_min = -256.0, z_max = 256.0;
 	double dx = (x_max - x_min)/(NX-1);
 	double dy = (y_max - y_min)/(NY-1);
 	double dz = (z_max - z_min)/(NZ-1);
@@ -32,7 +32,6 @@ void Grid::initializeData() {
 
 				double epsilon = 1e-7;
 				double rho = sqrt(x*x + y*y + z*z);
-				// Smoothing type :  rho_effectif = sqrt(rho^2 + epsilon^2)
 				double rho_eff = sqrt(rho * rho + epsilon * epsilon);
 
 				double Phi = 1.0 + 0.5 * M / rho_eff;
@@ -54,7 +53,7 @@ void Grid::initializeData() {
 	}
 
 
-	double test_radii[] = {1.0, 2.0, 5.0, 10.0, 20.0, 128.0};
+	double test_radii[] = {1.0, 2.0, 5.0, 10.0, 20.0, 256.0};
 	printf("\nVérification des valeurs analytiques aux points clés :\n");
 	for (double test_r : test_radii) {
 		double Phi_test = 1.0 + 0.5 * M / test_r;
@@ -151,16 +150,28 @@ void compute_christoffel_3D(int i, int j, int k, double christof[3][3][3]) {
 			}
 		}
 	}
-	printf("\nChristoffel Symbols:\n");
-	for (int lambda = 0; lambda < NDIM; lambda++) {
-		printf("\nGamma^%d:\n", lambda);
-		for (int mu = 0; mu < NDIM; mu++) {
-			for (int nu = 0; nu < NDIM; nu++) {
-				printf("%12.6f\t", christof[lambda][mu][nu]);
-			}
-			printf("\n");
-		}
-	}
+
+	/* double tol = 1e-2; */
+	/* for (int k = 0; k < NDIM3; k++) { */
+	/* 	for (int i = 0; i < NDIM3; i++) { */
+	/* 		for (int j = 0; j < NDIM3; j++) { */
+	/* 			if (fabs(christof[k][i][j] - christof[k][j][i]) > tol) { */
+	/* 				printf("Erreur: Gamma[%d][%d][%d] != Gamma[%d][%d][%d]\n",  */
+	/* 						k, i, j, k, j, i); */
+	/* 				printf("Gamma[%d][%d][%d] = %f, Gamma[%d][%d][%d] = %f\n", */
+	/* 						k, i, j, christof[k][i][j], k, j, i, christof[k][j][i]); */
+	/* 				printf("i = %d, j = %d, k = %d\n", i, j, k); */
+	/* 			} */
+	/* 		} */
+	/* 	} */
+	/* } */
+	/* for(int a=0;a<3;a++){ */
+	/* 	for(int b=0;b<3;b++){ */
+	/* 		for(int c=0;c<3;c++){ */
+	/* 			printf("christof[%d][%d][%d] = %f\n", a, b, c, christof[a][b][c]); */
+	/* 		} */
+	/* 	} */
+	/* } */
 }
 
 
@@ -331,7 +342,6 @@ void Grid::compute_time_derivatives(int i, int j, int k)
     }
     double gammaInv[3][3];
     invert_3x3(gammaLocal, gammaInv);
-
     double Ktrace = 0.0;
     for(int a=0;a<3;a++){
         Ktrace += gammaInv[a][a]*KLocal[a][a];
@@ -427,11 +437,11 @@ void Grid::compute_time_derivatives(int i, int j, int k)
     };
     auto partial_m_K = [&](int a, int b, int dim){
         if(dim==0){
-            return (globalGrid[i+1][j][k].K[a][b] - globalGrid[i-1][j][k].K[a][b])/(2.0*DX-1);
+            return (globalGrid[i+1][j][k].K[a][b] - globalGrid[i-1][j][k].K[a][b])/(2.0*DX);
         } else if(dim==1){
-            return (globalGrid[i][j+1][k].K[a][b] - globalGrid[i][j-1][k].K[a][b])/(2.0*DY-1);
+            return (globalGrid[i][j+1][k].K[a][b] - globalGrid[i][j-1][k].K[a][b])/(2.0*DY);
         } else {
-            return (globalGrid[i][j][k+1].K[a][b] - globalGrid[i][j][k-1].K[a][b])/(2.0*DZ-1);
+            return (globalGrid[i][j][k+1].K[a][b] - globalGrid[i][j][k-1].K[a][b])/(2.0*DZ);
         }
     };
 
@@ -466,6 +476,126 @@ void Grid::compute_time_derivatives(int i, int j, int k)
     }
 }
 
+
+
+
+void export_gamma_slice(int j) {
+    std::ofstream file("gamma_slice_full.csv");
+
+    file << "x,z,"
+         << "gamma_00,gamma_01,gamma_02,"
+         << "gamma_10,gamma_11,gamma_12,"
+         << "gamma_20,gamma_21,gamma_22\n";
+    
+    for(int i = 0; i < NX; i++) {
+        for(int k = 0; k < NZ; k++) {
+            double x = -256.0 + i * (512.0 / (NX - 1));
+            double z = -256.0 + k * (512.0 / (NZ - 1));
+
+            double g00 = globalGrid[i][j][k].gamma[0][0];
+            double g01 = globalGrid[i][j][k].gamma[0][1];
+            double g02 = globalGrid[i][j][k].gamma[0][2];
+            double g10 = globalGrid[i][j][k].gamma[1][0];
+            double g11 = globalGrid[i][j][k].gamma[1][1];
+            double g12 = globalGrid[i][j][k].gamma[1][2];
+            double g20 = globalGrid[i][j][k].gamma[2][0];
+            double g21 = globalGrid[i][j][k].gamma[2][1];
+            double g22 = globalGrid[i][j][k].gamma[2][2];
+
+            // Écriture dans le fichier CSV
+            file << x << "," << z << ","
+                 << g00 << "," << g01 << "," << g02 << ","
+                 << g10 << "," << g11 << "," << g12 << ","
+                 << g20 << "," << g21 << "," << g22 << "\n";
+        }
+    }
+    file.close();
+    std::cout << "Gamma slice (all components) saved to gamma_slice_full.csv\n";
+}
+
+
+
+
+#include <fstream>
+#include <string>
+
+// Hypothèses :
+//   - NX, NY, NZ, x_min, x_max, y_min, y_max, z_min, z_max, etc. sont des variables globales ou dans une classe
+//   - compute_christoffel_3D(i, j, k, christof) calcule christof[k][a][b]
+//   - On suppose i=0..NX-1, j=0..NY-1, k=0..NZ-1
+
+void export_christoffel_3D_vtk(const std::string &filename)
+{
+    // Ouvrir le fichier VTK
+    std::ofstream file(filename);
+    if(!file) {
+        std::cerr << "Erreur: impossible d'ouvrir " << filename << "\n";
+        return;
+    }
+	double x_min = -256.0, x_max = 256.0;
+	double y_min = -256.0, y_max = 256.0;
+	double z_min = -256.0, z_max = 256.0;
+    file << "# vtk DataFile Version 3.0\n";
+    file << "Christoffel 3D data\n";
+    file << "ASCII\n";
+    file << "DATASET STRUCTURED_POINTS\n";
+
+    // Dimensions
+    file << "DIMENSIONS " << NX << " " << NY << " " << NZ << "\n";
+
+    // Origine
+    double dx = (x_max - x_min)/(NX - 1);
+    double dy = (y_max - y_min)/(NY - 1);
+    double dz = (z_max - z_min)/(NZ - 1);
+
+    // On place l'origine à (x_min, y_min, z_min)
+    file << "ORIGIN " << x_min << " " << y_min << " " << z_min << "\n";
+
+    // Espacement
+    file << "SPACING " << dx << " " << dy << " " << dz << "\n";
+
+    // Nombre total de points
+    int nPoints = NX * NY * NZ;
+    file << "POINT_DATA " << nPoints << "\n";
+
+    // 2) Pour chaque composante (k,a,b), on écrit un "SCALARS" distinct
+    //    => 27 scalars
+    for(int kk=0; kk<3; kk++){
+        for(int aa=0; aa<3; aa++){
+            for(int bb=0; bb<3; bb++){
+                // Nom : ex "Gamma0_12"
+                std::string name = "Gamma" + std::to_string(kk) 
+                                 + "_" + std::to_string(aa) 
+                                 + std::to_string(bb);
+
+                file << "SCALARS " << name << " float 1\n";
+                file << "LOOKUP_TABLE default\n";
+
+                // On parcourt k, j, i dans l'ordre imposé par VTK
+                // Généralement, l'index qui varie le plus vite est i,
+                // puis j, puis k. 
+                // => On doit être cohérent avec "DIMENSIONS NX NY NZ"
+                // => L'ordre d'écriture est (k=0..NZ-1, j=0..NY-1, i=0..NX-1)
+                // ou l'inverse. 
+                // On va faire i le plus rapide, puis j, puis k en externe.
+
+                for(int zz = 0; zz < NZ; zz++){
+                    for(int yy = 0; yy < NY; yy++){
+                        for(int xx = 0; xx < NX; xx++){
+                            double christof[3][3][3];
+                            compute_christoffel_3D(xx, yy, zz, christof);
+                            float val = (float)christof[kk][aa][bb];
+                            file << val << "\n";
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    file.close();
+    std::cout << "Exported 3D Christoffel to " << filename << "\n";
+}
 
 void Grid::evolve(double dt, int nSteps) {
 	printf("Evolve\n");
@@ -632,7 +762,7 @@ void Grid::evolve(double dt, int nSteps) {
                 }
             }
         }
-        // end step
-
-    } // fin de la boucle sur nSteps
+		export_gamma_slice(NY/2);
+		export_christoffel_3D_vtk("christoffel_3D.vtk");
+    } 
 }
