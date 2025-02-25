@@ -44,13 +44,18 @@ class Grid {
 			Tensor3D dK_dx;       
 			Tensor3D dGamma3_dx;  
 
+			double alphaStage[4];
+			double betaStage[4][3];
 			double rho;          
 			Vector3 S_i;         
 			Matrix3x3 S_ij;     
 			double S; 
 			double dgt[3][3]; 
 			double dKt[3][3];  
-
+			double gamma0[3][3];
+			double K0[3][3];
+			double alpha0;
+			double beta0[3];
 			double gammaStage[4][3][3];  
 			double KStage[4][3][3];           
 		};
@@ -160,4 +165,11 @@ double partialZ_gamma(int i, int j, int k, int a, int b);
 double partialX_betacomp(int i, int j, int k, int comp);
 double partialY_betacomp(int i, int j, int k, int comp);
 double partialZ_betacomp(int i, int j, int k, int comp);
-
+double partialXY_alpha(int i, int j, int k);
+double partialXZ_alpha(int i, int j, int k);
+double partialYZ_alpha(int i, int j, int k);
+double second_partial_alpha(int i, int j, int k, int a, int b);
+void compute_gauge_derivatives(int i, int j, int k, double &d_alpha_dt, double d_beta_dt[3]);
+void compute_christoffel_3D(int i, int j, int k, double christof[3][3][3]);
+bool invert_3x3(const double m[3][3], double inv[3][3]);
+void compute_ricci_3D(int i, int j, int k, double Ricci[3][3]);

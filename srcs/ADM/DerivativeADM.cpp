@@ -130,3 +130,36 @@
  double partialZ_betacomp(int i, int j, int k, int comp) {
 	return (globalGrid[i][j][k+1].beta[comp] - globalGrid[i][j][k-1].beta[comp])/(2.0*DZ-1);
 }
+
+
+double partialXY_alpha(int i, int j, int k) {
+    return ( globalGrid[i+1][j+1][k].alpha - globalGrid[i+1][j-1][k].alpha
+           - globalGrid[i-1][j+1][k].alpha + globalGrid[i-1][j-1][k].alpha )
+           / (4.0 * DX * DY);
+}
+
+double partialXZ_alpha(int i, int j, int k) {
+	return ( globalGrid[i+1][j][k+1].alpha - globalGrid[i+1][j][k-1].alpha
+		   - globalGrid[i-1][j][k+1].alpha + globalGrid[i-1][j][k-1].alpha )
+		   / (4.0 * DX * DZ);
+}
+
+double partialYZ_alpha(int i, int j, int k) {
+	return ( globalGrid[i][j+1][k+1].alpha - globalGrid[i][j+1][k-1].alpha
+		   - globalGrid[i][j-1][k+1].alpha + globalGrid[i][j-1][k-1].alpha )
+		   / (4.0 * DY * DZ);
+}
+
+double second_partial_alpha(int i, int j, int k, int a, int b)
+{
+    if(a==0 && b==0) return partialXX_alpha(i,j,k);
+    if(a==1 && b==1) return partialYY_alpha(i,j,k);
+    if(a==2 && b==2) return partialZZ_alpha(i,j,k);
+
+    if((a==0 && b==1)||(a==1 && b==0)) return partialXY_alpha(i,j,k);
+    if((a==0 && b==2)||(a==2 && b==0)) return partialXZ_alpha(i,j,k);
+    if((a==1 && b==2)||(a==2 && b==1)) return partialYZ_alpha(i,j,k);
+
+    return 0.0;
+}
+

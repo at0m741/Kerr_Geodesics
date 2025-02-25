@@ -97,7 +97,7 @@ void Grid::calculeBeta(const Vector3& X, Vector3& beta_cov) {
 double Grid::compute_K(const Matrix3x3& gamma_inv, const Matrix3x3& K) {
     double K_trace = 0.0;
     for (int i = 0; i < DIM3; i++) {
-        K_trace += gamma_inv[i][i] * K[i][i];  // Somme diagonale uniquement
+        K_trace += gamma_inv[i][i] * K[i][i]; 
     }
     return K_trace;
 }
