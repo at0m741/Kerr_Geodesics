@@ -11,6 +11,10 @@ void compute_christoffel_3D(int i, int j, int k, double christof[3][3][3]) {
 	}
 	double invg[3][3];
 	bool ok = invert_3x3(g, invg);
+	if (!ok) {
+		memset(christof, 0, sizeof(christof[0][0][0]) * 3*3*3);
+		return;
+	}
 	double dgamma[3][3][3];
 	for(int a=0;a<3;a++){
 		for(int b=0;b<3;b++){
@@ -31,15 +35,15 @@ void compute_christoffel_3D(int i, int j, int k, double christof[3][3][3]) {
 			}
 		}
 	}
-	/* printf("\nChristoffel Symbols at (%d,%d,%d):\n", i, j, k); */
-	/*     for (int lambda = 0; lambda < NDIM; lambda++) { */
-	/*         printf("\nGamma^%d:\n", lambda); */
-	/*         for (int mu = 0; mu < NDIM; mu++) { */
-	/*             for (int nu = 0; nu < NDIM; nu++) { */
-	/*                 printf("%12.6f\t", christof[lambda][mu][nu]); */
-	/*             } */
-	/*             printf("\n"); */
-	/*         } */
-	/*     } */
+	printf("\nChristoffel Symbols at (%d,%d,%d):\n", i, j, k);
+	for (int lambda = 0; lambda < NDIM3; lambda++) {
+		printf("\nGamma^%d:\n", lambda);
+		for (int mu = 0; mu < NDIM3; mu++) {
+			for (int nu = 0; nu < NDIM3; nu++) {
+				printf("%12.6f\t", christof[lambda][mu][nu]);
+			}
+			printf("\n");
+		}
+	}
 }
 

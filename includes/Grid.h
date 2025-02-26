@@ -9,6 +9,10 @@
 #define NX 128
 #define NY 128
 #define NZ 128
+#define GHOST 2  
+#define NX_TOTAL (NX + 2*GHOST) 
+#define NY_TOTAL (NY + 2*GHOST)
+#define NZ_TOTAL (NZ + 2*GHOST)
 
 using Matrix4x4 = std::array<std::array<double, NDIM>, NDIM>;
 using Matrix3x3 = std::array<std::array<double, DIM3>, DIM3>;
@@ -23,8 +27,6 @@ using Riemann3D = std::array<std::array<std::array<std::array<double, DIM3>, DIM
 
 class Grid {
     public:
-		
-		
 		struct Cell2D {
 			Matrix3x3 gamma;     
 			Matrix3x3 gamma_inv; 
@@ -148,6 +150,7 @@ class Grid {
 				Riemann3D &Riemann4) ;
 		void compute_time_derivatives(int i, int j, int k);
 		void allocateGlobalGrid();
+		void initializeData_Minkowski();
 };
 
 

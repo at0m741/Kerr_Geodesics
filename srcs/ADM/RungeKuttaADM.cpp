@@ -1,8 +1,34 @@
 #include <Geodesics.h>
 
 
+void apply_boundary_conditions()
+{
+    for(int j=0; j<NY; j++){
+        for(int k=0; k<NZ; k++){
+            globalGrid[0][j][k] = globalGrid[1][j][k];        
+            globalGrid[NX-1][j][k] = globalGrid[NX-2][j][k]; 
+        }
+    }
+
+    for(int i=0; i<NX; i++){
+        for(int k=0; k<NZ; k++){
+            globalGrid[i][0][k] = globalGrid[i][1][k];        
+            globalGrid[i][NY-1][k] = globalGrid[i][NY-2][k]; 
+        }
+    }
+
+    for(int i=0; i<NX; i++){
+        for(int j=0; j<NY; j++){
+            globalGrid[i][j][0] = globalGrid[i][j][1];
+            globalGrid[i][j][NZ-1] = globalGrid[i][j][NZ-2];
+        }
+    }
+}
+
+
 void Grid::evolve(double dt, int nSteps) {
     for (int step = 0; step < nSteps; step++) {
+		apply_boundary_conditions();
         for (int i = 1; i < NX - 1; i++) {
             for (int j = 1; j < NY - 1; j++) {
                 for (int k = 1; k < NZ - 1; k++) {

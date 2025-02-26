@@ -10,7 +10,6 @@ int grid_setup() {
 
     Metric metric_obj;
     Grid grid_obj;
-    Matrix matrix_obj; 
 
     Vector3 X3D = { r, theta, phi };  
     std::array<double, NDIM> X4D = { 0.0, r, theta, phi };
@@ -54,7 +53,7 @@ int grid_setup() {
 	
 	grid_obj.allocateGlobalGrid();
 	grid_obj.initializeData();
-	grid_obj.evolve(0.0000001, 1);
+	grid_obj.evolve(0.00000001, 1);
 	printf("end of compute\n");
     return 0;
 }
