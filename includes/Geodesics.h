@@ -44,6 +44,7 @@ using MatrixNDIM = std::array<std::array<double, NDIM>, NDIM>;
 #include <Metric.h>
 #include <Connexion.h>
 #include <Grid.h>
+#include <GridTensor.h>
 
 typedef struct {
     double x, y, z;

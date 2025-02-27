@@ -1,7 +1,7 @@
 #include <Geodesics.h>
 
 
-void Grid::compute_christoffel_3D(int i, int j, int k, double christof[3][3][3]) {
+void GridTensor::compute_christoffel_3D(int i, int j, int k, double christof[3][3][3]) {
 	Matrix matrix_obj;
 	double g[3][3];
 	double invg[3][3];  

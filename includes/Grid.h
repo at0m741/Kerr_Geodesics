@@ -23,19 +23,7 @@ using Tensor4D  = std::array<std::array<std::array<std::array<double, DIM3>, DIM
 using Christoffel3D = std::array<std::array<std::array<double, DIM3>, DIM3>, DIM3>;
 using Riemann3D = std::array<std::array<std::array<std::array<double, DIM3>, DIM3>, DIM3>, DIM3>;
 
-template <class T>
-double fourth_order_diff(const T &plus2, const T &plus1, 
-                         const T &minus1, const T &minus2, double dx)
-{
-    return (-plus2 + 8.0*plus1 - 8.0*minus1 + minus2) / (12.0*dx);
-}
 
-
-template <class T>
-double second_order_diff(const T &plus1, const T &minus1, double dx)
-{
-    return (plus1 - minus1)/(2.0*dx);
-}
 
 class Grid {
     public:
@@ -54,11 +42,9 @@ class Grid {
 			double beta[3];
 			Matrix3x3 dgamma_dt;   
 			Matrix3x3 dK_dt;      
-
 			Vector3 dalpha_dx;    
 			Tensor3D dK_dx;       
 			Tensor3D dGamma3_dx;  
-
 			double alphaStage[4];
 			double betaStage[4][3];
 			double rho;          
@@ -77,6 +63,9 @@ class Grid {
 
 
 
+		std::vector<std::vector<std::vector<double>>> hamiltonianGrid;
+		void initialize_grid();
+		void export_hamiltonian_csv(const std::string& filename); 
 		void evolve(double dt, int nSteps);
 		void extract_3p1(const Matrix4x4& g,
 				const Matrix4x4& g_inv,  
@@ -165,7 +154,6 @@ class Grid {
 		void allocateGlobalGrid();
 		void initializeData_Minkowski();
 		void initializeData_kerr();
-		void compute_christoffel_3D(int i, int j, int k, double christof[3][3][3]);
 		void compute_ricci_3D(int i, int j, int k, double Ricci[3][3]);
 
 };
@@ -173,15 +161,13 @@ class Grid {
 
 
 extern std::vector<std::vector<std::vector<Grid::Cell2D>>> globalGrid;
+void export_K_slice(int j);
 double partialX_alpha(int i, int j, int k);
 double partialY_alpha(int i, int j, int k);
 double partialZ_alpha(int i, int j, int k);
 double partialXX_alpha(int i, int j, int k);
 double partialYY_alpha(int i, int j, int k);
 double partialZZ_alpha(int i, int j, int k);
-double partialX_gamma(int i, int j, int k, int a, int b);
-double partialY_gamma(int i, int j, int k, int a, int b);
-double partialZ_gamma(int i, int j, int k, int a, int b);
 double partialX_betacomp(int i, int j, int k, int comp);
 double partialY_betacomp(int i, int j, int k, int comp);
 double partialZ_betacomp(int i, int j, int k, int comp);
@@ -191,6 +177,5 @@ double partialYZ_alpha(int i, int j, int k);
 double second_partial_alpha(int i, int j, int k, int a, int b);
 void compute_gauge_derivatives(int i, int j, int k, double &d_alpha_dt, double d_beta_dt[3]);
 bool invert_3x3(const double m[3][3], double inv[3][3]);
-void export_christoffel_slice(int j);
 void export_gamma_slice(int j);
 void export_gauge_slice(int j);

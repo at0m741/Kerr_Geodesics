@@ -13,9 +13,6 @@ void fill_ghost_zones() {
 
 
 
-
-
-
  double partialX_alpha(int i, int j, int k) {
 	if(i < 2 || i > NX-3) {
 		return (globalGrid[i+1][j][k].alpha - globalGrid[i-1][j][k].alpha) / (2.0 * DX);
@@ -70,101 +67,6 @@ void fill_ghost_zones() {
 }
 
 
-double partialX_gamma(int i, int j, int k, int a, int b)
-{
-    if (i >= 2 && i <= NX - 3)
-    {
-        double res = fourth_order_diff(
-            globalGrid[i+2][j][k].gamma[a][b],
-            globalGrid[i+1][j][k].gamma[a][b],
-            globalGrid[i-1][j][k].gamma[a][b],
-            globalGrid[i-2][j][k].gamma[a][b],
-            DX 
-        );
-		return res;
-    }
-    else if (i >= 1 && i <= NX - 2)
-    {
-        double res = second_order_diff(
-            globalGrid[i+1][j][k].gamma[a][b],
-            globalGrid[i-1][j][k].gamma[a][b],
-            DX 
-        );
-        return res;
-    }
-    else if (i == 0) 
-    {
-        return (globalGrid[i+1][j][k].gamma[a][b] - globalGrid[i][j][k].gamma[a][b]) / DX;
-    }
-    else if (i == NX - 1) 
-    {
-        return (globalGrid[i][j][k].gamma[a][b] - globalGrid[i-1][j][k].gamma[a][b]) / DX;
-    }
-    return 0.0;
-}
-
-
-double partialY_gamma(int i, int j, int k, int a, int b)
-{
-	if (j >= 2 && j <= NY - 3)
-	{
-		return fourth_order_diff(
-			globalGrid[i][j+2][k].gamma[a][b],
-			globalGrid[i][j+1][k].gamma[a][b],
-			globalGrid[i][j-1][k].gamma[a][b],
-			globalGrid[i][j-2][k].gamma[a][b],
-			DY
-		);
-	}
-	else if (j >= 1 && j <= NY - 2)
-	{
-		return second_order_diff(
-			globalGrid[i][j+1][k].gamma[a][b],
-			globalGrid[i][j-1][k].gamma[a][b],
-			DY
-		);
-	}
-	else if (j == 0)
-	{
-		return (globalGrid[i][j+1][k].gamma[a][b] - globalGrid[i][j][k].gamma[a][b]) / DY;
-	}
-	else if (j == NY - 1)
-	{
-		return (globalGrid[i][j][k].gamma[a][b] - globalGrid[i][j-1][k].gamma[a][b]) / DY;
-	}
-	return 0.0;
-}
-
-double partialZ_gamma(int i, int j, int k, int a, int b)
-{
-    if (k >= 2 && k <= NZ - 3)
-    {
-        return fourth_order_diff(
-            globalGrid[i][j][k+2].gamma[a][b],
-            globalGrid[i][j][k+1].gamma[a][b],
-            globalGrid[i][j][k-1].gamma[a][b],
-            globalGrid[i][j][k-2].gamma[a][b],
-            DZ
-        );
-    }
-    else if (k >= 1 && k <= NZ - 2)
-    {
-        return second_order_diff(
-            globalGrid[i][j][k+1].gamma[a][b],
-            globalGrid[i][j][k-1].gamma[a][b],
-            DZ
-        );
-    }
-    else if (k == 0)
-	{
-		return (globalGrid[i][j][k+1].gamma[a][b] - globalGrid[i][j][k].gamma[a][b]) / DZ;
-	}
-	else if (k == NZ - 1)
-	{
-		return (globalGrid[i][j][k].gamma[a][b] - globalGrid[i][j][k-1].gamma[a][b]) / DZ;
-	}
-	return 0.0;
-}
 
 
 

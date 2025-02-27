@@ -29,6 +29,8 @@ void apply_boundary_conditions()
 void Grid::evolve(double dt, int nSteps) {
 	double momentum[3];
 	double hamiltonian;
+	GridTensor gridTensor;
+	initialize_grid();
     for (int step = 0; step < nSteps; step++) {
 		apply_boundary_conditions();
         for (int i = 1; i < NX - 1; i++) {
@@ -201,9 +203,8 @@ void Grid::evolve(double dt, int nSteps) {
             }
         }
 		export_gamma_slice(NY / 2);
-		/*         export_alpha_slice(NY / 2); */
-		/* export_K_slice(NX / 2); */
 		export_gauge_slice(NY / 2);
-		export_christoffel_slice(NY / 2);
+		export_hamiltonian_csv("hamiltonian_slice.csv");
+		gridTensor.export_christoffel_slice(NY / 2);
     }
 }

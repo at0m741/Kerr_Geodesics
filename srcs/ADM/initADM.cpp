@@ -32,8 +32,6 @@ void Grid::initializeData_Minkowski()
             double y = y_min + j*dy;
             for(int k=0; k<NZ; k++)
             {
-                double z = z_min + k*dz;
-
                 Cell2D &cell = globalGrid[i][j][k];
 
                 cell.alpha = 1.0;

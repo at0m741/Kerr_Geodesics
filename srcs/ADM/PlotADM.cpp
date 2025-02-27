@@ -103,8 +103,8 @@ void export_gauge_slice(int j) {
 }
 
 
-void export_christoffel_slice(int j) {
-	Grid grid;
+void GridTensor::export_christoffel_slice(int j) {
+	GridTensor grid;
     std::ofstream file("christoffel_slice.csv");
     file << "x,z,Gamma000,Gamma001,Gamma002\n";
     
@@ -128,3 +128,21 @@ void export_christoffel_slice(int j) {
 }
 
 
+void Grid::export_hamiltonian_csv(const std::string& filename) {
+    std::ofstream file(filename);
+    if (!file) {
+        std::cerr << "Erreur: impossible d'ouvrir " << filename << std::endl;
+        return;
+    }
+
+    file << "x,y,z,Hamiltonian\n";
+    for (int i = 0; i < NX; i++) {
+        for (int j = 0; j < NY; j++) {
+            for (int k = 0; k < NZ; k++) {
+                file << i * DX << "," << j * DY << "," << k * DZ << "," << hamiltonianGrid[i][j][k] << "\n";
+            }
+        }
+    }
+    file.close();
+    std::cout << "Hamiltonian exporté dans " << filename << std::endl;
+}
