@@ -46,7 +46,8 @@ class Grid {
 			Matrix3x3 K;        
 			Matrix3x3 Ricci;     
 			double H;    
-
+			double momentum[3];
+			double hamiltonian;
 			double alpha;        
 			Vector3 beta_cov;     
 			Vector3 beta_con;    
@@ -144,7 +145,7 @@ class Grid {
 				const Tensor3D &Gamma_minus_half_h,
 				int mu, int nu, int sigma, 
 				double h) ; 
-
+		void compute_constraints(int i, int j, int k, double &hamiltonian, double momentum[3]);
 		void calculate_riemann_3d(
 				const Christoffel3D& Gamma, 
 				const std::array<Christoffel3D, 3>& Gamma_plus_h,

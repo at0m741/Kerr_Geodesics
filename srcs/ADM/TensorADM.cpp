@@ -1,44 +1,6 @@
 #include <Geodesics.h>
 
-static void print_christoffel(const char* name, const double Gamma[3][3][3])
-{
-    printf("\n%s:\n", name);
-    for(int k = 0; k < 3; k++)
-    {
-        printf("  Gamma^%d_{ij}:\n", k);
-        for(int i = 0; i < 3; i++)
-        {
-            for(int j = 0; j < 3; j++)
-            {
-                printf("%12.6f ", Gamma[k][i][j]);
-            }
-            printf("\n");
-        }
-        printf("\n");
-    }
-}
 
-static void print_partialGamma(const char* name, const double partialGamma[3][3][3][3])
-{
-    printf("\n%s:\n", name);
-    for(int dim = 0; dim < 3; dim++)
-    {
-        printf("  Dimension = %d:\n", dim);
-        for(int k = 0; k < 3; k++)
-        {
-            printf("    k = %d:\n", k);
-            for(int a = 0; a < 3; a++)
-            {
-                for(int b = 0; b < 3; b++)
-                {
-                    printf("%12.6f ", partialGamma[dim][k][a][b]);
-                }
-                printf("\n");
-            }
-            printf("\n");
-        }
-    }
-}
 
 static void print_matrix_2D(const char* name, const double mat[3][3])
 {
@@ -52,24 +14,6 @@ static void print_matrix_2D(const char* name, const double mat[3][3])
         printf("\n");
     }
     printf("\n");
-}
-
-static void print_3Darray(const char* name, const double arr[3][3][3])
-{
-    printf("\n%s (3x3x3):\n", name);
-    for(int i = 0; i < 3; i++)
-    {
-        printf("  i=%d:\n", i);
-        for(int j = 0; j < 3; j++)
-        {
-            for(int k = 0; k < 3; k++)
-            {
-                printf("%12.6f ", arr[i][j][k]);
-            }
-            printf("\n");
-        }
-        printf("\n");
-    }
 }
 
 
@@ -233,5 +177,5 @@ void Grid::compute_ricci_3D(int i, int j, int k, double Ricci[3][3])
         }
     }
 
-    print_matrix_2D("Ricci(a,b)", Ricci);
+    /* print_matrix_2D("Ricci(a,b)", Ricci); */
 }

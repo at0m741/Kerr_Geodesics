@@ -27,6 +27,8 @@ void apply_boundary_conditions()
 
 
 void Grid::evolve(double dt, int nSteps) {
+	double momentum[3];
+	double hamiltonian;
     for (int step = 0; step < nSteps; step++) {
 		apply_boundary_conditions();
         for (int i = 1; i < NX - 1; i++) {
@@ -52,6 +54,7 @@ void Grid::evolve(double dt, int nSteps) {
                     compute_time_derivatives(i, j, k);
                     double d_alpha_dt, d_beta_dt[3];
                     compute_gauge_derivatives(i, j, k, d_alpha_dt, d_beta_dt);
+					compute_constraints(i, j, k, hamiltonian, momentum);
                     Cell2D &cell = globalGrid[i][j][k];
                     for (int a = 0; a < 3; a++) {
                         for (int b = 0; b < 3; b++) {
@@ -89,6 +92,7 @@ void Grid::evolve(double dt, int nSteps) {
                     compute_time_derivatives(i, j, k);
                     double d_alpha_dt, d_beta_dt[3];
                     compute_gauge_derivatives(i, j, k, d_alpha_dt, d_beta_dt);
+					compute_constraints(i, j, k, hamiltonian, momentum);
                     Cell2D &cell = globalGrid[i][j][k];
                     for (int a = 0; a < 3; a++) {
                         for (int b = 0; b < 3; b++) {
@@ -126,6 +130,7 @@ void Grid::evolve(double dt, int nSteps) {
                     compute_time_derivatives(i, j, k);
                     double d_alpha_dt, d_beta_dt[3];
                     compute_gauge_derivatives(i, j, k, d_alpha_dt, d_beta_dt);
+					compute_constraints(i, j, k, hamiltonian, momentum);
                     Cell2D &cell = globalGrid[i][j][k];
                     for (int a = 0; a < 3; a++) {
                         for (int b = 0; b < 3; b++) {
@@ -163,7 +168,8 @@ void Grid::evolve(double dt, int nSteps) {
                     compute_time_derivatives(i, j, k);
                     double d_alpha_dt, d_beta_dt[3];
                     compute_gauge_derivatives(i, j, k, d_alpha_dt, d_beta_dt);
-                    Cell2D &cell = globalGrid[i][j][k];
+					compute_constraints(i, j, k, hamiltonian, momentum);
+					Cell2D &cell = globalGrid[i][j][k];
                     for (int a = 0; a < 3; a++) {
                         for (int b = 0; b < 3; b++) {
                             cell.gammaStage[3][a][b] = cell.dgt[a][b];

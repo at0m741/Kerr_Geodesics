@@ -36,4 +36,56 @@ void compute_gauge_derivatives(int i, int j, int k, double &d_alpha_dt, double d
     }
 }
 
+void Grid::compute_constraints(int i, int j, int k, double &hamiltonian, double momentum[3])
+{
+    double Ricci[3][3];
+    compute_ricci_3D(i, j, k, Ricci);
+    
+    double gammaLocal[3][3], gammaInv[3][3];
+    Cell2D &cell = globalGrid[i][j][k];
+    for (int a = 0; a < 3; a++) {
+        for (int b = 0; b < 3; b++) {
+            gammaLocal[a][b] = cell.gamma[a][b];
+        }
+    }
+    invert_3x3(gammaLocal, gammaInv);
+
+    // Calcul de R = gammaInv[a][b] * Ricci[a][b]
+    double R = 0.0;
+    for (int a = 0; a < 3; a++) {
+        for (int b = 0; b < 3; b++) {
+            R += gammaInv[a][b] * Ricci[a][b];
+        }
+    }
+
+    double Ktrace = 0.0;
+    double KK = 0.0;
+    for (int a = 0; a < 3; a++) {
+        for (int b = 0; b < 3; b++) {
+            Ktrace += gammaInv[a][b] * cell.K[a][b];
+        }
+    }
+    for (int a = 0; a < 3; a++) {
+        for (int b = 0; b < 3; b++) {
+            for (int c = 0; c < 3; c++) {
+                KK += cell.K[a][b] * gammaInv[a][c] * cell.K[c][b];
+            }
+        }
+    }
+    
+    hamiltonian = R + Ktrace * Ktrace - KK;
+
+    for (int i_comp = 0; i_comp < 3; i_comp++) {
+        momentum[i_comp] = 0.0;
+        for (int j_comp = 0; j_comp < 3; j_comp++) {
+            double dKdx = (globalGrid[i+1][j][k].K[i_comp][j_comp] - globalGrid[i-1][j][k].K[i_comp][j_comp]) / (2.0 * DX);
+            double dKdy = (globalGrid[i][j+1][k].K[i_comp][j_comp] - globalGrid[i][j-1][k].K[i_comp][j_comp]) / (2.0 * DY);
+            double dKdz = (globalGrid[i][j][k+1].K[i_comp][j_comp] - globalGrid[i][j][k-1].K[i_comp][j_comp]) / (2.0 * DZ);
+            double dTerm = dKdx + dKdy + dKdz;
+            momentum[i_comp] += dTerm;
+		}
+    }
+}
+
+
 
