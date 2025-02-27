@@ -41,7 +41,7 @@ Data will be stored in CSV format for further analysis.
 Contributions are welcome! If you wish to contribute, feel free to open a pull request or issue.
 
 ## License
-MIT License. See `LICENSE` for details.
+GPL-3.0 license. See `LICENSE` for details.
 
 ## Contact
 For inquiries, reach out via GitHub Issues or email.
