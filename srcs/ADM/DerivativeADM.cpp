@@ -11,18 +11,8 @@ void fill_ghost_zones() {
     }
 }
 
-template <class T>
-double fourth_order_diff(const T &plus2, const T &plus1, 
-                         const T &minus1, const T &minus2, double dx)
-{
-    return (-plus2 + 8.0*plus1 - 8.0*minus1 + minus2) / (12.0*dx);
-}
 
-template <class T>
-double second_order_diff(const T &plus1, const T &minus1, double dx)
-{
-    return (plus1 - minus1)/(2.0*dx);
-}
+
 
 
 
@@ -82,57 +72,67 @@ double second_order_diff(const T &plus1, const T &minus1, double dx)
 
 double partialX_gamma(int i, int j, int k, int a, int b)
 {
-    if(i >= 2 && i <= NX-3)
+    if (i >= 2 && i <= NX - 3)
     {
-        return fourth_order_diff(
+        double res = fourth_order_diff(
             globalGrid[i+2][j][k].gamma[a][b],
             globalGrid[i+1][j][k].gamma[a][b],
             globalGrid[i-1][j][k].gamma[a][b],
             globalGrid[i-2][j][k].gamma[a][b],
-            DX
+            DX 
         );
+		return res;
     }
-    else if(i >= 1 && i <= NX-2)
+    else if (i >= 1 && i <= NX - 2)
     {
-        return second_order_diff(
+        double res = second_order_diff(
             globalGrid[i+1][j][k].gamma[a][b],
             globalGrid[i-1][j][k].gamma[a][b],
-            DX
+            DX 
         );
+        return res;
     }
-    else
+    else if (i == 0) 
     {
-        return 0.0;
+        return (globalGrid[i+1][j][k].gamma[a][b] - globalGrid[i][j][k].gamma[a][b]) / DX;
     }
+    else if (i == NX - 1) 
+    {
+        return (globalGrid[i][j][k].gamma[a][b] - globalGrid[i-1][j][k].gamma[a][b]) / DX;
+    }
+    return 0.0;
 }
-
-
 
 
 double partialY_gamma(int i, int j, int k, int a, int b)
 {
-    if (j >= 2 && j <= NY - 3)
-    {
-        return fourth_order_diff(
-            globalGrid[i][j+2][k].gamma[a][b],
-            globalGrid[i][j+1][k].gamma[a][b],
-            globalGrid[i][j-1][k].gamma[a][b],
-            globalGrid[i][j-2][k].gamma[a][b],
-            DY
-        );
-    }
-    else if (j >= 1 && j <= NY - 2)
-    {
-        return second_order_diff(
-            globalGrid[i][j+1][k].gamma[a][b],
-            globalGrid[i][j-1][k].gamma[a][b],
-            DY
-        );
-    }
-    else
-    {
-        return 0.0;
-    }
+	if (j >= 2 && j <= NY - 3)
+	{
+		return fourth_order_diff(
+			globalGrid[i][j+2][k].gamma[a][b],
+			globalGrid[i][j+1][k].gamma[a][b],
+			globalGrid[i][j-1][k].gamma[a][b],
+			globalGrid[i][j-2][k].gamma[a][b],
+			DY
+		);
+	}
+	else if (j >= 1 && j <= NY - 2)
+	{
+		return second_order_diff(
+			globalGrid[i][j+1][k].gamma[a][b],
+			globalGrid[i][j-1][k].gamma[a][b],
+			DY
+		);
+	}
+	else if (j == 0)
+	{
+		return (globalGrid[i][j+1][k].gamma[a][b] - globalGrid[i][j][k].gamma[a][b]) / DY;
+	}
+	else if (j == NY - 1)
+	{
+		return (globalGrid[i][j][k].gamma[a][b] - globalGrid[i][j-1][k].gamma[a][b]) / DY;
+	}
+	return 0.0;
 }
 
 double partialZ_gamma(int i, int j, int k, int a, int b)
@@ -155,26 +155,34 @@ double partialZ_gamma(int i, int j, int k, int a, int b)
             DZ
         );
     }
-    else
-    {
-        return 0.0;
-    }
+    else if (k == 0)
+	{
+		return (globalGrid[i][j][k+1].gamma[a][b] - globalGrid[i][j][k].gamma[a][b]) / DZ;
+	}
+	else if (k == NZ - 1)
+	{
+		return (globalGrid[i][j][k].gamma[a][b] - globalGrid[i][j][k-1].gamma[a][b]) / DZ;
+	}
+	return 0.0;
 }
 
 
 
  double partialX_betacomp(int i, int j, int k, int comp) {
-	return (globalGrid[i+1][j][k].beta[comp] - globalGrid[i-1][j][k].beta[comp])/(2.0*DX-1);
+	 return (globalGrid[i+1][j][k].beta[comp] 
+			 - globalGrid[i-1][j][k].beta[comp]) / (2.0 * DX);
 }
 
 
  double partialY_betacomp(int i, int j, int k, int comp) {
-	return (globalGrid[i][j+1][k].beta[comp] - globalGrid[i][j-1][k].beta[comp])/(2.0*DY-1);
+	return (globalGrid[i][j+1][k].beta[comp] 
+			- globalGrid[i][j-1][k].beta[comp]) / (2.0 * DY);
 }
 
 
  double partialZ_betacomp(int i, int j, int k, int comp) {
-	return (globalGrid[i][j][k+1].beta[comp] - globalGrid[i][j][k-1].beta[comp])/(2.0*DZ-1);
+	return (globalGrid[i][j][k+1].beta[comp] 
+			- globalGrid[i][j][k-1].beta[comp])/(2.0 * DZ);
 }
 
 

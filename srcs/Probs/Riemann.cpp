@@ -10,7 +10,7 @@ int Riemann_tensor(const char *metric) {
     Connexion connexion;
     Metric metric_obj;
     
-    double r0 = 20.0;
+    double r0 = 256.0;
     std::array<double, NDIM> X = {0.0, r0, M_PI/4.0, 0.0};
 
     if (strcmp(metric, "ds") == 0) {

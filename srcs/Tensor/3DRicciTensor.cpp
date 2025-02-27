@@ -66,7 +66,6 @@ void compute_partial_christoffel_3D(
 }
 
 
-
 void Grid::compute_ricci_3d(
     const Vector3& X,       
     const Tensor3D& Gamma3, 

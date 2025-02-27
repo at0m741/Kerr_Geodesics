@@ -14,7 +14,7 @@ void Grid::compute_time_derivatives(int i, int j, int k)
     for(int a=0; a<3; a++){
         for(int b=0; b<3; b++){
             gammaLocal[a][b] = cell.gamma[a][b];
-			printf("gammaLocal[%d][%d] = %f\n", a, b, gammaLocal[a][b]);
+			/* printf("gammaLocal[%d][%d] = %f\n", a, b, gammaLocal[a][b]); */
             KLocal[a][b]     = cell.K[a][b];
         }
     }

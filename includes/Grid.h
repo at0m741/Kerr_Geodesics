@@ -3,9 +3,9 @@
 #include <Geodesics.h>
 
 #define DIM3 3
-#define DX 1e-6
-#define DY 1e-6
-#define DZ 1e-6
+#define DX 1e-1
+#define DY 1e-1
+#define DZ 1e-1
 #define NX 128
 #define NY 128
 #define NZ 128
@@ -23,7 +23,19 @@ using Tensor4D  = std::array<std::array<std::array<std::array<double, DIM3>, DIM
 using Christoffel3D = std::array<std::array<std::array<double, DIM3>, DIM3>, DIM3>;
 using Riemann3D = std::array<std::array<std::array<std::array<double, DIM3>, DIM3>, DIM3>, DIM3>;
 
+template <class T>
+double fourth_order_diff(const T &plus2, const T &plus1, 
+                         const T &minus1, const T &minus2, double dx)
+{
+    return (-plus2 + 8.0*plus1 - 8.0*minus1 + minus2) / (12.0*dx);
+}
 
+
+template <class T>
+double second_order_diff(const T &plus1, const T &minus1, double dx)
+{
+    return (plus1 - minus1)/(2.0*dx);
+}
 
 class Grid {
     public:
@@ -151,6 +163,10 @@ class Grid {
 		void compute_time_derivatives(int i, int j, int k);
 		void allocateGlobalGrid();
 		void initializeData_Minkowski();
+		void initializeData_kerr();
+		void compute_christoffel_3D(int i, int j, int k, double christof[3][3][3]);
+		void compute_ricci_3D(int i, int j, int k, double Ricci[3][3]);
+
 };
 
 
@@ -173,6 +189,7 @@ double partialXZ_alpha(int i, int j, int k);
 double partialYZ_alpha(int i, int j, int k);
 double second_partial_alpha(int i, int j, int k, int a, int b);
 void compute_gauge_derivatives(int i, int j, int k, double &d_alpha_dt, double d_beta_dt[3]);
-void compute_christoffel_3D(int i, int j, int k, double christof[3][3][3]);
 bool invert_3x3(const double m[3][3], double inv[3][3]);
-void compute_ricci_3D(int i, int j, int k, double Ricci[3][3]);
+void export_christoffel_slice(int j);
+void export_gamma_slice(int j);
+void export_gauge_slice(int j);

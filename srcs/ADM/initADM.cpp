@@ -91,7 +91,7 @@ void Grid::initializeData() {
     double dx = (x_max - x_min)/(NX-1);
     double dy = (y_max - y_min)/(NY-1);
     double dz = (z_max - z_min)/(NZ-1);
-
+	Matrix matrix;
     double epsilon = 1e-6;
 
     for(int i=0; i<NX; i++){
@@ -101,73 +101,29 @@ void Grid::initializeData() {
             for(int k=0; k<NZ; k++){
                 double z = z_min + k*dz;
 
-                double rho = sqrt(x*x + y*y + z*z + epsilon*epsilon);
-
-                double Phi = 1.0 + 0.5 * M / rho;
+                double rho = sqrt(x*x + y*y + z*z);
                 Cell2D &cell = globalGrid[i][j][k];
-                cell.alpha = (1.0 - M/(2*rho)) / (1.0 + M/(2*rho));
-
-                for(int a=0; a<3; a++){
-                    for(int b=0; b<3; b++){
-                        cell.gamma[a][b] = (a == b) ? pow(Phi, 4) : 0.0;
-                    }
-                }
-
+                
+				double Phi = 1.0 + 0.5 * M / rho;
+				cell.alpha = (1.0 - M/(2*rho)) / (1.0 + M/(2*rho));
+				for(int a=0; a<3; a++){
+					for(int b=0; b<3; b++){
+						cell.gamma[a][b] = (a == b) ? pow(Phi, 4) : 0.0;
+					}
+				}
+				matrix.inverse_3x3(cell.gamma, cell.gamma_inv);
                 for(int a=0; a<3; a++){
                     for(int b=0; b<3; b++){
                         cell.K[a][b] = 0.0;
                     }
                 }
+				
+				if (j == NY / 2 && k == NZ / 2) { 
+					printf("gamma[0][0] at (i=%d, j=%d, k=%d) = %e\n", i, j, k, globalGrid[i][j][k].gamma[0][0]);
+				}
             }
         }
     }
-	double partialGamma[3][3][3];
-	compute_christoffel_3D(0, 0, 0, partialGamma);
-	printf("Vérification des valeurs analytiques aux points clés :\n");
-	for (int test_i = 0; test_i < 3; test_i++) {
-		for (int test_j = 0; test_j < 3; test_j++) {
-			for (int test_k = 0; test_k < 3; test_k++) {
-				Cell2D &cell = globalGrid[test_i][test_j][test_k];
-				printf("Point (%d,%d,%d): alpha=%f, gamma=\n", test_i, test_j, test_k, cell.alpha);
-				for (int a = 0; a < 3; a++) {
-					printf("  ");
-					for (int b = 0; b < 3; b++) {
-						printf("%f ", cell.gamma[a][b]);
-					}
-					printf("\n");
-				}
-			}
-		}
-	}
-
-	for (int i = 0; i < 3; i++) {
-		for (int j = 0; j < 3; j++) {
-			for (int k = 0; k < 3; k++) {
-				printf("Point (%d,%d,%d): partialGamma=\n", i, j, k);
-				for (int a = 0; a < 3; a++) {
-					printf("  ");
-					for (int b = 0; b < 3; b++) {
-						printf("%f ", partialGamma[a][b][k]);
-					}
-					printf("\n");
-				}
-			}
-		}
-	}
-		
-
-	double Ricci[3][3];
-	compute_ricci_3D(0, 0, 0, Ricci);
-	printf("Vérification de la diagonale de Ricci_{ij} :\n");
-	for (int i = 0; i < 3; i++) {
-		for (int j = 0; j < 3; j++) {
-			printf("Ricci[%d][%d] = %f\n", i, j, Ricci[i][j]);
-			if (i != j && fabs(Ricci[i][j]) > 1e-12) {
-				printf("⚠️ Ricci[%d][%d] non diagonale en (0,0,0) : %e\n", i, j, Ricci[i][j]);
-			}
-		}
-	}
-
 	double test_radii[] = {0.5, 1.0, 2.0, 5.0, 10.0, 20.0, 128.0};
 	printf("\nVérification des valeurs analytiques aux points clés :\n");
 	for (double test_r : test_radii) {

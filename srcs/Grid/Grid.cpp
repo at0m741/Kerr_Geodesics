@@ -21,10 +21,8 @@ void Grid::extract_3p1(const Matrix4x4& g,
 
 
 	Matrix matrix_obj; 
-	if (matrix_obj.inverse_3x3(gamma, gamma_inv) == 0) {
-		printf("Erreur: gamma_{ij} est singulière ou mal définie\n");
-	} else {
-		printf("gamma_{ij} est inversible\n");
+	if ((matrix_obj.inverse_3x3(gamma, gamma_inv) == 0)) {
+		printf("gamma_{ij} is not invertible\n");
 	}
 
 
@@ -46,11 +44,11 @@ void Grid::extract_3p1(const Matrix4x4& g,
     }
 
     *alpha = sqrt(betabeta - g[0][0]);
-    matrix_obj.print_matrix_3x3("gamma", gamma);
-    matrix_obj.print_matrix_3x3("gamma_inv", gamma_inv);
-    printf("beta_i = (%e, %e, %e)\n", beta_cov[0], beta_cov[1], beta_cov[2]);
-	printf("beta^i = (%e, %e, %e)\n", beta_con[0], beta_con[1], beta_con[2]);
-	printf("alpha = %e\n", *alpha);
+	/*     matrix_obj.print_matrix_3x3("gamma", gamma); */
+	/*     matrix_obj.print_matrix_3x3("gamma_inv", gamma_inv); */
+	/*     printf("beta_i = (%e, %e, %e)\n", beta_cov[0], beta_cov[1], beta_cov[2]); */
+	/* printf("beta^i = (%e, %e, %e)\n", beta_con[0], beta_con[1], beta_con[2]); */
+	/* printf("alpha = %e\n", *alpha); */
 }
 
 

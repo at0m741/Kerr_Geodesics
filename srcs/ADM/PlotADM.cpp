@@ -104,6 +104,7 @@ void export_gauge_slice(int j) {
 
 
 void export_christoffel_slice(int j) {
+	Grid grid;
     std::ofstream file("christoffel_slice.csv");
     file << "x,z,Gamma000,Gamma001,Gamma002\n";
     
@@ -113,7 +114,7 @@ void export_christoffel_slice(int j) {
             double z = -256.0 + k * (512.0 / (NZ-1));
 
             double christof[3][3][3];
-            compute_christoffel_3D(i, j, k, christof);
+            grid.compute_christoffel_3D(i, j, k, christof);
 
             file << x << "," << z << ","
                  << christof[0][0][0] << ","

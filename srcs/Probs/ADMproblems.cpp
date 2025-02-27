@@ -53,7 +53,7 @@ int grid_setup() {
 	
 	grid_obj.allocateGlobalGrid();
 	grid_obj.initializeData();
-	grid_obj.evolve(0.00000001, 1);
+	grid_obj.evolve(0.000001, 1);
 	printf("end of compute\n");
     return 0;
 }

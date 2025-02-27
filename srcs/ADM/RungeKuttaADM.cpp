@@ -194,10 +194,10 @@ void Grid::evolve(double dt, int nSteps) {
                 }
             }
         }
-		/*         export_gamma_slice(NY - 3); */
+		export_gamma_slice(NY / 2);
 		/*         export_alpha_slice(NY / 2); */
 		/* export_K_slice(NX / 2); */
-		/* export_gauge_slice(NY / 2); */
-		/* export_christoffel_slice(NY / 2); */
+		export_gauge_slice(NY / 2);
+		export_christoffel_slice(NY / 2);
     }
 }

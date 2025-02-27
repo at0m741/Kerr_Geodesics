@@ -74,7 +74,7 @@ static void print_3Darray(const char* name, const double arr[3][3][3])
 
 
 
-void compute_ricci_3D(int i, int j, int k, double Ricci[3][3])
+void Grid::compute_ricci_3D(int i, int j, int k, double Ricci[3][3])
 {
     double Gamma[3][3][3];
     compute_christoffel_3D(i, j, k, Gamma);
@@ -100,17 +100,23 @@ void compute_ricci_3D(int i, int j, int k, double Ricci[3][3])
                 for (int bb = 0; bb < 3; bb++) {
 
                     if (i >= 2 && i <= NX - 3) {
-                        partialGamma[0][kk][aa][bb] = (
-                            -   Gpp[kk][aa][bb]
-                            + 8.*Gp [kk][aa][bb]
-                            - 8.*Gm [kk][aa][bb]
-                            +    Gmm[kk][aa][bb]
-                        ) / (12.0 * DX);
-                    } else if (i >= 1 && i <= NX - 2) {
-                        partialGamma[0][kk][aa][bb] = (
-                            Gp[kk][aa][bb] - Gm[kk][aa][bb]
-                        ) / (2.0 * DX);
-
+						partialGamma[0][kk][aa][bb] = fourth_order_diff( 
+							Gpp[kk][aa][bb],
+							Gp[kk][aa][bb],
+							Gm[kk][aa][bb],
+							Gmm[kk][aa][bb],
+							DX
+						);
+					} else if (i >= 1 && i <= NX - 2) {
+						partialGamma[0][kk][aa][bb] = second_order_diff(
+							Gp[kk][aa][bb],
+							Gm[kk][aa][bb],
+							DX 
+						);
+					} else if (i == 0) {
+						partialGamma[0][kk][aa][bb] = (Gp[kk][aa][bb] - Gm[kk][aa][bb]) / DX;
+					} else if (i == NX - 1) {
+						partialGamma[0][kk][aa][bb] = (Gp[kk][aa][bb] - Gm[kk][aa][bb]) / DX;
                     } else {
                         partialGamma[0][kk][aa][bb] = 0.0;
                     }
@@ -138,16 +144,23 @@ void compute_ricci_3D(int i, int j, int k, double Ricci[3][3])
                 for (int bb = 0; bb < 3; bb++) {
 
                     if (j >= 2 && j <= NY - 3) {
-                        partialGamma[1][kk][aa][bb] = (
-                            -   Gpp[kk][aa][bb]
-                            + 8.*Gp [kk][aa][bb]
-                            - 8.*Gm [kk][aa][bb]
-                            +    Gmm[kk][aa][bb]
-                        ) / (12.0 * DY);
-                    } else if (j >= 1 && j <= NY - 2) {
-                        partialGamma[1][kk][aa][bb] = (
-                            Gp[kk][aa][bb] - Gm[kk][aa][bb]
-                        ) / (2.0 * DY);
+						partialGamma[1][kk][aa][bb] = fourth_order_diff(
+							Gpp[kk][aa][bb],
+							Gp[kk][aa][bb],
+							Gm[kk][aa][bb],
+							Gmm[kk][aa][bb],
+							DY
+						);
+					}else if (j >= 1 && j <= NY - 2) {
+						partialGamma[1][kk][aa][bb] = second_order_diff(
+							Gp[kk][aa][bb],
+							Gm[kk][aa][bb],
+							DY
+						);
+					} else if (j == 0) {
+						partialGamma[1][kk][aa][bb] = (Gp[kk][aa][bb] - Gm[kk][aa][bb]) / DY;
+					} else if (j == NY - 1) {
+						partialGamma[1][kk][aa][bb] = (Gp[kk][aa][bb] - Gm[kk][aa][bb]) / DY;
                     } else {
                         partialGamma[1][kk][aa][bb] = 0.0;
                     }
@@ -175,21 +188,23 @@ void compute_ricci_3D(int i, int j, int k, double Ricci[3][3])
                 for (int bb = 0; bb < 3; bb++) {
 
                     if (k >= 2 && k <= NZ - 3) {
-                        partialGamma[2][kk][aa][bb] = (
-                            -   Gpp[kk][aa][bb]
-                            + 8.*Gp [kk][aa][bb]
-                            - 8.*Gm [kk][aa][bb]
-                            +    Gmm[kk][aa][bb]
-                        ) / (12.0 * DZ);
-
+						partialGamma[2][kk][aa][bb] = fourth_order_diff( 
+							Gpp[kk][aa][bb],
+							Gp[kk][aa][bb],
+							Gm[kk][aa][bb],
+							Gmm[kk][aa][bb],
+							DZ
+						);
 					} else if (k >= 1 && k <= NZ - 2) {
-						partialGamma[2][kk][aa][bb] = (
-							Gp[kk][aa][bb] - Gm[kk][aa][bb]
-						) / (2.0 * DZ);
-                    } else if (k >= 1 && k <= NZ - 2) {
-                        partialGamma[2][kk][aa][bb] = (
-                            Gp[kk][aa][bb] - Gm[kk][aa][bb]
-                        ) / (2.0 * DZ);
+						partialGamma[2][kk][aa][bb] = second_order_diff(
+							Gp[kk][aa][bb],
+							Gm[kk][aa][bb],
+							DZ
+						);
+					} else if (k == 0) {
+						partialGamma[2][kk][aa][bb] = (Gp[kk][aa][bb] - Gm[kk][aa][bb]) / DZ;
+					} else if (k == NZ - 1) {
+						partialGamma[2][kk][aa][bb] = (Gp[kk][aa][bb] - Gm[kk][aa][bb]) / DZ;
                     } else {
                         partialGamma[2][kk][aa][bb] = 0.0;
                     }

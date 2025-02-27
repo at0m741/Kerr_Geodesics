@@ -52,7 +52,6 @@ void Tensor::calculate_riemann(const Christoffel3D& Gamma,
                         Gamma_plus_h[mu], Gamma_minus_h[mu], 
                         Gamma_plus_half_h[mu], Gamma_minus_half_h[mu], 
                         rho, nu, sigma, h);
-                    
                     double dGamma_nu = richardson_derivative(
                         Gamma_plus_h[nu], Gamma_minus_h[nu],
                         Gamma_plus_half_h[nu], Gamma_minus_half_h[nu],

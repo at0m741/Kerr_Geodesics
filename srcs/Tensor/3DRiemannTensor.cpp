@@ -13,8 +13,6 @@ double Grid::richardson_derivative_ricci(
     return (4.0 * diff_half_h - diff_h) / 3.0;
 }
 
-
-
 void Grid::calculate_riemann_3d(
     const Christoffel3D& Gamma, 
     const std::array<Christoffel3D, 3>& Gamma_plus_h,
@@ -44,7 +42,6 @@ void Grid::calculate_riemann_3d(
                         i, j, k, 
                         effective_h
                     );
-
                     double Gamma_terms = 0.0;
                     for (int m = 0; m < 3; m++) {
                         Gamma_terms += Gamma[i][k][m] * Gamma[m][l][j]
