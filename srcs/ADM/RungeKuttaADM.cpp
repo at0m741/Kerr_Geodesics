@@ -56,7 +56,7 @@ void Grid::evolve(double dt, int nSteps) {
                     compute_time_derivatives(i, j, k);
                     double d_alpha_dt, d_beta_dt[3];
                     compute_gauge_derivatives(i, j, k, d_alpha_dt, d_beta_dt);
-					compute_constraints(i, j, k, hamiltonian, momentum);
+					/* compute_constraints(i, j, k, hamiltonian, momentum); */
                     Cell2D &cell = globalGrid[i][j][k];
                     for (int a = 0; a < 3; a++) {
                         for (int b = 0; b < 3; b++) {
@@ -94,7 +94,7 @@ void Grid::evolve(double dt, int nSteps) {
                     compute_time_derivatives(i, j, k);
                     double d_alpha_dt, d_beta_dt[3];
                     compute_gauge_derivatives(i, j, k, d_alpha_dt, d_beta_dt);
-					compute_constraints(i, j, k, hamiltonian, momentum);
+					/* compute_constraints(i, j, k, hamiltonian, momentum); */
                     Cell2D &cell = globalGrid[i][j][k];
                     for (int a = 0; a < 3; a++) {
                         for (int b = 0; b < 3; b++) {
@@ -132,7 +132,7 @@ void Grid::evolve(double dt, int nSteps) {
                     compute_time_derivatives(i, j, k);
                     double d_alpha_dt, d_beta_dt[3];
                     compute_gauge_derivatives(i, j, k, d_alpha_dt, d_beta_dt);
-					compute_constraints(i, j, k, hamiltonian, momentum);
+					/* compute_constraints(i, j, k, hamiltonian, momentum); */
                     Cell2D &cell = globalGrid[i][j][k];
                     for (int a = 0; a < 3; a++) {
                         for (int b = 0; b < 3; b++) {
@@ -170,7 +170,7 @@ void Grid::evolve(double dt, int nSteps) {
                     compute_time_derivatives(i, j, k);
                     double d_alpha_dt, d_beta_dt[3];
                     compute_gauge_derivatives(i, j, k, d_alpha_dt, d_beta_dt);
-					compute_constraints(i, j, k, hamiltonian, momentum);
+					/* compute_constraints(i, j, k, hamiltonian, momentum); */
 					Cell2D &cell = globalGrid[i][j][k];
                     for (int a = 0; a < 3; a++) {
                         for (int b = 0; b < 3; b++) {
@@ -204,7 +204,7 @@ void Grid::evolve(double dt, int nSteps) {
         }
 		export_gamma_slice(NY / 2);
 		export_gauge_slice(NY / 2);
-		export_hamiltonian_csv("hamiltonian_slice.csv");
+		/* export_hamiltonian_csv("hamiltonian_slice.csv"); */
 		gridTensor.export_christoffel_slice(NY / 2);
     }
 }
