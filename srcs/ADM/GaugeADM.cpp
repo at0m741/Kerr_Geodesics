@@ -1,8 +1,11 @@
 #include <Geodesics.h>
 
-void compute_gauge_derivatives(int i, int j, int k, double &d_alpha_dt, double d_beta_dt[3]) {
+
+
+void Grid::compute_gauge_derivatives(int i, int j, int k, double &d_alpha_dt, double d_beta_dt[3]) {
     Grid::Cell2D &cell = globalGrid[i][j][k];
     double gammaLocal[3][3], KLocal[3][3];
+	GridTensor gridTensor;
     for (int a = 0; a < 3; a++) {
         for (int b = 0; b < 3; b++) {
             gammaLocal[a][b] = cell.gamma[a][b];
@@ -22,7 +25,7 @@ void compute_gauge_derivatives(int i, int j, int k, double &d_alpha_dt, double d
     for (int a = 0; a < 3; a++) {
         for (int b = 0; b < 3; b++) {
             Ktrace += gammaInv[a][b] * KLocal[a][b];
-        }
+		}
     }
 
     double lambda = 1.0 / (1.0 + 10.0 * Ktrace * Ktrace);
@@ -31,10 +34,15 @@ void compute_gauge_derivatives(int i, int j, int k, double &d_alpha_dt, double d
     double eta = 2.0 / (1.0 + std::fabs(Ktrace));
     double d_Gamma_dt[3] = {0.0, 0.0, 0.0}; 
 
+    double tildeGamma[3];
+    gridTensor.compute_tildeGamma(i, j, k, tildeGamma); 
+    gridTensor.compute_dt_tildeGamma(i, j, k, d_Gamma_dt);
+
     for (int m = 0; m < 3; m++) {
         d_beta_dt[m] = 3.0 / 4.0 * d_Gamma_dt[m] - eta * cell.beta[m];
     }
 }
+
 
 void Grid::initialize_grid() {
     globalGrid.resize(NX, std::vector<std::vector<Cell2D>>(NY, std::vector<Cell2D>(NZ)));

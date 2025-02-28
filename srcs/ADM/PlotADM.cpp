@@ -80,6 +80,7 @@ void export_alpha_slice(int j) {
 
 
 void export_gauge_slice(int j) {
+	Grid grid;
     std::ofstream file("gauge_slice.csv");
     file << "x,z,alpha,beta0,beta1,beta2,d_alpha_dt,d_beta0_dt,d_beta1_dt,d_beta2_dt\n";
 
@@ -91,7 +92,7 @@ void export_gauge_slice(int j) {
 			Grid::Cell2D &cell = globalGrid[i][j][k];
 
             double d_alpha_dt, d_beta_dt[3];
-            compute_gauge_derivatives(i, j, k, d_alpha_dt, d_beta_dt);
+            grid.compute_gauge_derivatives(i, j, k, d_alpha_dt, d_beta_dt);
 
             file << x << "," << z << "," 
                  << cell.alpha << "," << cell.beta[0] << "," << cell.beta[1] << "," << cell.beta[2] << ","

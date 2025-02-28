@@ -123,14 +123,12 @@ void Grid::initializeData() {
         }
     }
 	double test_radii[] = {0.5, 1.0, 2.0, 5.0, 10.0, 20.0, 128.0};
-	printf("\nVérification des valeurs analytiques aux points clés :\n");
 	for (double test_r : test_radii) {
 		double Phi_test = 1.0 + 0.5 * M / test_r;
 		double alpha_test = (1.0 - M / (2 * test_r)) / (1.0 + M / (2 * test_r));
 		printf("r = %f : Phi^4 = %e, alpha = %e\n", test_r, pow(Phi_test, 4), alpha_test);
 	}
 
-	printf("\nVérification de la diagonale de γ_{ij} :\n");
 	for (int iCell = 0; iCell < 3; iCell++) {
 		for (int jCell = 0; jCell < 3; jCell++) {
 			for (int kCell = 0; kCell < 3; kCell++) {
@@ -152,15 +150,15 @@ void Grid::initializeData() {
 	Cell2D &cell_far = globalGrid[i_far][j_center][k_center];
 
 	std::cout << "Test 1 (rho -> ∞):\n";
-	std::cout << "Alpha = " << cell_far.alpha << " (devrait être ~1)\n";
-	std::cout << "Gamma_xx = " << cell_far.gamma[0][0] << " (devrait être ~1)\n";
+	std::cout << "Alpha = " << cell_far.alpha << "\n";
+	std::cout << "Gamma_xx = " << cell_far.gamma[0][0] << "\n";
 
 	double rho_horizon = M / 2.0;  
 	int i_horizon = static_cast<int>((rho_horizon - x_min) / dx);
 	Cell2D &cell_horizon = globalGrid[i_horizon][j_center][k_center];
 
 	std::cout << "\nTest 2 (rho = M/2):\n";
-	std::cout << "Alpha = " << cell_horizon.alpha << " (devrait être ~0)\n";
+	std::cout << "Alpha = " << cell_horizon.alpha << "\n";
 	std::cout << "Position x = " << (x_min + i_horizon*dx) << "\n";
 }
 

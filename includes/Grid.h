@@ -162,6 +162,7 @@ class Grid {
 		void initializeData_kerr();
 		void compute_ricci_3D(int i, int j, int k, double Ricci[3][3]);
 
+		void compute_gauge_derivatives(int i, int j, int k, double &d_alpha_dt, double d_beta_dt[3]);
 };
 
 
@@ -181,7 +182,6 @@ double partialXY_alpha(int i, int j, int k);
 double partialXZ_alpha(int i, int j, int k);
 double partialYZ_alpha(int i, int j, int k);
 double second_partial_alpha(int i, int j, int k, int a, int b);
-void compute_gauge_derivatives(int i, int j, int k, double &d_alpha_dt, double d_beta_dt[3]);
 bool invert_3x3(const double m[3][3], double inv[3][3]);
 void export_gamma_slice(int j);
 void export_gauge_slice(int j);

@@ -26,6 +26,8 @@ class GridTensor {
 
 	protected:
 		void compute_christoffel_3D(int i, int j, int k, double christof[3][3][3]);
+		void compute_dt_tildeGamma(int i, int j, int k, double dt_tildeGamma[3]); 
+		void compute_tildeGamma(int i, int j, int k, double tildeGamma[3]);
 		void compute_partial_christoffel(int i, int j, int k, int dim, \
 				double partialGamma[3][3][3][3], double d);
 		double partialX_gamma(int i, int j, int k, int a, int b);
