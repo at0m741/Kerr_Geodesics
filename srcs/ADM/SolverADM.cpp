@@ -9,7 +9,7 @@ void Grid::compute_time_derivatives(int i, int j, int k)
     Cell2D &cell = globalGrid[i][j][k];
     double alpha = cell.alpha;
     double beta[3] = { cell.beta[0], cell.beta[1], cell.beta[2] };
-
+	GridTensor gridTensor;
     double gammaLocal[3][3], KLocal[3][3];
     for(int a=0; a<3; a++){
         for(int b=0; b<3; b++){
@@ -30,7 +30,7 @@ void Grid::compute_time_derivatives(int i, int j, int k)
 	}
 
     double Gamma[3][3][3];
-    /* compute_christoffel_3D(i,j,k,Gamma); */
+    gridTensor.compute_christoffel_3D(i,j,k,Gamma);
     
     double Ricci[3][3];
     compute_ricci_3D(i,j,k,Ricci);
@@ -48,6 +48,7 @@ void Grid::compute_time_derivatives(int i, int j, int k)
 		double sumG = 0.0;
 		for(int m=0; m<3; m++){
 			sumG += Gamma[m][a][b] * partial_m_alpha(i,j,k,m);
+			/* printf("Gamma[%d][%d][%d] = %f\n", m, a, b, Gamma[m][a][b]); */
 		}
 		return secondPart - sumG;
 	};
