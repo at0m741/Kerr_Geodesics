@@ -6,14 +6,24 @@ import math
 # Lecture du CSV
 data = pd.read_csv("christoffel_slice.csv")
 
-all_cols = data.columns.tolist() 
-columns_to_plot = all_cols[2:] 
+all_cols = data.columns.tolist()
+columns_to_plot = all_cols[2:]  
 
-nplots = len(columns_to_plot) 
-ncols = 3
+vals = []
+for col in columns_to_plot:
+    vals.append(data[col].values)
+all_vals = np.concatenate(vals)
+vmin, vmax = all_vals.min(), all_vals.max()
+
+mean_val = all_vals.mean()
+delta = 0.2  # +/- 1%
+vmin = mean_val - delta
+vmax = mean_val + delta
+nplots = len(columns_to_plot)
+ncols = 2  
 nrows = math.ceil(nplots / ncols)
 
-fig, axes = plt.subplots(nrows, ncols, figsize=(6*ncols, 5*nrows), squeeze=False)
+fig, axes = plt.subplots(nrows, ncols, figsize=(7*ncols, 5*nrows))
 
 for idx, col in enumerate(columns_to_plot):
     pivoted = data.pivot(index="z", columns="x", values=col)
@@ -22,7 +32,9 @@ for idx, col in enumerate(columns_to_plot):
     X, Z = np.meshgrid(xvals, zvals)
 
     ax = axes[idx // ncols, idx % ncols]
-    im = ax.pcolormesh(X, Z, pivoted.values, shading='auto', cmap='RdBu')
+    im = ax.pcolormesh(X, Z, pivoted.values,
+                       shading='auto', cmap='RdBu',
+                       vmin=vmin, vmax=vmax)
     ax.set_title(col)
     ax.set_xlabel("x")
     ax.set_ylabel("z")

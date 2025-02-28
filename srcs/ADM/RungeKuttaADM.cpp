@@ -61,7 +61,6 @@ void Grid::storeStage(Cell2D &cell, int stage, double d_alpha_dt, double d_beta_
     cell.alphaStage[stage] = d_alpha_dt;
     for (int m = 0; m < 3; m++) {
         cell.betaStage[stage][m] = d_beta_dt[m];
-		printf("d_beta_dt[%d] = %f\n", m, d_beta_dt[m]);
     }
 }
 

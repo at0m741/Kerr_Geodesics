@@ -82,10 +82,10 @@ void Grid::initializeData_Minkowski()
 
 
 void Grid::initializeData() {
-	double L = 256.0; 
-    double x_min = 2, x_max = L;
-    double y_min = 2, y_max = L;
-    double z_min = 2, z_max = L;
+	double L = 2.0; 
+    double x_min = -L, x_max = L;
+    double y_min = -L, y_max = L;
+    double z_min = -L, z_max = L;
     double dx = (x_max - x_min)/(NX-1);
     double dy = (y_max - y_min)/(NY-1);
     double dz = (z_max - z_min)/(NZ-1);
