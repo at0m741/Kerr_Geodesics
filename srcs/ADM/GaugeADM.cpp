@@ -75,7 +75,7 @@ void Grid::compute_constraints(int i, int j, int k, double &hamiltonian, double 
     }
     
     hamiltonian = R + Ktrace * Ktrace - KK;
-    hamiltonianGrid[i][j][k] = hamiltonian; // Stocke le Hamiltonian
+    hamiltonianGrid[i][j][k] = hamiltonian;
 
     for (int i_comp = 0; i_comp < 3; i_comp++) {
         momentum[i_comp] = 0.0;

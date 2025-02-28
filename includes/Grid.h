@@ -47,6 +47,7 @@ class Grid {
 			Tensor3D dGamma3_dx;  
 			double alphaStage[4];
 			double betaStage[4][3];
+			double Bstage[4][3];
 			double rho;          
 			Vector3 S_i;         
 			Matrix3x3 S_ij;     
@@ -66,7 +67,7 @@ class Grid {
 		std::vector<std::vector<std::vector<double>>> hamiltonianGrid;
 		void initialize_grid();
 		void export_hamiltonian_csv(const std::string& filename); 
-		void evolve(double dt, int nSteps);
+		void evolve(double dtinitital, int nSteps);
 		void extract_3p1(const Matrix4x4& g,
 				const Matrix4x4& g_inv,  
 				double* alpha,
@@ -122,8 +123,11 @@ class Grid {
 				const std::string &filename);
 		void evolve_Kij(double dt);
 		Matrix3x3 compute_second_derivative_alpha(int i, int j);
-
+		void copyInitialState(Cell2D &cell);
+		void updateIntermediateState(Cell2D &cell, double dtCoeff, int stageIndex);
+		void storeStage(Cell2D &cell, int stage, double d_alpha_dt, double d_beta_dt[3]) ;
 		Matrix3x3 compute_beta_gradient(int i, int j);
+		void combineStages(Cell2D &cell, double dt);
 		double compute_KijKij_component(const Matrix3x3& gamma_inv, const Matrix3x3& K, int a, int b);
 		void initialize_grid(int Nr, int Ntheta, double r_min, double r_max, double theta_min, double theta_max);
 		void export_vtk(const std::string& filename);
@@ -133,7 +137,9 @@ class Grid {
 				const Tensor3D &Gamma_plus_half_h,
 				const Tensor3D &Gamma_minus_half_h,
 				int mu, int nu, int sigma, 
-				double h) ; 
+				double h) ;
+		double computeMaxSpeed();
+		double computeCFL_dt(double CFL);
 		void compute_constraints(int i, int j, int k, double &hamiltonian, double momentum[3]);
 		void calculate_riemann_3d(
 				const Christoffel3D& Gamma, 
