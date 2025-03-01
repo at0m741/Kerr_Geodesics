@@ -81,8 +81,20 @@ void Grid::initializeData_Minkowski()
 }
 
 
+double effective_potential(double x, double y, double a) {
+    double r = sqrt(x*x + y*y);
+    double cos_theta = y / (r + 1e-10);
+    double sin2_theta = 1.0 - cos_theta * cos_theta;
+    
+    double delta = r*r - 2*r + a*a;
+    double Sigma = r*r + a*a * cos_theta * cos_theta;
+    double omega = 2.0 * r * a / (Sigma * delta);
+    
+    return 1.0 - sqrt(1.0 - 2.0 / r + a*a / (r*r));
+}
+
 void Grid::initializeData() {
-	double L = 2.0; 
+	double L = 1.0; 
     double x_min = -L, x_max = L;
     double y_min = -L, y_max = L;
     double z_min = -L, z_max = L;
@@ -116,12 +128,11 @@ void Grid::initializeData() {
                     }
                 }
 				cell.rho = exp(-r*r / 2.0); 
-				cell.p = 0.01 * cell.rho; 
-				double vr = -0.02; 
+				cell.p = 0.3 * cell.rho + 0.5 * cell.rho * cell.rho; 
+				double vr = 1.8; 
 				cell.vx += vr * x / r;
 				cell.vy += vr * y / r;
-				cell.vz = 0.02 * z / (r + 1e-2);
-				printf("r = %f, rho = %f, p = %f\n", r, cell.rho, cell.p);
+				cell.vz = 0.0; 
 				if (r < 0.1) { 
 					cell.vx = 0.0;
 					cell.vy = 0.0;
