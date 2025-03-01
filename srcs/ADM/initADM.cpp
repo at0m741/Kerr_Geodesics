@@ -115,11 +115,20 @@ void Grid::initializeData() {
                         cell.K[a][b] = 0.0;
                     }
                 }
-				cell.rho = exp(-r*r / 2.0); // Exemple de distribution gaussienne
-				cell.p = 0.01 * cell.rho;   // Pression suivant une EoS polytropique simple
-				cell.vx = 0.0;
-				cell.vy = 0.0;
-				cell.vz = 0.0;
+				cell.rho = exp(-r*r / 2.0); 
+				cell.p = 0.01 * cell.rho; 
+				double vr = -0.02; 
+				cell.vx += vr * x / r;
+				cell.vy += vr * y / r;
+				cell.vz = 0.02 * z / (r + 1e-2);
+				printf("r = %f, rho = %f, p = %f\n", r, cell.rho, cell.p);
+				if (r < 0.1) { 
+					cell.vx = 0.0;
+					cell.vy = 0.0;
+					cell.vz = 0.0;
+					cell.rho = 0.0;
+					cell.p = 0.0;
+				}
 				if (j == NY / 2 && k == NZ / 2) { 
 					printf("gamma[0][0] at (i=%d, j=%d, k=%d) = %e\n", i, j, k, globalGrid[i][j][k].gamma[0][0]);
 				}

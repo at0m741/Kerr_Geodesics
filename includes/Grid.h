@@ -63,9 +63,11 @@ class Grid {
 			double KStage[4][3][3];   
 			double vx, vy, vz;
 			double p;
+			double T[3][3];
 		};
 
 		void export_fluid_slice(int j_slice);
+		void export_energy_momentum_tensor_slice(int slice_y);
 		void update_fluid_velocity(int i, int j, int k, double dt);
 		void compute_fluid_derivatives(int i, int j, int k);
 		std::vector<std::vector<std::vector<double>>> hamiltonianGrid;

@@ -197,7 +197,8 @@ void Grid::compute_ricci_3D(int i, int j, int k, double Ricci[3][3]) {
     Cell2D &cell = globalGrid[i][j][k];
 	for (int a = 0; a < 3; a++) {
 		for (int b = 0; b < 3; b++) {
-			T[a][b] = (cell.rho + cell.p) * cell.vx * cell.vy + cell.p * cell.gamma[a][b];
+			cell.T[a][b] = (cell.rho + cell.p) * cell.vx * cell.vy + cell.p * cell.gamma[a][b];
+			
 		}
 	}
 
@@ -206,5 +207,6 @@ void Grid::compute_ricci_3D(int i, int j, int k, double Ricci[3][3]) {
 			Ricci[a][b] += 8 * M_PI * T[a][b];
 		}
 	}
+	/* print_matrix_2D("T", cell.T); */
 	/* print_matrix_2D("Ricci", Ricci); */
 }

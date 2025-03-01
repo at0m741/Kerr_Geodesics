@@ -1,4 +1,3 @@
-
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -9,12 +8,14 @@ x = data["x"].values
 z = data["z"].values
 rho = data["rho"].values
 p = data["p"].values
-vx = data["vz"].values
+vx = data["vx"].values
+vy = data["vy"].values
+vz = data["vz"].values
 
 NX = len(np.unique(x))
 NZ = len(np.unique(z))
 
-fig, axes = plt.subplots(1, 3, figsize=(18, 6))
+fig, axes = plt.subplots(1, 5, figsize=(28, 6))
 
 rho_grid = rho.reshape(NX, NZ)
 im1 = axes[0].imshow(rho_grid, extent=[x.min(), x.max(), z.min(), z.max()], origin="lower", cmap="inferno")
@@ -28,10 +29,22 @@ fig.colorbar(im2, ax=axes[1])
 
 vx_grid = vx.reshape(NX, NZ)
 im3 = axes[2].imshow(vx_grid, extent=[x.min(), x.max(), z.min(), z.max()], origin="lower", cmap="coolwarm")
-axes[2].set_title("Composante vx du fluide")
+axes[2].set_title("Composante $v_x$ du fluide")
 fig.colorbar(im3, ax=axes[2])
-plt.quiver(x, z, vx, np.zeros_like(vx), color="white", scale=20)
-plt.quiver(x, z, np.zeros_like(vx), vx, color="white", scale=20)
-plt.suptitle("Distribution du fluide en (x, z)", fontsize=16)
+axes[2].quiver(x, z, vx, np.zeros_like(vx), color="white", scale=20)
+
+vy_grid = vy.reshape(NX, NZ)
+im4 = axes[3].imshow(vy_grid, extent=[x.min(), x.max(), z.min(), z.max()], origin="lower", cmap="coolwarm")
+axes[3].set_title("Composante $v_y$ du fluide")
+fig.colorbar(im4, ax=axes[3])
+axes[3].quiver(x, z, np.zeros_like(vy), vy, color="white", scale=20)
+
+vz_grid = vz.reshape(NX, NZ)
+im5 = axes[4].imshow(vz_grid, extent=[x.min(), x.max(), z.min(), z.max()], origin="lower", cmap="coolwarm")
+axes[4].set_title("Composante $v_z$ du fluide")
+fig.colorbar(im5, ax=axes[4])
+axes[3].quiver(x, z, np.zeros_like(vz), vz, color="white", scale=20)
+
+plt.suptitle("Distribution et vitesse du fluide en (x, z)", fontsize=16)
 plt.tight_layout()
 plt.show()

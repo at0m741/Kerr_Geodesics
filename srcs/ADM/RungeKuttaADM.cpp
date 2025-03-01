@@ -100,5 +100,6 @@ void Grid::evolve(double dtinitital, int nSteps) {
         export_gauge_slice(NY / 2);
 		gridTensor.export_christoffel_slice(NY / 2);
 		export_fluid_slice(NY / 2);
+		export_energy_momentum_tensor_slice(NY / 2);
     }
 }

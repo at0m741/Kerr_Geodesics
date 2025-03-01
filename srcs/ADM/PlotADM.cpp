@@ -178,3 +178,31 @@ void Grid::export_fluid_slice(int j_slice) {
     std::cout << "✅ Export du fluide terminé dans fluid_slice.csv" << std::endl;
 }
 
+
+void Grid::export_energy_momentum_tensor_slice(int slice_y) {
+    std::ofstream file("T_energy_momentum.csv");
+    if (!file.is_open()) {
+        std::cerr << "Erreur lors de l'ouverture du fichier !\n";
+        return;
+    }
+
+    // En-têtes du CSV
+    file << "x,z,T_00,T_01,T_02,T_10,T_11,T_12,T_20,T_21,T_22\n";
+
+    for (int i = 0; i < NX; i++) {
+        for (int k = 0; k < NZ; k++) {
+            Cell2D &cell = globalGrid[i][slice_y][k];
+
+            file << i << "," << k;
+            for (int a = 0; a < 3; a++) {
+                for (int b = 0; b < 3; b++) {
+                    file << "," << cell.T[a][b];
+                }
+            }
+            file << "\n";
+        }
+    }
+
+    file.close();
+    std::cout << "Exportation de T_{ab} terminée : T_energy_momentum.csv\n";
+}
