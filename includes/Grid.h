@@ -3,9 +3,9 @@
 #include <Geodesics.h>
 
 #define DIM3 3
-#define DX 1e-1
-#define DY 1e-1
-#define DZ 1e-1
+#define DX 0.1
+#define DY 0.1
+#define DZ 0.1
 #define NX 128
 #define NY 128
 #define NZ 128
@@ -58,12 +58,16 @@ class Grid {
 			double K0[3][3];
 			double alpha0;
 			double beta0[3];
-			double gammaStage[4][3][3];  
-			double KStage[4][3][3];           
+			double gammaStage[4][3][3]; 
+			double Christoffel[3][3][3];
+			double KStage[4][3][3];   
+			double vx, vy, vz;
+			double p;
 		};
 
-
-
+		void export_fluid_slice(int j_slice);
+		void update_fluid_velocity(int i, int j, int k, double dt);
+		void compute_fluid_derivatives(int i, int j, int k);
 		std::vector<std::vector<std::vector<double>>> hamiltonianGrid;
 		void initialize_grid();
 		void export_hamiltonian_csv(const std::string& filename); 
@@ -185,3 +189,4 @@ double second_partial_alpha(int i, int j, int k, int a, int b);
 bool invert_3x3(const double m[3][3], double inv[3][3]);
 void export_gamma_slice(int j);
 void export_gauge_slice(int j);
+void apply_boundary_conditions();

@@ -3,12 +3,10 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import math
 
-# Lecture du CSV
 data = pd.read_csv("christoffel_slice.csv")
 
 all_cols = data.columns.tolist()
 columns_to_plot = all_cols[2:]  
-
 vals = []
 for col in columns_to_plot:
     vals.append(data[col].values)
@@ -16,7 +14,7 @@ all_vals = np.concatenate(vals)
 vmin, vmax = all_vals.min(), all_vals.max()
 
 mean_val = all_vals.mean()
-delta = 0.2  # +/- 1%
+delta = 0.1  # +/- 1%
 vmin = mean_val - delta
 vmax = mean_val + delta
 nplots = len(columns_to_plot)
@@ -35,6 +33,16 @@ for idx, col in enumerate(columns_to_plot):
     im = ax.pcolormesh(X, Z, pivoted.values,
                        shading='auto', cmap='RdBu',
                        vmin=vmin, vmax=vmax)
+    M = 1.0 
+    r_h = M * (1 + M / 4)**2
+
+    theta = np.linspace(0, 2*np.pi, 300)
+    horizon_x = r_h * np.cos(theta)
+    horizon_z = r_h * np.sin(theta)
+
+    ax.plot(horizon_x, horizon_z, 'k--', linewidth=2, label="Horizon des événements")
+    ax.legend()
+
     ax.set_title(col)
     ax.set_xlabel("x")
     ax.set_ylabel("z")

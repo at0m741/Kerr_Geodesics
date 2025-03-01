@@ -147,3 +147,34 @@ void Grid::export_hamiltonian_csv(const std::string& filename) {
     file.close();
     std::cout << "Hamiltonian exporté dans " << filename << std::endl;
 }
+
+void Grid::export_fluid_slice(int j_slice) {
+	double L = 2.0; 
+    double x_min = -L, x_max = L;
+    double y_min = -L, y_max = L;
+    double z_min = -L, z_max = L;
+    std::ofstream file("fluid_slice.csv");
+    if (!file.is_open()) {
+        std::cerr << "Erreur : impossible d'ouvrir le fichier fluid_slice.csv" << std::endl;
+        return;
+    }
+
+    file << "x,z,rho,p,vx,vy,vz\n";
+
+    for (int i = 0; i < NX; i++) {
+        for (int k = 0; k < NZ; k++) {
+            double x = x_min + i * DX;
+            double z = z_min + k * DZ;
+
+            Cell2D &cell = globalGrid[i][j_slice][k];
+            file << x << "," << z << ","
+                 << cell.rho << "," << cell.p << ","
+                 << cell.vx << "," << cell.vy << "," << cell.vz
+                 << "\n";
+        }
+    }
+
+    file.close();
+    std::cout << "✅ Export du fluide terminé dans fluid_slice.csv" << std::endl;
+}
+

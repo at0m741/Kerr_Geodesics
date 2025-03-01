@@ -99,11 +99,11 @@ void Grid::initializeData() {
             for(int k=0; k<NZ; k++){
                 double z = z_min + k*dz;
 
-                double rho = sqrt(x*x + y*y + z*z);
+                double r = sqrt(x*x + y*y + z*z);
                 Cell2D &cell = globalGrid[i][j][k];
                 
-				double Phi = 1.0 + 0.5 * M / rho;
-				cell.alpha = (1.0 - M/(2*rho)) / (1.0 + M/(2*rho));
+				double Phi = 1.0 + 0.5 * M / r;
+				cell.alpha = (1.0 - M/(2*r)) / (1.0 + M/(2*r));
 				for(int a=0; a<3; a++){
 					for(int b=0; b<3; b++){
 						cell.gamma[a][b] = (a == b) ? pow(Phi, 4) : 0.0;
@@ -115,7 +115,11 @@ void Grid::initializeData() {
                         cell.K[a][b] = 0.0;
                     }
                 }
-				
+				cell.rho = exp(-r*r / 2.0); // Exemple de distribution gaussienne
+				cell.p = 0.01 * cell.rho;   // Pression suivant une EoS polytropique simple
+				cell.vx = 0.0;
+				cell.vy = 0.0;
+				cell.vz = 0.0;
 				if (j == NY / 2 && k == NZ / 2) { 
 					printf("gamma[0][0] at (i=%d, j=%d, k=%d) = %e\n", i, j, k, globalGrid[i][j][k].gamma[0][0]);
 				}
@@ -149,7 +153,7 @@ void Grid::initializeData() {
 	int k_center = NZ / 2;
 	Cell2D &cell_far = globalGrid[i_far][j_center][k_center];
 
-	std::cout << "Test 1 (rho -> ∞):\n";
+	std::cout << "Test 1 (r -> ∞):\n";
 	std::cout << "Alpha = " << cell_far.alpha << "\n";
 	std::cout << "Gamma_xx = " << cell_far.gamma[0][0] << "\n";
 
@@ -157,7 +161,7 @@ void Grid::initializeData() {
 	int i_horizon = static_cast<int>((rho_horizon - x_min) / dx);
 	Cell2D &cell_horizon = globalGrid[i_horizon][j_center][k_center];
 
-	std::cout << "\nTest 2 (rho = M/2):\n";
+	std::cout << "\nTest 2 (r = M/2):\n";
 	std::cout << "Alpha = " << cell_horizon.alpha << "\n";
 	std::cout << "Position x = " << (x_min + i_horizon*dx) << "\n";
 }
