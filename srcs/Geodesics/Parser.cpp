@@ -50,24 +50,29 @@ void write_vtk_file(const char *filename)
 
 
 void store_geodesic_point_AVX(VEC_TYPE x[4], double lambda) {
-    if (num_points + 16 >= capacity) {
-        capacity = (capacity == 0) ? 1000 : capacity * 2;
-        double (*new_geodesic_points)[5];
-        if (posix_memalign((void **)&new_geodesic_points, ALIGNMENT,
-                           capacity * sizeof(*geodesic_points)) != 0)
-        {
-            fprintf(stderr, "Error: failed to allocate memory for geodesic_points\n");
-            exit(EXIT_FAILURE);
-        }
+    #pragma omp critical
+    {
+        if (num_points + 16 >= capacity) {
+            capacity = (capacity == 0) ? 1000 : capacity * 2;
+            double (*new_geodesic_points)[5];
+            if (posix_memalign((void **)&new_geodesic_points, ALIGNMENT,
+                               capacity * sizeof(*geodesic_points)) != 0)
+            {
+                fprintf(stderr, "Error: failed to allocate memory for geodesic_points\n");
+                exit(EXIT_FAILURE);
+            }
 
-        if (geodesic_points) {
-            memcpy(new_geodesic_points, geodesic_points,
-                   num_points * sizeof(*geodesic_points));
-            free(geodesic_points);
-        }
+            if (geodesic_points) {
+                memcpy(new_geodesic_points, geodesic_points,
+                       num_points * sizeof(*geodesic_points));
+                free(geodesic_points);
+            }
 
-        geodesic_points = new_geodesic_points;
+            geodesic_points = new_geodesic_points;
+        }
     }
+
+    #pragma omp parallel for
     for (int i = 0; i < 4; i++) {
         __attribute__((aligned(32))) double r_vals[4], th_vals[4], ph_vals[4];
 
@@ -93,12 +98,14 @@ void store_geodesic_point_AVX(VEC_TYPE x[4], double lambda) {
             double yy = rr * sin_th[j] * sin_ph[j];
             double zz = rr * cos_th[j];
 
-            geodesic_points[num_points][0] = xx;
-            geodesic_points[num_points][1] = yy;
-            geodesic_points[num_points][2] = zz;
-            geodesic_points[num_points][3] = lambda;
-
-            num_points++;
+            #pragma omp critical
+            {
+                geodesic_points[num_points][0] = xx;
+                geodesic_points[num_points][1] = yy;
+                geodesic_points[num_points][2] = zz;
+                geodesic_points[num_points][3] = lambda;
+                num_points++;
+            }
         }
     }
 }

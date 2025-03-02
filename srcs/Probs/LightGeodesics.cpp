@@ -6,7 +6,7 @@ extern double a;
 int light_geodesics_prob() {
 	Connexion connexion;
 	Metric metric_obj;
-	double r0 = 20.0;
+	double r0 = 100.0;
     std::array<double, NDIM> X = {0.0, r0, M_PI/4.0, 0.0};;
 	metric_obj.calculate_metric(X, metric_obj.gcov, metric_obj.gcon);
 	double g_tt = metric_obj.gcov[0][0];
@@ -17,7 +17,7 @@ int light_geodesics_prob() {
 	double vt = 1.0 / sqrt(fabs(denom));
 	double v[NDIM] = {vt, 0.0, 0.0, 3.5 * Omega * vt};
 	double norm = g_tt * v[0] * v[0] + 2.0 * g_tphi * v[0] * v[3] + g_phiphi * v[3] * v[3];
-	double dt = 0.0910;
+	double dt = 0.00910;
 	double christoffel[NDIM][NDIM][NDIM];
 	connexion.calculate_christoffel(X, DELTA, connexion.Gamma, metric_obj.gcov, metric_obj.gcon, "kerr");
 	__m256d X_avx[NDIM], v_avx[NDIM];

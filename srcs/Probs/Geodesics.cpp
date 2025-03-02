@@ -7,7 +7,7 @@ int Geodesics_prob() {
 	Connexion connexion;
 	Metric metric_obj;
 	double r0 = 20.0;
-    std::array<double, NDIM> X = {0.0, r0, M_PI/3.0, 0.0};;
+    std::array<double, NDIM> X = {0.0, r0, M_PI/3.8, 0.0};;
 	metric_obj.calculate_metric(X, metric_obj.gcov, metric_obj.gcon);
 	double g_tt = metric_obj.gcov[0][0];
 	double g_tphi = metric_obj.gcov[0][3];

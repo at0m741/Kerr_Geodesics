@@ -183,7 +183,7 @@ void Grid::compute_ricci_3D(int i, int j, int k, double Ricci[3][3]) {
                 term1 += partialGamma[m][m][a][b];  
                 term2 += partialGamma[a][m][m][b];  
             }
-
+			#pragma omp simd collapse(2)
             for (int k = 0; k < 3; k++) {
                 for (int l = 0; l < 3; l++) {
                     term3 += Gamma[k][a][b] * Gamma[l][k][l]; // Γ^k_ab Γ^l_kl
@@ -195,6 +195,7 @@ void Grid::compute_ricci_3D(int i, int j, int k, double Ricci[3][3]) {
         }
     }
     Cell2D &cell = globalGrid[i][j][k];
+#pragma omp for simd collapse(2)
 	for (int a = 0; a < 3; a++) {
 		for (int b = 0; b < 3; b++) {
 			cell.T[a][b] = (cell.rho + cell.p) * cell.vx * cell.vy + cell.p * cell.gamma[a][b];

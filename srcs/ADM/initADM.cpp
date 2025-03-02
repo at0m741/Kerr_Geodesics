@@ -1,16 +1,27 @@
 #include <Geodesics.h>
 
 
+
 void Grid::allocateGlobalGrid(){
-	printf("Allocating global grid\n");
+    printf("Allocating global grid\n");
+
     globalGrid.resize(NX);
-    for(int i=0;i<NX;i++){
+    for(int i = 0; i < NX; i++){
         globalGrid[i].resize(NY);
-        for(int j=0;j<NY;j++){
+        for(int j = 0; j < NY; j++){
             globalGrid[i][j].resize(NZ);
         }
     }
+    #pragma omp parallel for collapse(3)
+    for(int i = 0; i < NX; i++){
+        for(int j = 0; j < NY; j++){
+            for(int k = 0; k < NZ; k++){
+                globalGrid[i][j][k] = Cell2D(); 
+            }
+        }
+    }
 }
+
 
 
 void Grid::initializeData_Minkowski()
@@ -94,55 +105,71 @@ double effective_potential(double x, double y, double a) {
 }
 
 void Grid::initializeData() {
-	double L = 1.0; 
+    double L = 1.0; 
     double x_min = -L, x_max = L;
     double y_min = -L, y_max = L;
     double z_min = -L, z_max = L;
-    double dx = (x_max - x_min)/(NX-1);
-    double dy = (y_max - y_min)/(NY-1);
-    double dz = (z_max - z_min)/(NZ-1);
-	Matrix matrix;
-    double epsilon = 1e-6;
+    double dx = (x_max - x_min) / (NX - 1);
+    double dy = (y_max - y_min) / (NY - 1);
+    double dz = (z_max - z_min) / (NZ - 1);
+    Matrix matrix;
 
-    for(int i=0; i<NX; i++){
-        double x = x_min + i*dx;
-        for(int j=0; j<NY; j++){
-            double y = y_min + j*dy;
-            for(int k=0; k<NZ; k++){
-                double z = z_min + k*dz;
+    globalGrid.resize(NX);
+    for (int i = 0; i < NX; i++) {
+        globalGrid[i].resize(NY);
+        for (int j = 0; j < NY; j++) {
+            globalGrid[i][j].resize(NZ);
+        }
+    }
 
-                double r = sqrt(x*x + y*y + z*z);
-                Cell2D &cell = globalGrid[i][j][k];
+    #pragma omp parallel for collapse(3)
+    for (int i = 0; i < NX; i++) {
+        for (int j = 0; j < NY; j++) {
+            for (int k = 0; k < NZ; k++) {
+                double x = x_min + i * dx;
+                double y = y_min + j * dy;
+                double z = z_min + k * dz;
+                double r = sqrt(x * x + y * y + z * z);
+
+                Cell2D cell;
+                double Phi = 1.0 + 0.5 * M / r;
+                cell.alpha = (1.0 - M / (2 * r)) / (1.0 + M / (2 * r));
                 
-				double Phi = 1.0 + 0.5 * M / r;
-				cell.alpha = (1.0 - M/(2*r)) / (1.0 + M/(2*r));
-				for(int a=0; a<3; a++){
-					for(int b=0; b<3; b++){
-						cell.gamma[a][b] = (a == b) ? pow(Phi, 4) : 0.0;
-					}
-				}
-				matrix.inverse_3x3(cell.gamma, cell.gamma_inv);
-                for(int a=0; a<3; a++){
-                    for(int b=0; b<3; b++){
+                for (int a = 0; a < 3; a++) {
+                    for (int b = 0; b < 3; b++) {
+                        cell.gamma[a][b] = (a == b) ? pow(Phi, 4) : 0.0;
+                    }
+                }
+
+                matrix.inverse_3x3(cell.gamma, cell.gamma_inv);
+                
+                for (int a = 0; a < 3; a++) {
+                    for (int b = 0; b < 3; b++) {
                         cell.K[a][b] = 0.0;
                     }
                 }
-				cell.rho = exp(-r*r / 2.0); 
-				cell.p = 0.3 * cell.rho + 0.5 * cell.rho * cell.rho; 
-				double vr = 1.8; 
-				cell.vx += vr * x / r;
-				cell.vy += vr * y / r;
-				cell.vz = 0.0; 
-				if (r < 0.1) { 
-					cell.vx = 0.0;
-					cell.vy = 0.0;
-					cell.vz = 0.0;
-					cell.rho = 0.0;
-					cell.p = 0.0;
-				}
-				if (j == NY / 2 && k == NZ / 2) { 
-					printf("gamma[0][0] at (i=%d, j=%d, k=%d) = %e\n", i, j, k, globalGrid[i][j][k].gamma[0][0]);
-				}
+
+                cell.rho = exp(-r * r / 2.0);
+                cell.p = 0.3 * cell.rho + 0.5 * cell.rho * cell.rho;
+
+                double vr = 0.4;
+                cell.vx = vr * x / r;
+                cell.vy = vr * y / r;
+                cell.vz = 0.0;
+
+                if (r < 0.1) {
+                    cell.vx = 0.0;
+                    cell.vy = 0.0;
+                    cell.vz = 0.0;
+                    cell.rho = 0.0;
+                    cell.p = 0.0;
+                }
+
+                globalGrid[i][j][k] = cell;
+
+                if (j == NY / 2 && k == NZ / 2) { 
+                    printf("gamma[0][0] at (i=%d, j=%d, k=%d) = %e\n", i, j, k, globalGrid[i][j][k].gamma[0][0]);
+                }
             }
         }
     }

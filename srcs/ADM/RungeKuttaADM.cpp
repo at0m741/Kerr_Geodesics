@@ -7,6 +7,8 @@ void Grid::evolve(double dtinitital, int nSteps) {
 	GridTensor gridTensor;
 	double CFL = 0.5;
 	double dt = dtinitital;
+
+
     for (int step = 0; step < nSteps; step++) {
 		dt = computeCFL_dt(CFL);
         apply_boundary_conditions();
@@ -96,7 +98,6 @@ void Grid::evolve(double dtinitital, int nSteps) {
             }
         }
         
-        export_gamma_slice(NY / 2);
         export_gauge_slice(NY / 2);
 		gridTensor.export_christoffel_slice(NY / 2);
 		export_fluid_slice(NY / 2);

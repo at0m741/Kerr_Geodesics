@@ -14,7 +14,6 @@ void Grid::compute_time_derivatives(int i, int j, int k)
     for(int a=0; a<3; a++){
         for(int b=0; b<3; b++){
             gammaLocal[a][b] = cell.gamma[a][b];
-			/* printf("gammaLocal[%d][%d] = %f\n", a, b, gammaLocal[a][b]); */
             KLocal[a][b]     = cell.K[a][b];
         }
     }
@@ -106,6 +105,7 @@ void Grid::compute_time_derivatives(int i, int j, int k)
             double termB = 0.0; 
             {
                 double KContra[3][3];
+				#pragma omp simd collapse(2)
 				for(int m=0; m<3; m++){
                     for(int n=0; n<3; n++){
                         double sum_ = 0.0;
