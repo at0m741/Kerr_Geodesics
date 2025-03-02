@@ -104,8 +104,113 @@ double effective_potential(double x, double y, double a) {
     return 1.0 - sqrt(1.0 - 2.0 / r + a*a / (r*r));
 }
 
+
+void Grid::initializeKerrData() {
+    double a = 0.5;   
+    
+    double L = 4.0;
+    double x_min = -L, x_max = L;
+    double y_min = -L, y_max = L;
+    double z_min = -L, z_max = L;
+    double dx = (x_max - x_min) / (NX - 1);
+    double dy = (y_max - y_min) / (NY - 1);
+    double dz = (z_max - z_min) / (NZ - 1);
+    Matrix matrix;
+
+    globalGrid.resize(NX);
+    for (int i = 0; i < NX; i++) {
+        globalGrid[i].resize(NY);
+        for (int j = 0; j < NY; j++) {
+            globalGrid[i][j].resize(NZ);
+        }
+    }
+
+#pragma omp parallel for collapse(3)
+    for (int i = 0; i < NX; i++) {
+        for (int j = 0; j < NY; j++) {
+            for (int k = 0; k < NZ; k++) {
+                double x = x_min + i * dx;
+                double y = y_min + j * dy;
+                double z = z_min + k * dz;
+                double R2 = x * x + y * y + z * z;
+
+                double temp = R2 - a * a;
+                double sqrt_arg = temp * temp + 4 * a * a * z * z;
+                double r = sqrt( 0.5 * (R2 - a * a + sqrt(sqrt_arg)) );
+                if (r < 1e-6) r = 1e-6;  // éviter la division par zéro
+
+                // Calcul de H
+                double H = M * r * r * r / (r * r * r * r + a * a * z * z);
+
+                double denom = r * r + a * a;
+                double lx = (r * x + a * y) / denom;
+                double ly = (r * y - a * x) / denom;
+                double lz = z / r;
+
+                Cell2D cell;
+                cell.gamma[0][0] = 1.0; cell.gamma[0][1] = 0.0; cell.gamma[0][2] = 0.0;
+                cell.gamma[1][0] = 0.0; cell.gamma[1][1] = 1.0; cell.gamma[1][2] = 0.0;
+                cell.gamma[2][0] = 0.0; cell.gamma[2][1] = 0.0; cell.gamma[2][2] = 1.0;
+                cell.gamma[0][0] += 2 * H * lx * lx;
+                cell.gamma[0][1] += 2 * H * lx * ly;
+                cell.gamma[0][2] += 2 * H * lx * lz;
+                cell.gamma[1][0] += 2 * H * ly * lx;
+                cell.gamma[1][1] += 2 * H * ly * ly;
+                cell.gamma[1][2] += 2 * H * ly * lz;
+                cell.gamma[2][0] += 2 * H * lz * lx;
+                cell.gamma[2][1] += 2 * H * lz * ly;
+                cell.gamma[2][2] += 2 * H * lz * lz;
+
+                cell.alpha = 1.0 / sqrt(1.0 + 2 * H);
+
+                matrix.inverse_3x3(cell.gamma, cell.gamma_inv);
+
+                for (int a_idx = 0; a_idx < 3; a_idx++) {
+                    for (int b_idx = 0; b_idx < 3; b_idx++) {
+                        cell.K[a_idx][b_idx] = 0.0;
+                    }
+                }
+
+                double r_cart = sqrt(x * x + y * y + z * z);
+                cell.rho = exp(-r_cart * r_cart / 2.0);
+                cell.p = 0.3 * cell.rho + 0.5 * cell.rho * cell.rho;
+
+                double vr = 0.4;  
+                if (r_cart > 1e-6) {
+                    cell.vx = -vr * y / r_cart;
+                    cell.vy = vr * x / r_cart;
+                } else {
+                    cell.vx = cell.vy = 0.0;
+                }
+                cell.vz = 0.0;
+
+                double r_horizon = M + sqrt(M * M - a * a);
+                if (r < r_horizon / 2) {
+                    cell.vx = cell.vy = cell.vz = 0.0;
+                    cell.rho = 0.0;
+                    cell.p = 0.0;
+                }
+
+                globalGrid[i][j][k] = cell;
+
+                if (j == NY / 2 && k == NZ / 2) {
+                    printf("gamma[0][0] à (i=%d, j=%d, k=%d) = %e\n", i, j, k, cell.gamma[0][0]);
+                }
+            }
+        }
+    }
+
+    double test_radii[] = {0.5, 1.0, 2.0, 5.0, 10.0};
+    for (double test_r : test_radii) {
+        double H_test = M / test_r;
+        double alpha_test = 1.0 / sqrt(1.0 + 2 * H_test);
+        printf("Plan équatorial r = %f : H = %e, alpha = %e\n", test_r, H_test, alpha_test);
+    }
+}
+
+
 void Grid::initializeData() {
-    double L = 1.0; 
+    double L = 4.0; 
     double x_min = -L, x_max = L;
     double y_min = -L, y_max = L;
     double z_min = -L, z_max = L;
@@ -157,7 +262,7 @@ void Grid::initializeData() {
                 cell.vy = vr * y / r;
                 cell.vz = 0.0;
 
-                if (r < 0.1) {
+                if (r < 2 * M) {
                     cell.vx = 0.0;
                     cell.vy = 0.0;
                     cell.vz = 0.0;

@@ -36,7 +36,7 @@ for idx, col in enumerate(T_labels):
         extent=[x.min(), x.max(), z.min(), z.max()],
         origin="lower",
         aspect="auto",
-        cmap="coolwarm",
+        cmap="hot",
         vmin=vmin,    
         vmax=vmax
     )

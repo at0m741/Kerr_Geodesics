@@ -28,17 +28,17 @@ axes[1].set_title("Pression du fluide (p)")
 fig.colorbar(im2, ax=axes[1])
 
 vx_grid = vx.reshape(NX, NZ)
-im3 = axes[2].imshow(vx_grid, extent=[x.min(), x.max(), z.min(), z.max()], origin="lower", cmap="coolwarm")
+im3 = axes[2].imshow(vx_grid, extent=[x.min(), x.max(), z.min(), z.max()], origin="lower", cmap="hot")
 axes[2].set_title("Composante $v_x$ du fluide")
 fig.colorbar(im3, ax=axes[2])
 
 vy_grid = vy.reshape(NX, NZ)
-im4 = axes[3].imshow(vy_grid, extent=[x.min(), x.max(), z.min(), z.max()], origin="lower", cmap="coolwarm")
+im4 = axes[3].imshow(vy_grid, extent=[x.min(), x.max(), z.min(), z.max()], origin="lower", cmap="hot")
 axes[3].set_title("Composante $v_y$ du fluide")
 fig.colorbar(im4, ax=axes[3])
 
 vz_grid = vz.reshape(NX, NZ)
-im5 = axes[4].imshow(vz_grid, extent=[x.min(), x.max(), z.min(), z.max()], origin="lower", cmap="coolwarm")
+im5 = axes[4].imshow(vz_grid, extent=[x.min(), x.max(), z.min(), z.max()], origin="lower", cmap="hot")
 axes[4].set_title("Composante $v_z$ du fluide")
 fig.colorbar(im5, ax=axes[4])
 
