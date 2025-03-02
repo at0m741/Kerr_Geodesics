@@ -106,9 +106,9 @@ double effective_potential(double x, double y, double a) {
 
 
 void Grid::initializeKerrData() {
-    double a = 0.8;   
+    double a = 0.5;   
     
-    double L = 6.0;
+    double L = 1.0;
     double x_min = -L, x_max = L;
     double y_min = -L, y_max = L;
     double z_min = -L, z_max = L;
@@ -191,9 +191,7 @@ void Grid::initializeKerrData() {
                 }
 
                 globalGrid[i][j][k] = cell;
-                cell.beta[0] = 2 * H * lx;
-                cell.beta[1] = 2 * H * ly;
-                cell.beta[2] = 2 * H * lz;
+
                 if (j == NY / 2 && k == NZ / 2) {
                     printf("gamma[0][0] à (i=%d, j=%d, k=%d) = %e\n", i, j, k, cell.gamma[0][0]);
                 }
