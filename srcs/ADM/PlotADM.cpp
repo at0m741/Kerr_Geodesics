@@ -104,29 +104,49 @@ void export_gauge_slice(int j) {
 }
 
 
+
 void GridTensor::export_christoffel_slice(int j) {
-	GridTensor grid;
     std::ofstream file("christoffel_slice.csv");
-    file << "x,z,Gamma000,Gamma001,Gamma002\n";
+	double L = 6.0;
+    double x_min = -L, x_max = L;
+    double y_min = -L, y_max = L;
+    double z_min = -L, z_max = L;
+    double dx = (x_max - x_min) / (NX - 1);
+    double dy = (y_max - y_min) / (NY - 1);
+    double dz = (z_max - z_min) / (NZ - 1);
+    file << "x,z";
+    for (int i = 0; i < 3; i++) {
+        for (int k = 0; k < 3; k++) {
+            for (int l = 0; l < 3; l++) {
+                file << ",Gamma" << i << k << l;
+            }
+        }
+    }
+    file << "\n";
     
-    for(int i = 1; i < NX-1; i++) {
-        for(int k = 1; k < NZ-1; k++) {
-            double x = -256.0 + i * (512.0 / (NX-1));
-            double z = -256.0 + k * (512.0 / (NZ-1));
-
+    for (int i_idx = 1; i_idx < NX-1; i_idx++) {
+        for (int k_idx = 1; k_idx < NZ-1; k_idx++) {
+            double x = x_min + i_idx * dx;
+            double z = z_min + k_idx * dz;            
             double christof[3][3][3];
-            grid.compute_christoffel_3D(i, j, k, christof);
-
-            file << x << "," << z << ","
-                 << christof[0][0][0] << ","
-                 << christof[0][0][1] << ","
-                 << christof[0][0][2] << "\n";
+            compute_christoffel_3D(i_idx, j, k_idx, christof);
+            
+            file << x << "," << z;
+            for (int i = 0; i < 3; i++) {
+                for (int k = 0; k < 3; k++) {
+                    for (int l = 0; l < 3; l++) {
+                        file << "," << christof[i][k][l];
+                    }
+                }
+            }
+            file << "\n";
         }
     }
     
     file.close();
     std::cout << "Christoffel slice saved to christoffel_slice.csv\n";
 }
+
 
 
 void Grid::export_hamiltonian_csv(const std::string& filename) {

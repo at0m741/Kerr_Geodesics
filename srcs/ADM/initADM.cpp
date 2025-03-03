@@ -106,9 +106,9 @@ double effective_potential(double x, double y, double a) {
 
 
 void Grid::initializeKerrData() {
-    double a = 0.8;   
-    
-    double L = 6.0;
+    double a = 0.0;   
+	double M2 = 1.0; 
+    double L = 2.0;
     double x_min = -L, x_max = L;
     double y_min = -L, y_max = L;
     double z_min = -L, z_max = L;
@@ -134,6 +134,7 @@ void Grid::initializeKerrData() {
                 double z = z_min + k * dz;
                 double R2 = x * x + y * y + z * z;
 
+				Cell2D &cell = globalGrid[i][j][k];
                 double temp = R2 - a * a;
                 double sqrt_arg = temp * temp + 4 * a * a * z * z;
                 double r = sqrt( 0.5 * (R2 - a * a + sqrt(sqrt_arg)) );
@@ -146,7 +147,6 @@ void Grid::initializeKerrData() {
                 double ly = (r * y - a * x) / denom;
                 double lz = z / r;
 
-                Cell2D cell;
                 cell.gamma[0][0] = 1.0; cell.gamma[0][1] = 0.0; cell.gamma[0][2] = 0.0;
                 cell.gamma[1][0] = 0.0; cell.gamma[1][1] = 1.0; cell.gamma[1][2] = 0.0;
                 cell.gamma[2][0] = 0.0; cell.gamma[2][1] = 0.0; cell.gamma[2][2] = 1.0;
@@ -174,10 +174,11 @@ void Grid::initializeKerrData() {
                 cell.rho = exp(-r_cart * r_cart / 2.0);
                 cell.p = 0.3 * cell.rho + 0.5 * cell.rho * cell.rho;
 
-                double vr = 0.4;  
+                double vr = 2.4;  
                 if (r_cart > 1e-6) {
                     cell.vx = -vr * y / r_cart;
                     cell.vy = vr * x / r_cart;
+					cell.vz = vr * z / r_cart * (1.0 - 1.0 / r_cart);
                 } else {
                     cell.vx = cell.vy = 0.0;
                 }
@@ -190,7 +191,6 @@ void Grid::initializeKerrData() {
                     cell.p = 0.0;
                 }
 
-                globalGrid[i][j][k] = cell;
                 cell.beta[0] = 2 * H * lx;
                 cell.beta[1] = 2 * H * ly;
                 cell.beta[2] = 2 * H * lz;
@@ -200,43 +200,33 @@ void Grid::initializeKerrData() {
             }
 		}
 	}
-	if (a == 0.0) {
-		double test_radii[] = {0.5, 1.0, 2.0, 5.0, 10.0, 20.0, 128.0};
-		for (double test_r : test_radii) {
-			double H_test = M * test_r * test_r * test_r / (test_r * test_r * test_r * test_r);
-			double alpha_test = 1.0 / sqrt(1.0 + 2 * H_test);
-			printf("Plan équatorial r = %f : H = %e, alpha = %e\n", test_r, H_test, alpha_test);
-		}
-	}
-	else
-	{
-		for (int i = 1; i < NX - 1; i++) {
-			for (int j = 1; j < NY - 1; j++) {
-				for (int k = 1; k < NZ - 1; k++) {
-					Cell2D &cell = globalGrid[i][j][k];
 
-					double dBeta_x_dx = (globalGrid[i+1][j][k].beta[0] - globalGrid[i-1][j][k].beta[0]) / (2 * dx);
-					double dBeta_x_dy = (globalGrid[i][j+1][k].beta[0] - globalGrid[i][j-1][k].beta[0]) / (2 * dy);
-					double dBeta_x_dz = (globalGrid[i][j][k+1].beta[0] - globalGrid[i][j][k-1].beta[0]) / (2 * dz);
+	for (int i = 1; i < NX - 1; i++) {
+		for (int j = 1; j < NY - 1; j++) {
+			for (int k = 1; k < NZ - 1; k++) {
 
-					double dBeta_y_dx = (globalGrid[i+1][j][k].beta[1] - globalGrid[i-1][j][k].beta[1]) / (2 * dx);
-					double dBeta_y_dy = (globalGrid[i][j+1][k].beta[1] - globalGrid[i][j-1][k].beta[1]) / (2 * dy);
-					double dBeta_y_dz = (globalGrid[i][j][k+1].beta[1] - globalGrid[i][j][k-1].beta[1]) / (2 * dz);
+				Cell2D &cell = globalGrid[i][j][k];
+				double dBeta_x_dx = (globalGrid[i+1][j][k].beta[0] - globalGrid[i-1][j][k].beta[0]) / (2 * dx);
+				double dBeta_x_dy = (globalGrid[i][j+1][k].beta[0] - globalGrid[i][j-1][k].beta[0]) / (2 * dy);
+				double dBeta_x_dz = (globalGrid[i][j][k+1].beta[0] - globalGrid[i][j][k-1].beta[0]) / (2 * dz);
 
-					double dBeta_z_dx = (globalGrid[i+1][j][k].beta[2] - globalGrid[i-1][j][k].beta[2]) / (2 * dx);
-					double dBeta_z_dy = (globalGrid[i][j+1][k].beta[2] - globalGrid[i][j-1][k].beta[2]) / (2 * dy);
-					double dBeta_z_dz = (globalGrid[i][j][k+1].beta[2] - globalGrid[i][j][k-1].beta[2]) / (2 * dz);
+				double dBeta_y_dx = (globalGrid[i+1][j][k].beta[1] - globalGrid[i-1][j][k].beta[1]) / (2 * dx);
+				double dBeta_y_dy = (globalGrid[i][j+1][k].beta[1] - globalGrid[i][j-1][k].beta[1]) / (2 * dy);
+				double dBeta_y_dz = (globalGrid[i][j][k+1].beta[1] - globalGrid[i][j][k-1].beta[1]) / (2 * dz);
 
-					cell.K[0][0] = 1.0/(2*cell.alpha) * (dBeta_x_dx + dBeta_x_dx);
-					cell.K[0][1] = 1.0/(2*cell.alpha) * (dBeta_x_dy + dBeta_y_dx);
-					cell.K[0][2] = 1.0/(2*cell.alpha) * (dBeta_x_dz + dBeta_z_dx);
-					cell.K[1][0] = cell.K[0][1];
-					cell.K[1][1] = 1.0/(2*cell.alpha) * (dBeta_y_dy + dBeta_y_dy);
-					cell.K[1][2] = 1.0/(2*cell.alpha) * (dBeta_y_dz + dBeta_z_dy);
-					cell.K[2][0] = cell.K[0][2];
-					cell.K[2][1] = cell.K[1][2];
-					cell.K[2][2] = 1.0/(2*cell.alpha) * (dBeta_z_dz + dBeta_z_dz);
-				}
+				double dBeta_z_dx = (globalGrid[i+1][j][k].beta[2] - globalGrid[i-1][j][k].beta[2]) / (2 * dx);
+				double dBeta_z_dy = (globalGrid[i][j+1][k].beta[2] - globalGrid[i][j-1][k].beta[2]) / (2 * dy);
+				double dBeta_z_dz = (globalGrid[i][j][k+1].beta[2] - globalGrid[i][j][k-1].beta[2]) / (2 * dz);
+
+				cell.K[0][0] = 1.0/(2*cell.alpha) * (dBeta_x_dx + dBeta_x_dx);
+				cell.K[0][1] = 1.0/(2*cell.alpha) * (dBeta_x_dy + dBeta_y_dx);
+				cell.K[0][2] = 1.0/(2*cell.alpha) * (dBeta_x_dz + dBeta_z_dx);
+				cell.K[1][0] = cell.K[0][1];
+				cell.K[1][1] = 1.0/(2*cell.alpha) * (dBeta_y_dy + dBeta_y_dy);
+				cell.K[1][2] = 1.0/(2*cell.alpha) * (dBeta_y_dz + dBeta_z_dy);
+				cell.K[2][0] = cell.K[0][2];
+				cell.K[2][1] = cell.K[1][2];
+				cell.K[2][2] = 1.0/(2*cell.alpha) * (dBeta_z_dz + dBeta_z_dz);
 			}
 		}
 	}
@@ -305,10 +295,10 @@ void Grid::initializeData() {
                 cell.rho = exp(-r * r / 2.0);
                 cell.p = 0.3 * cell.rho + 0.5 * cell.rho * cell.rho;
 
-                double vr = 0.4;
+                double vr = 2.2;
                 cell.vx = vr * x / r;
                 cell.vy = vr * y / r;
-                cell.vz = 0.0;
+                cell.vz = vr * z / r;
 
                 if (r < 2 * M) {
                     cell.vx = 0.0;

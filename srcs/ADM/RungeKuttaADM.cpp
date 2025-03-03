@@ -7,7 +7,7 @@ void Grid::evolve(double dtinitital, int nSteps) {
 	GridTensor gridTensor;
 	double CFL = 0.5;
 	double dt = dtinitital;
-
+	double hamiltonian, momentum[3];
 
     for (int step = 0; step < nSteps; step++) {
 		dt = computeCFL_dt(CFL);
@@ -28,6 +28,7 @@ void Grid::evolve(double dtinitital, int nSteps) {
                     double d_alpha_dt, d_beta_dt[3];
                     compute_gauge_derivatives(i, j, k, d_alpha_dt, d_beta_dt);
 					update_fluid_velocity(i, j, k, dt);
+					compute_constraints(i, j, k, hamiltonian, momentum);
                     storeStage(globalGrid[i][j][k], 0, d_alpha_dt, d_beta_dt);
                 }
             }
@@ -66,6 +67,7 @@ void Grid::evolve(double dtinitital, int nSteps) {
                     double d_alpha_dt, d_beta_dt[3];
                     compute_gauge_derivatives(i, j, k, d_alpha_dt, d_beta_dt);
 					update_fluid_velocity(i, j, k, dt);
+					compute_constraints(i, j, k, hamiltonian, momentum);
 					storeStage(globalGrid[i][j][k], 2, d_alpha_dt, d_beta_dt);
                 }
             }
@@ -85,6 +87,7 @@ void Grid::evolve(double dtinitital, int nSteps) {
                     double d_alpha_dt, d_beta_dt[3];
                     compute_gauge_derivatives(i, j, k, d_alpha_dt, d_beta_dt);
 					update_fluid_velocity(i, j, k, dt);
+					compute_constraints(i, j, k, hamiltonian, momentum);
                     storeStage(globalGrid[i][j][k], 3, d_alpha_dt, d_beta_dt);
                 }
             }
@@ -97,10 +100,15 @@ void Grid::evolve(double dtinitital, int nSteps) {
                 }
             }
         }
-        
-        export_gauge_slice(NY / 2);
-		gridTensor.export_christoffel_slice(NY / 2);
-		export_fluid_slice(NY / 2);
-		export_energy_momentum_tensor_slice(NY / 2);
+		if (step == nSteps- 1)
+		{
+			printf("Exporting slices\n");
+			export_K_slice(NY / 2);
+			export_gamma_slice(NY / 2); 
+			export_gauge_slice(NY / 2);
+			gridTensor.export_christoffel_slice(NY / 2);
+			export_fluid_slice(NY / 2);
+			export_energy_momentum_tensor_slice(NY / 2);
+		}
     }
 }
