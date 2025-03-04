@@ -1,28 +1,29 @@
 #include <Geodesics.h>
 
-void apply_boundary_conditions()
-{
-    for(int j=0; j<NY; j++){
-        for(int k=0; k<NZ; k++){
-            globalGrid[0][j][k] = globalGrid[1][j][k];        
-            globalGrid[NX-1][j][k] = globalGrid[NX-2][j][k]; 
+
+void apply_boundary_conditions(Grid &grid_obj) {
+    for (int j = 0; j < NY; j++) {
+        for (int k = 0; k < NZ; k++) {
+            grid_obj.getCell(0, j, k) = grid_obj.getCell(1, j, k);
+            grid_obj.getCell(NX - 1, j, k) = grid_obj.getCell(NX - 2, j, k);
         }
     }
 
-    for(int i=0; i<NX; i++){
-        for(int k=0; k<NZ; k++){
-            globalGrid[i][0][k] = globalGrid[i][1][k];        
-            globalGrid[i][NY-1][k] = globalGrid[i][NY-2][k]; 
+    for (int i = 0; i < NX; i++) {
+        for (int k = 0; k < NZ; k++) {
+            grid_obj.getCell(i, 0, k) = grid_obj.getCell(i, 1, k);
+            grid_obj.getCell(i, NY - 1, k) = grid_obj.getCell(i, NY - 2, k);
         }
     }
 
-    for(int i=0; i<NX; i++){
-        for(int j=0; j<NY; j++){
-            globalGrid[i][j][0] = globalGrid[i][j][1];
-            globalGrid[i][j][NZ-1] = globalGrid[i][j][NZ-2];
+    for (int i = 0; i < NX; i++) {
+        for (int j = 0; j < NY; j++) {
+            grid_obj.getCell(i, j, 0) = grid_obj.getCell(i, j, 1);
+            grid_obj.getCell(i, j, NZ - 1) = grid_obj.getCell(i, j, NZ - 2);
         }
     }
 }
+
 
 void Grid::copyInitialState(Cell2D &cell) {
     for (int a = 0; a < 3; a++) {

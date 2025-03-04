@@ -41,16 +41,16 @@ void Grid::compute_gauge_derivatives(int i, int j, int k, double &d_alpha_dt, do
     }
 }
 
-
+std::vector<std::vector<std::vector<double>>> hamiltonianGrid;
 void Grid::initialize_grid() {
     globalGrid.resize(NX, std::vector<std::vector<Cell2D>>(NY, std::vector<Cell2D>(NZ)));
     hamiltonianGrid.resize(NX, std::vector<std::vector<double>>(NY, std::vector<double>(NZ, 0.0)));
 }
 
 
-void Grid::compute_constraints(int i, int j, int k, double &hamiltonian, double momentum[3]) {
+void Grid::compute_constraints(Grid &grid_obj, int i, int j, int k, double &hamiltonian, double momentum[3]) {
     double Ricci[3][3];
-    compute_ricci_3D(i, j, k, Ricci);
+    compute_ricci_3D(grid_obj, i, j, k, Ricci);
     
     double gammaLocal[3][3], gammaInv[3][3];
     Cell2D &cell = globalGrid[i][j][k];

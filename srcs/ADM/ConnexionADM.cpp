@@ -3,7 +3,9 @@
 
 
 void GridTensor::compute_dt_tildeGamma(int i, int j, int k, double dt_tildeGamma[3]) {
-    Grid::Cell2D &cell = globalGrid[i][j][k];
+	Grid grid_obj;
+	Grid::Cell2D &cell = grid_obj.getCell(i, j, k);
+    
     double gammaInv[3][3], KLocal[3][3], Atilde[3][3], dBeta[3][3];
     double alpha = cell.alpha;
     double beta[3] = { cell.beta[0], cell.beta[1], cell.beta[2] };
@@ -23,9 +25,11 @@ void GridTensor::compute_dt_tildeGamma(int i, int j, int k, double dt_tildeGamma
     }
 
     double Ktrace = 0.0;
-    for (int a = 0; a < 3; a++)
-        for (int b = 0; b < 3; b++)
+    for (int a = 0; a < 3; a++) {
+        for (int b = 0; b < 3; b++) {
             Ktrace += gammaInv[a][b] * KLocal[a][b];
+        }
+    }
 
     for (int a = 0; a < 3; a++) {
         for (int b = 0; b < 3; b++) {
@@ -35,7 +39,7 @@ void GridTensor::compute_dt_tildeGamma(int i, int j, int k, double dt_tildeGamma
 
     for (int m = 0; m < 3; m++) {
         for (int n = 0; n < 3; n++) {
-            dBeta[m][n] = (globalGrid[iP][jP][kP].beta[n] - globalGrid[iM][jM][kM].beta[n]) / (2.0 * DX);
+            dBeta[m][n] = (grid_obj.getCell(iP, jP, kP).beta[n] - grid_obj.getCell(iM, jM, kM).beta[n]) / (2.0 * DX);
         }
     }
 
@@ -45,8 +49,8 @@ void GridTensor::compute_dt_tildeGamma(int i, int j, int k, double dt_tildeGamma
         double beta_term = 0.0;
 
         for (int j_comp = 0; j_comp < 3; j_comp++) {
-            div_Atilde += (globalGrid[iP][jP][kP].K[i_comp][j_comp] -
-                           globalGrid[iM][jM][kM].K[i_comp][j_comp]) / (2.0 * DX);
+            div_Atilde += (grid_obj.getCell(iP, jP, kP).K[i_comp][j_comp] -
+                           grid_obj.getCell(iM, jM, kM).K[i_comp][j_comp]) / (2.0 * DX);
         }
 
         for (int j_comp = 0; j_comp < 3; j_comp++) {
@@ -56,31 +60,30 @@ void GridTensor::compute_dt_tildeGamma(int i, int j, int k, double dt_tildeGamma
         }
 
         for (int j_comp = 0; j_comp < 3; j_comp++) {
-            beta_term += beta[j_comp] * (globalGrid[iP][jP][kP].beta[i_comp] -
-                                         globalGrid[iM][jM][kM].beta[i_comp]) / (2.0 * DX);
+            beta_term += beta[j_comp] * (grid_obj.getCell(iP, jP, kP).beta[i_comp] -
+                                          grid_obj.getCell(iM, jM, kM).beta[i_comp]) / (2.0 * DX);
         }
 
         dt_tildeGamma[i_comp] = -2.0 * alpha * div_Atilde + 2.0 * alpha * tildeGamma_Atilde + beta_term;
-	}
+    }
 }
 
 void GridTensor::compute_tildeGamma(int i, int j, int k, double tildeGamma[3]) {
     double gammaInv[3][3];
     double christof[3][3][3];
+	Grid grid_obj;
+    Grid::Cell2D &cell = grid_obj.getCell(i, j, k);
 
     for (int a = 0; a < 3; a++) {
         for (int b = 0; b < 3; b++) {
-            gammaInv[a][b] = globalGrid[i][j][k].gamma_inv[a][b];
-			for (int c = 0; c < 3; c++) {
-				christof[a][b][c] = globalGrid[i][j][k].Christoffel[a][b][c];
-			}
-		}
+            gammaInv[a][b] = cell.gamma_inv[a][b];
+            for (int c = 0; c < 3; c++) {
+                christof[a][b][c] = cell.Christoffel[a][b][c];
+            }
+        }
     }
 
-
-    for (int m = 0; m < 3; m++) {
-        tildeGamma[m] = 0.0;
-    }
+    std::fill_n(tildeGamma, 3, 0.0);
 
     for (int i_comp = 0; i_comp < 3; i_comp++) { 
         for (int j_comp = 0; j_comp < 3; j_comp++) {
@@ -89,21 +92,18 @@ void GridTensor::compute_tildeGamma(int i, int j, int k, double tildeGamma[3]) {
             }
         }
     }
-	/*  */
-	/* printf("tildeGamma at (%d, %d, %d): [%e, %e, %e]\n", */
-	/* 		i, j, k, tildeGamma[0], tildeGamma[1], tildeGamma[2]); */
 }
 
-void GridTensor::compute_christoffel_3D(int i, int j, int k, double christof[3][3][3]) {
+void GridTensor::compute_christoffel_3D(Grid &grid_obj, int i, int j, int k, double christof[3][3][3]) {
 	Matrix matrix_obj;
 	double g[3][3];
-	double invg[3][3];  
+	double invg[3][3]; 
 	for (int a = 0; a < 3; a++) {
 		for (int b = 0; b < 3; b++) {
-			invg[a][b] = globalGrid[i][j][k].gamma_inv[a][b];
-			g[a][b] = globalGrid[i][j][k].gamma[a][b];
+			invg[a][b] = grid_obj.getCell(i, j, k).gamma_inv[a][b];
+			g[a][b] = grid_obj.getCell(i, j, k).gamma[a][b];
 			for (int c = 0; c < 3; c++) {
-				christof[a][b][c] = globalGrid[i][j][k].Christoffel[a][b][c];
+				christof[a][b][c] = grid_obj.getCell(i, j, k).Christoffel[a][b][c];
 			}
 		}
 	}
@@ -111,9 +111,9 @@ void GridTensor::compute_christoffel_3D(int i, int j, int k, double christof[3][
 	double dgamma[3][3][3];
 	for(int a=0;a<3;a++){
 		for(int b=0;b<3;b++){
-			dgamma[0][a][b] = partialX_gamma(i,j,k,a,b);
-			dgamma[1][a][b] = partialY_gamma(i,j,k,a,b);
-			dgamma[2][a][b] = partialZ_gamma(i,j,k,a,b);
+			dgamma[0][a][b] = partialX_gamma(grid_obj, i, j, k, a, b);
+			dgamma[1][a][b] = partialY_gamma(grid_obj, i, j, k, a, b);
+			dgamma[2][a][b] = partialZ_gamma(grid_obj, i, j, k, a, b);
 		}
 	}
 	for(int kk=0; kk<3; kk++){
@@ -125,7 +125,7 @@ void GridTensor::compute_christoffel_3D(int i, int j, int k, double christof[3][
 					double tmp = dgamma[aa][ll][bb] + dgamma[bb][ll][aa] - dgamma[ll][aa][bb];
 					sum += invg[kk][ll] * tmp;
 				}
-				globalGrid[i][j][k].Christoffel[kk][aa][bb] = 0.5 * sum;
+				grid_obj.getCell(i, j, k).Christoffel[kk][aa][bb] = 0.5 * sum;
 				
 			}
 		}

@@ -2,7 +2,7 @@
 
 
 
-void Grid::evolve(double dtinitital, int nSteps) {
+void Grid::evolve(Grid &grid_obj, double dtinitital, int nSteps) {
     initialize_grid(); 
 	GridTensor gridTensor;
 	double CFL = 0.5;
@@ -11,7 +11,7 @@ void Grid::evolve(double dtinitital, int nSteps) {
 
     for (int step = 0; step < nSteps; step++) {
 		dt = computeCFL_dt(CFL);
-        apply_boundary_conditions();
+        apply_boundary_conditions(grid_obj);
         
         for (int i = 1; i < NX - 1; i++) {
             for (int j = 1; j < NY - 1; j++) {
@@ -24,11 +24,11 @@ void Grid::evolve(double dtinitital, int nSteps) {
         for (int i = 1; i < NX - 1; i++) {
             for (int j = 1; j < NY - 1; j++) {
                 for (int k = 1; k < NZ - 1; k++) {
-                    compute_time_derivatives(i, j, k);
+                    compute_time_derivatives(grid_obj, i, j, k);
                     double d_alpha_dt, d_beta_dt[3];
                     compute_gauge_derivatives(i, j, k, d_alpha_dt, d_beta_dt);
 					update_fluid_velocity(i, j, k, dt);
-					compute_constraints(i, j, k, hamiltonian, momentum);
+					compute_constraints(grid_obj, i, j, k, hamiltonian, momentum);
                     storeStage(globalGrid[i][j][k], 0, d_alpha_dt, d_beta_dt);
                 }
             }
@@ -44,7 +44,7 @@ void Grid::evolve(double dtinitital, int nSteps) {
         for (int i = 1; i < NX - 1; i++) {
             for (int j = 1; j < NY - 1; j++) {
                 for (int k = 1; k < NZ - 1; k++) {
-                    compute_time_derivatives(i, j, k);
+                    compute_time_derivatives(grid_obj, i, j, k);
                     double d_alpha_dt, d_beta_dt[3];
                     compute_gauge_derivatives(i, j, k, d_alpha_dt, d_beta_dt);
 					update_fluid_velocity(i, j, k, dt);
@@ -63,11 +63,11 @@ void Grid::evolve(double dtinitital, int nSteps) {
         for (int i = 1; i < NX - 1; i++) {
             for (int j = 1; j < NY - 1; j++) {
                 for (int k = 1; k < NZ - 1; k++) {
-                    compute_time_derivatives(i, j, k);
-                    double d_alpha_dt, d_beta_dt[3];
+                    compute_time_derivatives(grid_obj, i, j, k);
+					double d_alpha_dt, d_beta_dt[3];
                     compute_gauge_derivatives(i, j, k, d_alpha_dt, d_beta_dt);
 					update_fluid_velocity(i, j, k, dt);
-					compute_constraints(i, j, k, hamiltonian, momentum);
+					compute_constraints(grid_obj, i, j, k, hamiltonian, momentum);
 					storeStage(globalGrid[i][j][k], 2, d_alpha_dt, d_beta_dt);
                 }
             }
@@ -83,11 +83,11 @@ void Grid::evolve(double dtinitital, int nSteps) {
         for (int i = 1; i < NX - 1; i++) {
             for (int j = 1; j < NY - 1; j++) {
                 for (int k = 1; k < NZ - 1; k++) {
-                    compute_time_derivatives(i, j, k);
+                    compute_time_derivatives(grid_obj, i, j, k);
                     double d_alpha_dt, d_beta_dt[3];
                     compute_gauge_derivatives(i, j, k, d_alpha_dt, d_beta_dt);
 					update_fluid_velocity(i, j, k, dt);
-					compute_constraints(i, j, k, hamiltonian, momentum);
+					compute_constraints(grid_obj, i, j, k, hamiltonian, momentum);
                     storeStage(globalGrid[i][j][k], 3, d_alpha_dt, d_beta_dt);
                 }
             }
@@ -103,12 +103,12 @@ void Grid::evolve(double dtinitital, int nSteps) {
 		if (step == nSteps- 1)
 		{
 			printf("Exporting slices\n");
-			export_K_slice(NY / 2);
-			export_gamma_slice(NY / 2); 
-			export_gauge_slice(NY / 2);
-			gridTensor.export_christoffel_slice(NY / 2);
+			export_K_slice(grid_obj, NY / 2);
+			export_gauge_slice(grid_obj, NY / 2);
+			gridTensor.export_christoffel_slice(grid_obj, NY / 2);
 			export_fluid_slice(NY / 2);
 			export_energy_momentum_tensor_slice(NY / 2);
+			export_K_3D(grid_obj);
 		}
     }
 }

@@ -23,8 +23,6 @@ using Tensor4D  = std::array<std::array<std::array<std::array<double, DIM3>, DIM
 using Christoffel3D = std::array<std::array<std::array<double, DIM3>, DIM3>, DIM3>;
 using Riemann3D = std::array<std::array<std::array<std::array<double, DIM3>, DIM3>, DIM3>, DIM3>;
 
-
-
 class Grid {
     public:
 		struct Cell2D {
@@ -71,10 +69,8 @@ class Grid {
 		void export_energy_momentum_tensor_slice(int slice_y);
 		void update_fluid_velocity(int i, int j, int k, double dt);
 		void compute_fluid_derivatives(int i, int j, int k);
-		std::vector<std::vector<std::vector<double>>> hamiltonianGrid;
 		void initialize_grid();
-		void export_hamiltonian_csv(const std::string& filename); 
-		void evolve(double dtinitital, int nSteps);
+		void evolve(Grid &grid_obj, double dtinitital, int nSteps);
 		void extract_3p1(const Matrix4x4& g,
 				const Matrix4x4& g_inv,  
 				double* alpha,
@@ -83,113 +79,64 @@ class Grid {
 				Matrix3x3& gamma,
 				Matrix3x3& gamma_inv);
 		void initializeData(); 
-		void calculeBeta(const Vector3& X, Vector3& beta_cov);
-		void calculate_dbeta(const Vector3& X, Matrix3x3& dbeta);
 		void compute_ricci_3d(
 				Grid& grid_obj,  
 				const Vector3& X,       
 				const Tensor3D& Gamma3, 
 				Matrix3x3& R3);
 		void print_ricci_tensor(const Matrix3x3& R3);
-		double compute_K(const Matrix3x3& gamma_inv, const Matrix3x3& K);
-		double compute_Kij_Kij(const Matrix3x3& gamma_inv, const Matrix3x3& K);
-		void compute_extrinsic_curvature_stationary_3D(
-				const Vector3& X,
-				double alpha,
-				const Vector3& beta_cov,
-				std::array<std::array<std::array<double, DIM3>, DIM3>, DIM3>& Gamma3,
-				const Matrix3x3& dbeta,
-				Matrix3x3& K);
 		void calculate_christoffel_3D(const Vector3& X, Tensor3D& Gamma3, 
 				const Matrix3x3& gamma, Matrix3x3 gamma_inv) ;
-		double compute_hamiltonian_constraint(const Matrix3x3& gamma_inv, const Matrix3x3& K, const Matrix3x3& Ricci);
-		void calculate_christoffel_3D_grid(
-				std::vector<std::vector<Grid::Cell2D>>& grid,
-				int Nx, int Ny,
-				double dr, double dtheta,
-				double r_min,
-				double theta_min);
-		void save_christoffel_symbols(const std::vector<std::vector<Cell2D>>& grid,
-				int Nx, int Ny,
-				const std::string &filename);
 		void compute_ricci_3d(
 				const Vector3& X,       
 				const Tensor3D& Gamma3, 
 				Matrix3x3& R3);
-		void compute_ricci_3d_grid(
-				std::vector<std::vector<Cell2D>>& grid,
-				int Nr, int Ntheta,
-				double dr, double dtheta,
-				double r_min, double theta_min,
-				double delta);
-		std::vector<std::vector<Cell2D>> grid; 
-		int Nr, Ntheta;
-		double dr, dtheta;
-		void save_extrinsic_curvature(const std::vector<std::vector<Cell2D>>& grid,
-				int Nx, int Ny,
-				const std::string &filename);
-		void evolve_Kij(double dt);
-		Matrix3x3 compute_second_derivative_alpha(int i, int j);
+
 		void copyInitialState(Cell2D &cell);
 		void updateIntermediateState(Cell2D &cell, double dtCoeff, int stageIndex);
 		void storeStage(Cell2D &cell, int stage, double d_alpha_dt, double d_beta_dt[3]) ;
 		Matrix3x3 compute_beta_gradient(int i, int j);
 		void combineStages(Cell2D &cell, double dt);
-		double compute_KijKij_component(const Matrix3x3& gamma_inv, const Matrix3x3& K, int a, int b);
 		void initialize_grid(int Nr, int Ntheta, double r_min, double r_max, double theta_min, double theta_max);
 		void export_vtk(const std::string& filename);
-		double richardson_derivative_ricci(
-				const Tensor3D &Gamma_plus_h, 
-				const Tensor3D &Gamma_minus_h,
-				const Tensor3D &Gamma_plus_half_h,
-				const Tensor3D &Gamma_minus_half_h,
-				int mu, int nu, int sigma, 
-				double h) ;
 		double computeMaxSpeed();
 		double computeCFL_dt(double CFL);
-		void compute_constraints(int i, int j, int k, double &hamiltonian, double momentum[3]);
-		void calculate_riemann_3d(
-				const Christoffel3D& Gamma, 
-				const std::array<Christoffel3D, 3>& Gamma_plus_h,
-				const std::array<Christoffel3D, 3>& Gamma_minus_h,
-				const std::array<Christoffel3D, 3>& Gamma_plus_half_h,
-				const std::array<Christoffel3D, 3>& Gamma_minus_half_h,
-				Riemann3D& Riemann,
-				double h,
-				double scale); 
+		void compute_constraints(Grid &grid_obj, int i, int j, int k, double &hamiltonian, double momentum[3]);
 		void calculate_ricci_3d_from_riemann(const Riemann3D& Riemann, Matrix3x3& Ricci);
-		bool verify_riemann_symmetries(const Riemann3D &Riemann);
-		void calculate_riemann_4d_from_3d(
-				const Riemann3D &Riemann3,
-				const Matrix3x3 &K,     
-				Riemann3D &Riemann4) ;
-		void compute_time_derivatives(int i, int j, int k);
+		void compute_time_derivatives(Grid &grid_obj, int i, int j, int k);
 		void allocateGlobalGrid();
 		void initializeData_Minkowski();
 		void initializeData_kerr();
-		void compute_ricci_3D(int i, int j, int k, double Ricci[3][3]);
+		void compute_ricci_3D(Grid &grid_obj, int i, int j, int k, double Ricci[3][3]);
 
 		void compute_gauge_derivatives(int i, int j, int k, double &d_alpha_dt, double d_beta_dt[3]);
+		
+		Cell2D& getCell(int i, int j, int k) {
+			return globalGrid[i][j][k];
+		}
+
+	private:
+		std::vector<std::vector<std::vector<Grid::Cell2D>>> globalGrid;
+
 };
 
 
-
-extern std::vector<std::vector<std::vector<Grid::Cell2D>>> globalGrid;
-void export_K_slice(int j);
-double partialX_alpha(int i, int j, int k);
-double partialY_alpha(int i, int j, int k);
-double partialZ_alpha(int i, int j, int k);
-double partialXX_alpha(int i, int j, int k);
-double partialYY_alpha(int i, int j, int k);
-double partialZZ_alpha(int i, int j, int k);
-double partialX_betacomp(int i, int j, int k, int comp);
-double partialY_betacomp(int i, int j, int k, int comp);
-double partialZ_betacomp(int i, int j, int k, int comp);
-double partialXY_alpha(int i, int j, int k);
-double partialXZ_alpha(int i, int j, int k);
-double partialYZ_alpha(int i, int j, int k);
-double second_partial_alpha(int i, int j, int k, int a, int b);
+double partialX_alpha(Grid &grid_obj, int i, int j, int k);
+double partialY_alpha(Grid &grid_obj, int i, int j, int k);
+double partialZ_alpha(Grid &grid_obj, int i, int j, int k);
+double partialXX_alpha(Grid &grid_obj, int i, int j, int k);
+double partialYY_alpha(Grid &grid_obj, int i, int j, int k);
+double partialZZ_alpha(Grid &grid_obj, int i, int j, int k);
+double partialX_betacomp(Grid &grid_obj, int i, int j, int k, int comp);
+double partialY_betacomp(Grid &grid_obj, int i, int j, int k, int comp);
+double partialZ_betacomp(Grid &grid_obj, int i, int j, int k, int comp);
+double partialXY_alpha(Grid &grid_obj, int i, int j, int k);
+double partialXZ_alpha(Grid &grid_obj, int i, int j, int k);
+double partialYZ_alpha(Grid &grid_obj, int i, int j, int k);
+double second_partial_alpha(Grid &grid_obj, int i, int j, int k, int a, int b);
 bool invert_3x3(const double m[3][3], double inv[3][3]);
-void export_gamma_slice(int j);
-void export_gauge_slice(int j);
-void apply_boundary_conditions();
+void apply_boundary_conditions(Grid &grid_obj);
+void export_K_3D(Grid &grid_obj);
+void export_alpha_slice(Grid &grid_obj, int j);
+void export_gauge_slice(Grid &grid_obj, int j);
+void export_K_slice(Grid &grid_obj, int j);

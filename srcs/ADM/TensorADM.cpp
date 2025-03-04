@@ -15,111 +15,82 @@ static void print_matrix_2D(const char* name, const double mat[3][3])
 }
 
 
-double GridTensor::partialX_gamma(int i, int j, int k, int a, int b)
-{
-    if (i >= 2 && i <= NX - 3)
-    {
-        double res = fourth_order_diff(
-            globalGrid[i+2][j][k].gamma[a][b],
-            globalGrid[i+1][j][k].gamma[a][b],
-            globalGrid[i-1][j][k].gamma[a][b],
-            globalGrid[i-2][j][k].gamma[a][b],
+double GridTensor::partialX_gamma(Grid &grid_obj, int i, int j, int k, int a, int b) {
+    if (i >= 2 && i <= NX - 3) {
+        return fourth_order_diff(
+            grid_obj.getCell(i+2, j, k).gamma[a][b],
+            grid_obj.getCell(i+1, j, k).gamma[a][b],
+            grid_obj.getCell(i-1, j, k).gamma[a][b],
+            grid_obj.getCell(i-2, j, k).gamma[a][b],
             DX 
         );
-		return res;
-    }
-    else if (i >= 1 && i <= NX - 2)
-    {
-        double res = second_order_diff(
-            globalGrid[i+1][j][k].gamma[a][b],
-            globalGrid[i-1][j][k].gamma[a][b],
+    } else if (i >= 1 && i <= NX - 2) {
+        return second_order_diff(
+            grid_obj.getCell(i+1, j, k).gamma[a][b],
+            grid_obj.getCell(i-1, j, k).gamma[a][b],
             DX 
         );
-        return res;
-    }
-    else if (i == 0) 
-    {
-        return (globalGrid[i+1][j][k].gamma[a][b] - \
-				globalGrid[i][j][k].gamma[a][b]) / DX;
-    }
-    else if (i == NX - 1) 
-    {
-        return (globalGrid[i][j][k].gamma[a][b] - \
-				globalGrid[i-1][j][k].gamma[a][b]) / DX;
+    } else if (i == 0) {
+        return (grid_obj.getCell(i+1, j, k).gamma[a][b] - 
+                grid_obj.getCell(i, j, k).gamma[a][b]) / DX;
+    } else if (i == NX - 1) {
+        return (grid_obj.getCell(i, j, k).gamma[a][b] - 
+                grid_obj.getCell(i-1, j, k).gamma[a][b]) / DX;
     }
     return 0.0;
 }
 
-
-double GridTensor::partialY_gamma(int i, int j, int k, int a, int b)
-{
-	if (j >= 2 && j <= NY - 3)
-	{
-		return fourth_order_diff(
-			globalGrid[i][j+2][k].gamma[a][b],
-			globalGrid[i][j+1][k].gamma[a][b],
-			globalGrid[i][j-1][k].gamma[a][b],
-			globalGrid[i][j-2][k].gamma[a][b],
-			DY
-		);
-	}
-	else if (j >= 1 && j <= NY - 2)
-	{
-		return second_order_diff(
-			globalGrid[i][j+1][k].gamma[a][b],
-			globalGrid[i][j-1][k].gamma[a][b],
-			DY
-		);
-	}
-	else if (j == 0)
-	{
-		return (globalGrid[i][j+1][k].gamma[a][b] - \
-				globalGrid[i][j][k].gamma[a][b]) / DY;
-	}
-	else if (j == NY - 1)
-	{
-		return (globalGrid[i][j][k].gamma[a][b] - \
-				globalGrid[i][j-1][k].gamma[a][b]) / DY;
-	}
-	return 0.0;
+double GridTensor::partialY_gamma(Grid &grid_obj, int i, int j, int k, int a, int b) {
+    if (j >= 2 && j <= NY - 3) {
+        return fourth_order_diff(
+            grid_obj.getCell(i, j+2, k).gamma[a][b],
+            grid_obj.getCell(i, j+1, k).gamma[a][b],
+            grid_obj.getCell(i, j-1, k).gamma[a][b],
+            grid_obj.getCell(i, j-2, k).gamma[a][b],
+            DY
+        );
+    } else if (j >= 1 && j <= NY - 2) {
+        return second_order_diff(
+            grid_obj.getCell(i, j+1, k).gamma[a][b],
+            grid_obj.getCell(i, j-1, k).gamma[a][b],
+            DY
+        );
+    } else if (j == 0) {
+        return (grid_obj.getCell(i, j+1, k).gamma[a][b] - 
+                grid_obj.getCell(i, j, k).gamma[a][b]) / DY;
+    } else if (j == NY - 1) {
+        return (grid_obj.getCell(i, j, k).gamma[a][b] - 
+                grid_obj.getCell(i, j-1, k).gamma[a][b]) / DY;
+    }
+    return 0.0;
 }
 
-double GridTensor::partialZ_gamma(int i, int j, int k, int a, int b)
-{
-	if (k >= 2 && k <= NZ - 3)
-	{
-		return fourth_order_diff(
-				globalGrid[i][j][k+2].gamma[a][b],
-				globalGrid[i][j][k+1].gamma[a][b],
-				globalGrid[i][j][k-1].gamma[a][b],
-				globalGrid[i][j][k-2].gamma[a][b],
-				DZ
-				);
-	}
-	else if (k >= 1 && k <= NZ - 2)
-	{
-		return second_order_diff(
-				globalGrid[i][j][k+1].gamma[a][b],
-				globalGrid[i][j][k-1].gamma[a][b],
-				DZ
-				);
-	}
-	else if (k == 0)
-	{
-		return (globalGrid[i][j][k+1].gamma[a][b] - \
-				globalGrid[i][j][k].gamma[a][b]) / DZ;
-	}
-	else if (k == NZ - 1)
-	{
-		return (globalGrid[i][j][k].gamma[a][b] - \
-				globalGrid[i][j][k-1].gamma[a][b]) / DZ;
-	}
-	return 0.0;
+double GridTensor::partialZ_gamma(Grid &grid_obj, int i, int j, int k, int a, int b) {
+    if (k >= 2 && k <= NZ - 3) {
+        return fourth_order_diff(
+            grid_obj.getCell(i, j, k+2).gamma[a][b],
+            grid_obj.getCell(i, j, k+1).gamma[a][b],
+            grid_obj.getCell(i, j, k-1).gamma[a][b],
+            grid_obj.getCell(i, j, k-2).gamma[a][b],
+            DZ
+        );
+    } else if (k >= 1 && k <= NZ - 2) {
+        return second_order_diff(
+            grid_obj.getCell(i, j, k+1).gamma[a][b],
+            grid_obj.getCell(i, j, k-1).gamma[a][b],
+            DZ
+        );
+    } else if (k == 0) {
+        return (grid_obj.getCell(i, j, k+1).gamma[a][b] - 
+                grid_obj.getCell(i, j, k).gamma[a][b]) / DZ;
+    } else if (k == NZ - 1) {
+        return (grid_obj.getCell(i, j, k).gamma[a][b] - 
+                grid_obj.getCell(i, j, k-1).gamma[a][b]) / DZ;
+    }
+    return 0.0;
 }
 
-
-
-void GridTensor::compute_partial_christoffel(int i, int j, int k, int dim, double partialGamma[3][3][3][3], double d) {
+void GridTensor::compute_partial_christoffel(Grid &grid_obj, int i, int j, int k, int dim, double partialGamma[3][3][3][3], double d) {
     double Gmm[3][3][3], Gm[3][3][3], Gp[3][3][3], Gpp[3][3][3];
     double localPartialGamma[3][3][3] = {0.0}; 
 
@@ -127,13 +98,13 @@ void GridTensor::compute_partial_christoffel(int i, int j, int k, int dim, doubl
     int max_a = (dim == 0) ? NX : ((dim == 1) ? NY : NZ);
 
     if (a >= 2 && a <= max_a - 3) {
-        compute_christoffel_3D(i - 2 * (dim == 0), j - 2 * (dim == 1), k - 2 * (dim == 2), Gmm);
-        compute_christoffel_3D(i - 1 * (dim == 0), j - 1 * (dim == 1), k - 1 * (dim == 2), Gm);
-        compute_christoffel_3D(i + 1 * (dim == 0), j + 1 * (dim == 1), k + 1 * (dim == 2), Gp);
-        compute_christoffel_3D(i + 2 * (dim == 0), j + 2 * (dim == 1), k + 2 * (dim == 2), Gpp);
+        compute_christoffel_3D(grid_obj, i - 2 * (dim == 0), j - 2 * (dim == 1), k - 2 * (dim == 2), Gmm);
+        compute_christoffel_3D(grid_obj, i - 1 * (dim == 0), j - 1 * (dim == 1), k - 1 * (dim == 2), Gm);
+        compute_christoffel_3D(grid_obj, i + 1 * (dim == 0), j + 1 * (dim == 1), k + 1 * (dim == 2), Gp);
+        compute_christoffel_3D(grid_obj, i + 2 * (dim == 0), j + 2 * (dim == 1), k + 2 * (dim == 2), Gpp);
     } else if (a >= 1 && a <= max_a - 2) {
-        compute_christoffel_3D(i - 1 * (dim == 0), j - 1 * (dim == 1), k - 1 * (dim == 2), Gm);
-        compute_christoffel_3D(i + 1 * (dim == 0), j + 1 * (dim == 1), k + 1 * (dim == 2), Gp);
+        compute_christoffel_3D(grid_obj, i - 1 * (dim == 0), j - 1 * (dim == 1), k - 1 * (dim == 2), Gm);
+        compute_christoffel_3D(grid_obj, i + 1 * (dim == 0), j + 1 * (dim == 1), k + 1 * (dim == 2), Gp);
     }
 
     for (int kk = 0; kk < 3; kk++) {
@@ -164,16 +135,16 @@ void GridTensor::compute_partial_christoffel(int i, int j, int k, int dim, doubl
 }
 
 
-void Grid::compute_ricci_3D(int i, int j, int k, double Ricci[3][3]) {
+void Grid::compute_ricci_3D(Grid &grid_obj, int i, int j, int k, double Ricci[3][3]) {
     double Gamma[3][3][3];
     GridTensor gridTensor;
-    gridTensor.compute_christoffel_3D(i, j, k, Gamma);
+    gridTensor.compute_christoffel_3D(grid_obj, i, j, k, Gamma);
 
     double T[3][3]; 
     double partialGamma[3][3][3][3] = {};  
-    gridTensor.compute_partial_christoffel(i, j, k, 0, partialGamma, DX);
-    gridTensor.compute_partial_christoffel(i, j, k, 1, partialGamma, DY);
-    gridTensor.compute_partial_christoffel(i, j, k, 2, partialGamma, DZ);
+    gridTensor.compute_partial_christoffel(grid_obj, i, j, k, 0, partialGamma, DX);
+    gridTensor.compute_partial_christoffel(grid_obj, i, j, k, 1, partialGamma, DY);
+    gridTensor.compute_partial_christoffel(grid_obj, i, j, k, 2, partialGamma, DZ);
 
     for (int a = 0; a < 3; a++) {
         for (int b = 0; b < 3; b++) {

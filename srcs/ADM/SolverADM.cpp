@@ -1,10 +1,9 @@
 #include <Geodesics.h>
 #include <cassert>
 
-std::vector<std::vector<std::vector<Grid::Cell2D>>> globalGrid;
 
 
-void Grid::compute_time_derivatives(int i, int j, int k)
+void Grid::compute_time_derivatives(Grid &grid_obj, int i, int j, int k)
 {
     Cell2D &cell = globalGrid[i][j][k];
     double alpha = cell.alpha;
@@ -29,21 +28,21 @@ void Grid::compute_time_derivatives(int i, int j, int k)
 	}
 
     double Gamma[3][3][3];
-    gridTensor.compute_christoffel_3D(i,j,k,Gamma);
+    gridTensor.compute_christoffel_3D(grid_obj, i,j,k,Gamma);
     
     double Ricci[3][3];
-    compute_ricci_3D(i,j,k,Ricci);
+    compute_ricci_3D(grid_obj, i,j,k,Ricci);
 
 
 	auto partial_m_alpha = [&](int i, int j, int k, int m){
-		if(m==0) return partialX_alpha(i,j,k);
-		if(m==1) return partialY_alpha(i,j,k);
-		if(m==2) return partialZ_alpha(i,j,k);
+		if(m==0) return partialX_alpha(grid_obj, i, j, k);
+		if(m==1) return partialY_alpha(grid_obj, i, j, k);
+		if(m==2) return partialZ_alpha(grid_obj, i, j, k);
 		return 0.0;
 	};
 
 	auto D_iD_j_alpha = [&](int a, int b){
-		double secondPart = second_partial_alpha(i,j,k,a,b);
+		double secondPart = second_partial_alpha(grid_obj, i,j,k,a,b);
 		double sumG = 0.0;
 		for(int m=0; m<3; m++){
 			sumG += Gamma[m][a][b] * partial_m_alpha(i,j,k,m);
@@ -68,9 +67,9 @@ void Grid::compute_time_derivatives(int i, int j, int k)
     };
 
     auto partial_j_beta_comp = [&](int dimSpace, int compBeta){
-        if(dimSpace==0) return partialX_betacomp(i,j,k, compBeta);
-        if(dimSpace==1) return partialY_betacomp(i,j,k, compBeta);
-        if(dimSpace==2) return partialZ_betacomp(i,j,k, compBeta);
+        if(dimSpace==0) return partialX_betacomp(grid_obj, i, j, k, compBeta);
+        if(dimSpace==1) return partialY_betacomp(grid_obj, i, j, k, compBeta);
+        if(dimSpace==2) return partialZ_betacomp(grid_obj, i, j, k, compBeta);
         return 0.0;
     };
 
