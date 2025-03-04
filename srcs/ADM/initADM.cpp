@@ -106,9 +106,8 @@ double effective_potential(double x, double y, double a) {
 
 
 void Grid::initializeKerrData() {
-    double a = 0.9;   
-	double M2 = 1.0; 
-    double L = 2.6;
+    double a = 0.935;   
+    double L = 4.0;
     double x_min = -L, x_max = L;
     double y_min = -L, y_max = L;
     double z_min = -L, z_max = L;
