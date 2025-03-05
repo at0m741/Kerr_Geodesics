@@ -106,8 +106,8 @@ double effective_potential(double x, double y, double a) {
 
 
 void Grid::initializeKerrData() {
-    double a = 0.935;   
-    double L = 4.0;
+    double a = 0.3;   
+    double L = 6.0;
     double x_min = -L, x_max = L;
     double y_min = -L, y_max = L;
     double z_min = -L, z_max = L;
@@ -184,11 +184,11 @@ void Grid::initializeKerrData() {
                 cell.vz = 0.0;
 
                 double r_horizon = M + sqrt(M * M - a * a);
-                if (r < r_horizon / 4) {
-                    cell.vx = cell.vy = cell.vz = 0.0;
-                    cell.rho = 0.0;
-                    cell.p = 0.0;
-                }
+                /* if (r < r_horizon / 4) { */
+                /*     cell.vx = cell.vy = cell.vz = 0.0; */
+                /*     cell.rho = 0.0; */
+                /*     cell.p = 0.0; */
+                /* } */
 
                 cell.beta[0] = 2 * H * lx;
                 cell.beta[1] = 2 * H * ly;

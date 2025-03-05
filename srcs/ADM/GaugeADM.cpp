@@ -82,9 +82,9 @@ void Grid::compute_constraints(Grid &grid_obj, int i, int j, int k, double &hami
     
     hamiltonian = R + Ktrace * Ktrace - KK;
     hamiltonianGrid[i][j][k] = hamiltonian;
-	if (hamiltonian > 5.0) {
-		printf("hamiltonian = %f, at i = %d, j = %d, k = %d\n", hamiltonian, i, j, k);
-	}
+	/* if (hamiltonian > 5.0) { */
+	/* 	printf("hamiltonian = %f, at i = %d, j = %d, k = %d\n", hamiltonian, i, j, k); */
+	/* } */
     for (int i_comp = 0; i_comp < 3; i_comp++) {
         momentum[i_comp] = 0.0;
         for (int j_comp = 0; j_comp < 3; j_comp++) {
@@ -92,10 +92,10 @@ void Grid::compute_constraints(Grid &grid_obj, int i, int j, int k, double &hami
             double dKdy = (globalGrid[i][j+1][k].K[i_comp][j_comp] - globalGrid[i][j-1][k].K[i_comp][j_comp]) / (2.0 * DY);
             double dKdz = (globalGrid[i][j][k+1].K[i_comp][j_comp] - globalGrid[i][j][k-1].K[i_comp][j_comp]) / (2.0 * DZ);
             momentum[i_comp] += (dKdx + dKdy + dKdz);
-			if (momentum[i_comp] > 5.0) {
-				printf("momentum[%d] = %f, at i = %d, j = %d, k = %d\n", i_comp, momentum[i_comp], i, j, k);
-        
-			}
+			/* if (momentum[i_comp] > 5.0) { */
+			/* 	printf("momentum[%d] = %f, at i = %d, j = %d, k = %d\n", i_comp, momentum[i_comp], i, j, k); */
+			/*          */
+			/* } */
 		}
     }
 }
