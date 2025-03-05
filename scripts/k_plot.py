@@ -38,7 +38,6 @@ for idx, col in enumerate(K_labels):
         origin="lower",
         aspect="auto",
         cmap="RdBu",
-        norm=norm,
         interpolation="bilinear"
     )
     

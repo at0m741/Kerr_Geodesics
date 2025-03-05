@@ -112,6 +112,7 @@ void Grid::evolve(Grid &grid_obj, double dtinitital, int nSteps) {
 					printf("Exporting slices\n");
 					export_K_slice(grid_obj, NY / 2);
 					export_gauge_slice(grid_obj, NY / 2);
+					export_gamma_slice(grid_obj, NY / 2);
 					gridTensor.export_christoffel_slice(grid_obj, NY / 2);
 					export_fluid_slice(NY / 2);
 					export_energy_momentum_tensor_slice(NY / 2);

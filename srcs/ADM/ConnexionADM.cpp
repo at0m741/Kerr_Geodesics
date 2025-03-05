@@ -130,13 +130,6 @@ void GridTensor::compute_christoffel_3D(Grid &grid_obj, int i, int j, int k, dou
 			}
 		}
 	}
-	/* printf("Christoffel symbols at (%d, %d, %d):\n", i, j, k); */
-	/* for(int a=0; a<3; a++){ */
-	/* 	for(int b=0; b<3; b++){ */
-	/* 		for(int c=0; c<3; c++){ */
-	/* 			printf("Gamma[%d][%d][%d] = %e\n", a, b, c, christof[a][b][c]); */
-	/* 		} */
-	/* 	} */
-	/* } */
+
 }
 

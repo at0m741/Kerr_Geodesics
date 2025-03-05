@@ -140,3 +140,4 @@ void export_K_3D(Grid &grid_obj);
 void export_alpha_slice(Grid &grid_obj, int j);
 void export_gauge_slice(Grid &grid_obj, int j);
 void export_K_slice(Grid &grid_obj, int j);
+void export_gamma_slice(Grid &grid_obj, int j);

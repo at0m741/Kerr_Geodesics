@@ -106,8 +106,8 @@ double effective_potential(double x, double y, double a) {
 
 
 void Grid::initializeKerrData(Grid &grid_obj) {
-    double a = 0.3;   
-    double L = 6.0;
+    double a = 0.9;   
+    double L = 3.0;
     double x_min = -L, x_max = L;
     double y_min = -L, y_max = L;
     double z_min = -L, z_max = L;
@@ -134,34 +134,46 @@ void Grid::initializeKerrData(Grid &grid_obj) {
                 double R2 = x * x + y * y + z * z;
 
 				Cell2D &cell = globalGrid[i][j][k];
-                double temp = R2 - a * a;
-                double sqrt_arg = temp * temp + 4 * a * a * z * z;
-                double r = sqrt( 0.5 * (R2 - a * a + sqrt(sqrt_arg)) );
-                if (r < 1e-6) r = 1e-6;  
 
-                double H = M * r * r * r / (r * r * r * r + a * a * z * z);
+				double r2 = x*x + y*y + z*z;
+				double r  = sqrt(r2);
+				double r4 = r2*r2;
+				double H  = (r < 1e-12) ? 0.0 
+					: (M * r*r*r) / (r4 + a*a*z*z);
 
-                double denom = r * r + a * a;
-                double lx = (r * x + a * y) / denom;
-                double ly = (r * y - a * x) / denom;
-                double lz = z / r;
+				// l^x, l^y, l^z  (avec l^t = 1)
+				double denom = (r2 + a*a);
+				double lx = (r*x + a*y) / denom;
+				double ly = (r*y - a*x) / denom;
+				double lz = (r > 1e-12) ? (z / r) : 0.0;
 
-                cell.gamma[0][0] = 1.0; cell.gamma[0][1] = 0.0; cell.gamma[0][2] = 0.0;
-                cell.gamma[1][0] = 0.0; cell.gamma[1][1] = 1.0; cell.gamma[1][2] = 0.0;
-                cell.gamma[2][0] = 0.0; cell.gamma[2][1] = 0.0; cell.gamma[2][2] = 1.0;
-                cell.gamma[0][0] += 2 * H * lx * lx;
-                cell.gamma[0][1] += 2 * H * lx * ly;
-                cell.gamma[0][2] += 2 * H * lx * lz;
-                cell.gamma[1][0] += 2 * H * ly * lx;
-                cell.gamma[1][1] += 2 * H * ly * ly;
-                cell.gamma[1][2] += 2 * H * ly * lz;
-                cell.gamma[2][0] += 2 * H * lz * lx;
-                cell.gamma[2][1] += 2 * H * lz * ly;
-                cell.gamma[2][2] += 2 * H * lz * lz;
+				// gamma_{ij} = delta_ij + 2H (l_i l_j)
+				// On relève/abaisse indices via delta_ij (i.e. l_i = l^i en coords plates).
+				double lxlx = lx * lx;
+				double lyly = ly * ly;
+				double lzlz = lz * lz;
+
+				// On construit la 3D-métrique
+				cell.gamma[0][0] = 1.0 + 2.0*H*lxlx; 
+				cell.gamma[0][1] = 2.0*H*lx*ly;      
+				cell.gamma[0][2] = 2.0*H*lx*lz;
+				cell.gamma[1][0] = cell.gamma[0][1]; 
+				cell.gamma[1][1] = 1.0 + 2.0*H*lyly; 
+				cell.gamma[1][2] = 2.0*H*ly*lz;
+				cell.gamma[2][0] = cell.gamma[0][2];
+				cell.gamma[2][1] = cell.gamma[1][2];
+				cell.gamma[2][2] = 1.0 + 2.0*H*lzlz;
+
 
                 cell.alpha = 1.0 / sqrt(1.0 + 2 * H);
 
                 matrix.inverse_3x3(cell.gamma, cell.gamma_inv);
+				cell.beta[0] = 2.0 * H * lx;
+				cell.beta[1] = 2.0 * H * ly;
+				cell.beta[2] = 2.0 * H * lz;
+
+				// Lapse : alpha = 1 / sqrt(1 + 2H)
+				cell.alpha = 1.0 / sqrt(1.0 + 2.0 * H);
 
                 for (int a_idx = 0; a_idx < 3; a_idx++) {
                     for (int b_idx = 0; b_idx < 3; b_idx++) {
