@@ -40,4 +40,5 @@ void Grid::update_fluid_velocity(int i, int j, int k, double dt) {
     cell.vx += -dt * (pressure_gradient_x / cell.rho + christoffel_x);
     cell.vy += -dt * (pressure_gradient_y / cell.rho + christoffel_y);
     cell.vz += -dt * (pressure_gradient_z / cell.rho + christoffel_z);
+	/* printf("vx = %f, vy = %f, vz = %f\n", cell.vx, cell.vy, cell.vz); */
 }

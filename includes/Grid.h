@@ -6,9 +6,9 @@
 #define DX 0.1
 #define DY 0.1
 #define DZ 0.1
-#define NX 128
-#define NY 128
-#define NZ 128
+#define NX 64
+#define NY 64
+#define NZ 64
 #define GHOST 2  
 #define NX_TOTAL (NX + 2*GHOST) 
 #define NY_TOTAL (NY + 2*GHOST)
@@ -106,7 +106,7 @@ class Grid {
 		void compute_time_derivatives(Grid &grid_obj, int i, int j, int k);
 		void allocateGlobalGrid();
 		void initializeData_Minkowski();
-		void initializeData_kerr();
+		void initializeKerrData(Grid &grid_obj);
 		void compute_ricci_3D(Grid &grid_obj, int i, int j, int k, double Ricci[3][3]);
 
 		void compute_gauge_derivatives(int i, int j, int k, double &d_alpha_dt, double d_beta_dt[3]);

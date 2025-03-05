@@ -105,7 +105,7 @@ double effective_potential(double x, double y, double a) {
 }
 
 
-void Grid::initializeKerrData() {
+void Grid::initializeKerrData(Grid &grid_obj) {
     double a = 0.3;   
     double L = 6.0;
     double x_min = -L, x_max = L;
@@ -184,11 +184,11 @@ void Grid::initializeKerrData() {
                 cell.vz = 0.0;
 
                 double r_horizon = M + sqrt(M * M - a * a);
-                /* if (r < r_horizon / 4) { */
-                /*     cell.vx = cell.vy = cell.vz = 0.0; */
-                /*     cell.rho = 0.0; */
-                /*     cell.p = 0.0; */
-                /* } */
+                if (r < r_horizon / 4) {
+                    cell.vx = cell.vy = cell.vz = 0.0;
+                    cell.rho = 0.0;
+                    cell.p = 0.0;
+                }
 
                 cell.beta[0] = 2 * H * lx;
                 cell.beta[1] = 2 * H * ly;
@@ -199,33 +199,51 @@ void Grid::initializeKerrData() {
             }
 		}
 	}
+	GridTensor gridtensor;
+	double Christo[3][3][3];
 
 	for (int i = 1; i < NX - 1; i++) {
 		for (int j = 1; j < NY - 1; j++) {
 			for (int k = 1; k < NZ - 1; k++) {
-
+				gridtensor.compute_christoffel_3D(grid_obj, i, j, k, Christo);
 				Cell2D &cell = globalGrid[i][j][k];
-				double dBeta_x_dx = (globalGrid[i+1][j][k].beta[0] - globalGrid[i-1][j][k].beta[0]) / (2 * dx);
-				double dBeta_x_dy = (globalGrid[i][j+1][k].beta[0] - globalGrid[i][j-1][k].beta[0]) / (2 * dy);
-				double dBeta_x_dz = (globalGrid[i][j][k+1].beta[0] - globalGrid[i][j][k-1].beta[0]) / (2 * dz);
 
-				double dBeta_y_dx = (globalGrid[i+1][j][k].beta[1] - globalGrid[i-1][j][k].beta[1]) / (2 * dx);
-				double dBeta_y_dy = (globalGrid[i][j+1][k].beta[1] - globalGrid[i][j-1][k].beta[1]) / (2 * dy);
-				double dBeta_y_dz = (globalGrid[i][j][k+1].beta[1] - globalGrid[i][j][k-1].beta[1]) / (2 * dz);
+				double dBeta_x_dx = (globalGrid[i+1][j][k].beta[0] - globalGrid[i-1][j][k].beta[0]) / (2.0 * dx);
+				double dBeta_x_dy = (globalGrid[i][j+1][k].beta[0] - globalGrid[i][j-1][k].beta[0]) / (2.0 * dy);
+				double dBeta_x_dz = (globalGrid[i][j][k+1].beta[0] - globalGrid[i][j][k-1].beta[0]) / (2.0 * dz);
 
-				double dBeta_z_dx = (globalGrid[i+1][j][k].beta[2] - globalGrid[i-1][j][k].beta[2]) / (2 * dx);
-				double dBeta_z_dy = (globalGrid[i][j+1][k].beta[2] - globalGrid[i][j-1][k].beta[2]) / (2 * dy);
-				double dBeta_z_dz = (globalGrid[i][j][k+1].beta[2] - globalGrid[i][j][k-1].beta[2]) / (2 * dz);
+				double dBeta_y_dx = (globalGrid[i+1][j][k].beta[1] - globalGrid[i-1][j][k].beta[1]) / (2.0 * dx);
+				double dBeta_y_dy = (globalGrid[i][j+1][k].beta[1] - globalGrid[i][j-1][k].beta[1]) / (2.0 * dy);
+				double dBeta_y_dz = (globalGrid[i][j][k+1].beta[1] - globalGrid[i][j][k-1].beta[1]) / (2.0 * dz);
 
-				cell.K[0][0] = 1.0/(2*cell.alpha) * (dBeta_x_dx + dBeta_x_dx);
-				cell.K[0][1] = 1.0/(2*cell.alpha) * (dBeta_x_dy + dBeta_y_dx);
-				cell.K[0][2] = 1.0/(2*cell.alpha) * (dBeta_x_dz + dBeta_z_dx);
-				cell.K[1][0] = cell.K[0][1];
-				cell.K[1][1] = 1.0/(2*cell.alpha) * (dBeta_y_dy + dBeta_y_dy);
-				cell.K[1][2] = 1.0/(2*cell.alpha) * (dBeta_y_dz + dBeta_z_dy);
-				cell.K[2][0] = cell.K[0][2];
-				cell.K[2][1] = cell.K[1][2];
-				cell.K[2][2] = 1.0/(2*cell.alpha) * (dBeta_z_dz + dBeta_z_dz);
+				double dBeta_z_dx = (globalGrid[i+1][j][k].beta[2] - globalGrid[i-1][j][k].beta[2]) / (2.0 * dx);
+				double dBeta_z_dy = (globalGrid[i][j+1][k].beta[2] - globalGrid[i][j-1][k].beta[2]) / (2.0 * dy);
+				double dBeta_z_dz = (globalGrid[i][j][k+1].beta[2] - globalGrid[i][j][k-1].beta[2]) / (2.0 * dz);
+
+				double partialBeta[3][3];
+				partialBeta[0][0] = dBeta_x_dx; partialBeta[0][1] = dBeta_y_dx; partialBeta[0][2] = dBeta_z_dx;
+				partialBeta[1][0] = dBeta_x_dy; partialBeta[1][1] = dBeta_y_dy; partialBeta[1][2] = dBeta_z_dy;
+				partialBeta[2][0] = dBeta_x_dz; partialBeta[2][1] = dBeta_y_dz; partialBeta[2][2] = dBeta_z_dz;
+
+				double sumGammaBeta[3][3];
+				for (int ii = 0; ii < 3; ii++) {
+					for (int jj = 0; jj < 3; jj++) {
+						double tmp = 0.0;
+						for (int m = 0; m < 3; m++) {
+							tmp += Christo[m][ii][jj] * cell.beta[m];
+						}
+						sumGammaBeta[ii][jj] = tmp;
+					}
+				}
+
+				double alphaLoc = cell.alpha;
+				for (int ii = 0; ii < 3; ii++) {
+					for (int jj = 0; jj < 3; jj++) {
+						double derivPart = partialBeta[ii][jj] + partialBeta[jj][ii];
+						double gammaTerm = 2.0 * sumGammaBeta[ii][jj];
+						cell.K[ii][jj] = (1.0 / (2.0 * alphaLoc)) * (derivPart - gammaTerm);
+					}
+				}
 			}
 		}
 	}
