@@ -21,7 +21,7 @@ make
 ## Usage
 Run the simulation with:
 ```sh
-./CurvatureEngine
+./CurvatureEngine <options>
 ```
 Data will be stored in CSV format for further analysis.
 
